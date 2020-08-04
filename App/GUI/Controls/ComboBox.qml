@@ -67,16 +67,6 @@ T.ComboBox {
         highlighted: control.highlightedIndex === index
         hoverEnabled: control.hoverEnabled
     }
-
-    indicator: ColorImage {
-        x: control.mirrored ? control.padding : control.width - width - control.padding
-        y: control.topPadding + (control.availableHeight - height) / 2
-        color: control.palette.dark
-        defaultColor: "#353637"
-        source: "qrc:/qt-project.org/imports/QtQuick/Controls.2/images/double-arrow.png"
-        opacity: enabled ? 1 : 0.3
-    }
-
     contentItem: T.TextField {
         leftPadding: !control.mirrored ? 12 : control.editable && activeFocus ? 3 : 1
         rightPadding: control.mirrored ? 12 : control.editable && activeFocus ? 3 : 1
@@ -104,6 +94,15 @@ T.ComboBox {
             border.color: parent && parent.activeFocus ? control.palette.highlight : control.palette.dark//control.palette.button
             color: control.palette.base
         }
+    }
+
+    indicator: ColorImage {
+        x: control.mirrored ? control.padding : control.width - width - control.padding
+        y: control.topPadding + (control.availableHeight - height) / 2
+        color: control.palette.dark
+        defaultColor: "#353637"
+        source: "qrc:/qt-project.org/imports/QtQuick/Controls.2/images/double-arrow.png"
+        opacity: enabled ? 1 : 0.3
     }
 
     background: Rectangle {

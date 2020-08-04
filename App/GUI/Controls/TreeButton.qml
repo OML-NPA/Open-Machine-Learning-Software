@@ -7,6 +7,8 @@ import QtQuick.Templates 2.12 as T
 T.Button {
     id: control
 
+    property var data
+
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,

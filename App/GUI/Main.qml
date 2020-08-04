@@ -104,18 +104,37 @@ ApplicationWindow {
                         ScrollView {
                             clip: true
                             anchors.fill: parent
+                            spacing: 0
+                            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                             ColumnLayout {
+                                spacing: 0
                                 Repeater {
-                                    model: 10
+                                    model: 4
+                                    TreeButton {
+                                        id: control
+                                        Layout.preferredWidth: buttonWidth + 0.5*margin-4
+                                        Layout.preferredHeight: buttonHeight-2
+                                        onClicked: {
+                                        }
                                         RowLayout {
                                             spacing: 0
-                                            CheckBox {padding: 0}
+                                            CheckBox {
+                                                padding: 0
+                                                Layout.leftMargin: -0.175*margin
+                                                Layout.topMargin: 0.125*margin
+                                            }
+                                            anchors.fill: parent.fill
                                             Label {
+                                                topPadding: 0.10*margin
+                                                leftPadding: -0.1*margin
                                                 text: "folder"+index
+                                                //Layout.alignment: Qt.AlignVCenter
                                             }
                                         }
+                                    }
                                 }
                             }
+
                         }
                     }
                 }

@@ -30,7 +30,12 @@ ApplicationWindow {
 
     property bool terminate: false
 
-    property var colors: ["green","red","blue","orange"]
+    property var colors: [[0.0,1.0,0.0],[1.0,0.0,0.0],[0.0,0.0,1.0],[1.0,1.0,0.0]]
+    property string colorR: "1"
+    property string colorG: "1"
+    property string colorB: "1"
+
+    property bool featureOpen: false
 
     onClosing: {
         window.visible = false
@@ -143,25 +148,33 @@ ApplicationWindow {
                                        border.width: 2
                                    }
                         ScrollView {
-                            clip: false
+                            clip: true
                             anchors.fill: parent
-                            padding: -10
+                            padding: 0
+                            //topPadding: 0.01*margin
                             spacing: 0
                             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                             ColumnLayout {
-                                spacing: -2
+                                spacing: 0
                                 Repeater {
                                     model: 4
                                     TreeButton {
                                         id: control
                                         Layout.preferredWidth: buttonWidth + 0.5*margin-4
                                         Layout.preferredHeight: buttonHeight-2
-                                        //onClicked:
+                                        onClicked: {
+                                            colorR = String(Math.round(255*colors[index][0]))
+                                            colorG = String(Math.round(255*colors[index][1]))
+                                            colorB = String(Math.round(255*colors[index][2]))
+                                            featuredialogLoader.source = ""
+                                            featuredialogLoader.source = "FeatureDialog.qml"
+                                            data: [colorR,colorG,colorB]
+                                        }
                                         RowLayout {
                                             anchors.fill: parent.fill
                                             Frame {
-                                                Layout.leftMargin: 0.3*margin
-                                                Layout.bottomMargin: 0.025*margin
+                                                Layout.leftMargin: 0.2*margin
+                                                Layout.bottomMargin: 0.03*margin
                                                 Layout.preferredWidth: 0.4*margin
                                                 Layout.preferredHeight: 0.4*margin
                                                 height: 10*margin
@@ -169,13 +182,14 @@ ApplicationWindow {
 
                                                 background: Rectangle {
                                                     anchors.fill: parent.fill
-                                                    color: colors[index]
+                                                    color: Qt.rgba(colors[index][0],colors[index][1],colors[index][2],1.0)
                                                     border.width: 1
                                                 }
                                             }
                                             Label {
+                                                topPadding: 0.15*margin
+                                                leftPadding: 0.10*margin
                                                 text: "feature"+index
-                                                topPadding: 10
                                                 Layout.alignment: Qt.AlignBottom
                                             }
                                         }

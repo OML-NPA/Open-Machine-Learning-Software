@@ -37,6 +37,8 @@ DISTFILES += \
     Controls/MenuButton.qml \
     Controls/ScrollView.qml \
     Controls/TextField.qml \
+    Controls/TreeButton.qml \
+    FeatureDialog.qml \
     LocalTraining.qml \
     Main.qml \
     Options.qml \

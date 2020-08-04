@@ -2,7 +2,7 @@
 using QML
 using Observables
 
-cd("C:\\Users\\a_ill\\Documents\\App")
+cd("C:\\Users\\a_ill\\Documents\\GitHub\\Deep-Image-Analysis\\App")
 
 function browsefolder(folder)
   folder = QString(folder)
