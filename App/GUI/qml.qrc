@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Main.qml</file>
+        <file>qtquickcontrols2.conf</file>
+        <file>Options.qml</file>
+        <file>test.qml</file>
+        <file>Controls/Button.qml</file>
+        <file>Controls/MenuButton.qml</file>
+        <file>Controls/CheckBox.qml</file>
+        <file>Controls/TextField.qml</file>
+        <file>Controls/Label.qml</file>
+        <file>LocalTraining.qml</file>
+        <file>Controls/ScrollView.qml</file>
+        <file>Controls/TreeButton.qml</file>
+        <file>FeatureDialog.qml</file>
+    </qresource>
+</RCC>
