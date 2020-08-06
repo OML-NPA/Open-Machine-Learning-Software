@@ -32,10 +32,13 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 DISTFILES += \
     Controls/Button.qml \
     Controls/CheckBox.qml \
+    Controls/ColorBox.qml \
     Controls/ComboBox.qml \
+    Controls/Frame.qml \
     Controls/Frame.qml \
     Controls/Label.qml \
     Controls/MenuButton.qml \
+    Controls/ProgressBar.qml \
     Controls/ScrollView.qml \
     Controls/TextField.qml \
     Controls/TreeButton.qml \
@@ -44,4 +47,5 @@ DISTFILES += \
     Main.qml \
     Options.qml \
     Plus.png \
+    TrainingPlot.qml \
     qtquickcontrols2.conf

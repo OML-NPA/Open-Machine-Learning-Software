@@ -35,29 +35,35 @@
 ****************************************************************************/
 
 import QtQuick 2.12
+import QtQuick.Templates 2.12 as T
 import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
-import QtQuick.Templates 2.12 as T
 import QtQuick.Window 2.2
 
-T.Frame {
+T.ProgressBar {
     id: control
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    property color backgroundColor: systempalette.window
-    property real borderWidth: Screen.width/3840*2
-    property color borderColor: control.palette.dark
+    property real backgroundHeight: 6*Screen.width/3840
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                            contentWidth + leftPadding + rightPadding)
+                            implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
-                             contentHeight + topPadding + bottomPadding)
+                             implicitContentHeight + topPadding + bottomPadding)
 
-    padding: 12
+    contentItem: ProgressBarImpl {
+        implicitHeight: backgroundHeight
+        implicitWidth: 116
+        scale: control.mirrored ? -1 : 1
+        progress: control.position
+        indeterminate: control.visible && control.indeterminate
+        color: "#3498db"
+    }
 
     background: Rectangle {
-        anchors.fill: parent.fill
+        implicitWidth: 200
+        implicitHeight: 6
+        radius: 8*Screen.width/3840
+        y: (control.height - height) / 2
+        height: backgroundHeight
 
-        color: backgroundColor
-        border.width: borderWidth
-        border.color: borderColor
+        color: control.palette.midlight
     }
 }

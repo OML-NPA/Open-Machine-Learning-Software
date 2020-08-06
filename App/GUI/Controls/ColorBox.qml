@@ -38,14 +38,10 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
 import QtQuick.Templates 2.12 as T
-import QtQuick.Window 2.2
 
 T.Frame {
     id: control
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    property color backgroundColor: systempalette.window
-    property real borderWidth: Screen.width/3840*2
-    property color borderColor: control.palette.dark
+    property var colorRGB: [1,1,1]
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
@@ -56,8 +52,7 @@ T.Frame {
     background: Rectangle {
         anchors.fill: parent.fill
 
-        color: backgroundColor
-        border.width: borderWidth
-        border.color: borderColor
+        color: typeof(colorRGB)=="undefined" ? "white" : Qt.rgba(colorRGB[0],colorRGB[1],colorRGB[2],1.0)
+        border.width: 1
     }
 }

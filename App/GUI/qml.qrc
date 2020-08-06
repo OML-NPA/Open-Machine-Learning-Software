@@ -15,5 +15,8 @@
         <file>FeatureDialog.qml</file>
         <file>Controls/Frame.qml</file>
         <file>Plus.png</file>
+        <file>Controls/ColorBox.qml</file>
+        <file>Controls/ProgressBar.qml</file>
+        <file>Controls/StopButton.qml</file>
     </qresource>
 </RCC>

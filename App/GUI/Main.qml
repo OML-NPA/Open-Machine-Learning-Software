@@ -12,7 +12,7 @@ import "Controls"
 
 ApplicationWindow {
     id: window
-    visible: true 
+    visible: true
     title: qsTr("Image Analysis Software")
     minimumWidth: gridLayout.width
     minimumHeight: gridLayout.height
@@ -23,7 +23,6 @@ ApplicationWindow {
     color: systempalette.window
 
     property double margin: 0.02*Screen.width
-    property double fontsize: Math.round(11*Screen.height/2160)
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
     property color defaultcolor: systempalette.window
@@ -115,6 +114,7 @@ ApplicationWindow {
                         Layout.column: 2
                         height: 0.2*Screen.height
                         width: buttonWidth + 0.5*margin
+                        backgroundColor: systempalette.light
                         ScrollView {
                             clip: true
                             anchors.fill: parent

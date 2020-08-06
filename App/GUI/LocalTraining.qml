@@ -21,7 +21,6 @@ ApplicationWindow {
     color: systempalette.window
 
     property double margin: 0.02*Screen.width
-    property double fontsize: Math.round(11*Screen.height/2160)
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
     property double tabmargin: 0.5*margin
@@ -54,6 +53,7 @@ ApplicationWindow {
     }
 
     Loader { id: featuredialogLoader}
+    Loader { id: trainingplotLoader}
 
     GridLayout {
         id: gridLayout
@@ -145,6 +145,7 @@ ApplicationWindow {
                     Frame {
                         height: 0.2*Screen.height
                         width: buttonWidth + 0.5*margin
+                        backgroundColor: systempalette.light
                         ScrollView {
                             clip: true
                             anchors.fill: parent
@@ -170,7 +171,7 @@ ApplicationWindow {
                                         }
                                         RowLayout {
                                             anchors.fill: parent.fill
-                                            Frame {
+                                            ColorBox {
                                                 Layout.leftMargin: 0.2*margin
                                                 Layout.bottomMargin: 0.03*margin
                                                 Layout.preferredWidth: 0.4*margin
@@ -218,6 +219,7 @@ ApplicationWindow {
                         text: "Start training"
                         Layout.preferredWidth: buttonWidth
                         Layout.preferredHeight: buttonHeight
+                        onClicked: trainingplotLoader.source = "TrainingPlot.qml"
                     }
                 }
             }

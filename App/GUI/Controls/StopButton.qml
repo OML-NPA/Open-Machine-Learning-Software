@@ -8,6 +8,8 @@ import QtQuick.Window 2.2
 T.Button {
     id: control
 
+    property real size: 20
+
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
@@ -38,12 +40,20 @@ T.Button {
     }
 
     background: Rectangle {
-        anchors.fill: parent.fill
+        implicitWidth: size
+        implicitHeight: size
+        radius: size
         visible: !control.flat || control.down || control.checked || control.highlighted
-        color: Color.blend(control.checked || control.highlighted ? control.palette.dark :
-                           control.hovered ? systempalette.midlight: systempalette.light,
+        color: Color.blend(control.checked || control.highlighted ? control.palette.dark : "#fafafa",
                                                                     control.palette.mid, control.down ? 0.5 : 0.0)
         border.color: control.palette.dark
-        border.width: (Screen.width/3840)*(control.visualFocus ? 4 : 0)
+        border.width: (Screen.width/3840)*(control.visualFocus ? 4 : 2)
+        Rectangle {
+            x: size/2
+            y: size/2
+            width: size/2
+            height: size/2
+            color: control.palette.dark
+        }
     }
 }
