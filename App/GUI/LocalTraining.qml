@@ -30,10 +30,11 @@ ApplicationWindow {
 
     property bool terminate: false
 
-    property var colors: [[0.0,1.0,0.0],[1.0,0.0,0.0],[0.0,0.0,1.0],[1.0,1.0,0.0]]
-    property string colorR: "1"
-    property string colorG: "1"
-    property string colorB: "1"
+    property var colors: [[0,255,0],[255,0,0],[0,0,255],[255,255,0],[255,0,255]]
+    property string colorR: "0"
+    property string colorG: "0"
+    property string colorB: "0"
+    property int indTree: 0
 
     property bool featureOpen: false
 
@@ -45,6 +46,7 @@ ApplicationWindow {
 
     FolderDialog {
             id: folderDialog
+            currentFolder: currentfolder
             onAccepted: {
                 Julia.browsefolder(folderDialog.folder)
                 Qt.quit()
@@ -132,6 +134,7 @@ ApplicationWindow {
                         width: buttonWidth + 0.5*margin
                         text: "Features:"
                         padding: 0.1*margin
+                        leftPadding: 0.2*margin
                         background: Rectangle {
                             anchors.fill: parent.fill
                             color: defaultcolor
@@ -142,11 +145,6 @@ ApplicationWindow {
                     Frame {
                         height: 0.2*Screen.height
                         width: buttonWidth + 0.5*margin
-                        background: Rectangle {
-                                       anchors.fill: parent.fill
-                                       border.color: systempalette.dark
-                                       border.width: 2
-                                   }
                         ScrollView {
                             clip: true
                             anchors.fill: parent
@@ -154,21 +152,21 @@ ApplicationWindow {
                             //topPadding: 0.01*margin
                             spacing: 0
                             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                            ColumnLayout {
-                                spacing: 0
-                                Repeater {
-                                    model: 4
-                                    TreeButton {
+                            Item {
+                                ListView {
+                                    id: featureView
+                                    height: childrenRect.height
+                                    spacing: 0
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    model: ListModel {id: featureModel}
+                                    delegate: TreeButton {
                                         id: control
-                                        Layout.preferredWidth: buttonWidth + 0.5*margin-4
-                                        Layout.preferredHeight: buttonHeight-2
+                                        width: buttonWidth + 0.5*margin-4
+                                        height: buttonHeight-2
                                         onClicked: {
-                                            colorR = String(Math.round(255*colors[index][0]))
-                                            colorG = String(Math.round(255*colors[index][1]))
-                                            colorB = String(Math.round(255*colors[index][2]))
+                                            indTree = index
                                             featuredialogLoader.source = ""
                                             featuredialogLoader.source = "FeatureDialog.qml"
-                                            data: [colorR,colorG,colorB]
                                         }
                                         RowLayout {
                                             anchors.fill: parent.fill
@@ -179,20 +177,28 @@ ApplicationWindow {
                                                 Layout.preferredHeight: 0.4*margin
                                                 height: 10*margin
                                                 Layout.alignment: Qt.AlignBottom
-
-                                                background: Rectangle {
-                                                    anchors.fill: parent.fill
-                                                    color: Qt.rgba(colors[index][0],colors[index][1],colors[index][2],1.0)
-                                                    border.width: 1
-                                                }
+                                                colorRGB: [255,255,255]
                                             }
                                             Label {
                                                 topPadding: 0.15*margin
                                                 leftPadding: 0.10*margin
-                                                text: "feature"+index
+                                                text: name
                                                 Layout.alignment: Qt.AlignBottom
                                             }
                                         }
+                                    }
+                                }
+                                TreeButton {
+                                    anchors.top: featureView.bottom
+                                    width: buttonWidth + 0.5*margin-4
+                                    height: buttonHeight-2
+                                    Label {
+                                        topPadding: 0.15*margin
+                                        leftPadding: 0.2*margin
+                                        text: "Add more"
+                                    }
+                                    onClicked: {featureModel.append({ "name": "feature",
+                                                "colorR": 255, "colorG": 255, "colorB": 255})
                                     }
                                 }
                             }

@@ -13,5 +13,7 @@
         <file>Controls/ScrollView.qml</file>
         <file>Controls/TreeButton.qml</file>
         <file>FeatureDialog.qml</file>
+        <file>Controls/Frame.qml</file>
+        <file>Plus.png</file>
     </qresource>
 </RCC>

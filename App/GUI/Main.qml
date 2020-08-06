@@ -4,6 +4,8 @@ import QtQuick.Controls 2.15
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.2
 import Qt.labs.platform 1.1
+import QtQml.Models 2.15
+import Qt.labs.folderlistmodel 2.15
 import "Controls"
 //import org.julialang 1.0
 
@@ -29,6 +31,9 @@ ApplicationWindow {
     property bool optionsOpen: false
     property bool localtrainingOpen: false
 
+    property string currentfolder: Qt.resolvedUrl(".")
+
+
     onClosing: {
         if (optionsOpen===true) {
             optionsLoader.item.terminate = true
@@ -38,11 +43,21 @@ ApplicationWindow {
         }
     }
 
+    FolderListModel {
+            id: folderModel
+            showFiles: false
+            rootFolder: currentfolder
+        }
     FolderDialog {
             id: folderDialog
+            currentFolder: currentfolder
             onAccepted: {
-                Julia.browsefolder(folderDialog.folder)
-                Qt.quit()
+                currentfolder = folderDialog.folder
+                folderModel.folder = currentfolder
+                folderView.model = folderModel
+                console.log(folderModel.folder)
+                //Julia.browsefolder(folderDialog.folder)
+                //Qt.quit()
             }
     }
 
@@ -67,7 +82,10 @@ ApplicationWindow {
                         text: "Up"
                         Layout.preferredWidth: buttonWidth/2
                         Layout.preferredHeight: buttonHeight
-                        //onClicked: updatelocation
+                        onClicked: {currentfolder = folderModel.parentFolder;
+                                    folderModel.folder = currentfolder;
+                                    folderView.model = folderModel
+                        }
                     }
                     Button {
                         id: browse
@@ -84,6 +102,7 @@ ApplicationWindow {
                         width: buttonWidth + 0.5*margin
                         text: "Folders:"
                         padding: 0.1*margin
+                        leftPadding: 0.2*margin
                         background: Rectangle {
                             anchors.fill: parent.fill
                             color: defaultcolor
@@ -96,40 +115,35 @@ ApplicationWindow {
                         Layout.column: 2
                         height: 0.2*Screen.height
                         width: buttonWidth + 0.5*margin
-                        background: Rectangle {
-                                       anchors.fill: parent.fill
-                                       border.color: systempalette.dark
-                                       border.width: 2
-                                   }
                         ScrollView {
                             clip: true
                             anchors.fill: parent
                             spacing: 0
                             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                            ColumnLayout {
+                            ListView {
+                                id: folderView
                                 spacing: 0
-                                Repeater {
-                                    model: 4
-                                    TreeButton {
-                                        id: control
-                                        Layout.preferredWidth: buttonWidth + 0.5*margin-4
-                                        Layout.preferredHeight: buttonHeight-2
-                                        onClicked: {
+                                boundsBehavior: Flickable.StopAtBounds
+                                model: folderModel
+                                delegate: TreeButton {
+                                    id: control
+                                    width: buttonWidth + 0.5*margin-4
+                                    height: buttonHeight-2
+                                    onDoubleClicked: {
+                                    }
+                                    RowLayout {
+                                        spacing: 0
+                                        CheckBox {
+                                            padding: 0
+                                            Layout.leftMargin: -0.175*margin
+                                            Layout.topMargin: 0.125*margin
                                         }
-                                        RowLayout {
-                                            spacing: 0
-                                            CheckBox {
-                                                padding: 0
-                                                Layout.leftMargin: -0.175*margin
-                                                Layout.topMargin: 0.125*margin
-                                            }
-                                            anchors.fill: parent.fill
-                                            Label {
-                                                topPadding: 0.10*margin
-                                                leftPadding: -0.1*margin
-                                                text: "folder"+index
-                                                //Layout.alignment: Qt.AlignVCenter
-                                            }
+                                        //anchors.fill: parent.fill
+                                        Label {
+                                            topPadding: 0.10*margin
+                                            leftPadding: -0.1*margin
+                                            text: fileName
+                                            //Layout.alignment: Qt.AlignVCenter
                                         }
                                     }
                                 }

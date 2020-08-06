@@ -38,56 +38,21 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
 import QtQuick.Templates 2.12 as T
-import QtQuick.Window 2.2
 
-T.Button {
+T.Frame {
     id: control
-
-    property double margin: 0.02*Screen.width
-    property double tabmargin: 0.5*margin
-
+    property var colorRGB: [1,1,1]
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                            implicitContentWidth + leftPadding + rightPadding)
+                            contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
-                             implicitContentHeight + topPadding + bottomPadding)
+                             contentHeight + topPadding + bottomPadding)
 
-    padding: 6
-    horizontalPadding: padding + 2
-    spacing: 6
-
-    icon.width: 24
-    icon.height: 24
-    icon.color: control.checked || control.highlighted ? control.palette.brightText :
-                control.flat && !control.down ? (control.visualFocus ? control.palette.highlight : control.palette.windowText) : control.palette.buttonText
-
-    contentItem: IconLabel {
-        spacing: control.spacing
-        mirrored: control.mirrored
-        display: control.display
-
-        icon: control.icon
-        Text {
-            text: control.text
-            anchors.fill: parent
-            font.family: control.font.family
-            font.pointSize: 9
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignLeft
-            leftPadding: tabmargin
-        }
-
-
-        color: control.checked || control.highlighted ? control.palette.brightText :
-               control.flat && !control.down ? (control.visualFocus ? control.palette.highlight : control.palette.windowText) : control.palette.buttonText
-    }
+    padding: 12
 
     background: Rectangle {
         anchors.fill: parent.fill
-        visible: !control.flat || control.down || control.checked || control.highlighted
-        color: control.pressed ? control.palette.dark :
-               control.hovered ? systempalette.midlight:
-               control.activeFocus ? systempalette.window: "#fafafa"
-        border.color: control.palette.dark
-        border.width: 0
+
+        color: typeof(colorRGB)=="undefined" ? "white" : Qt.rgba(colorRGB[0],colorRGB[1],colorRGB[2],1.0)
+        border.width: 1
     }
 }

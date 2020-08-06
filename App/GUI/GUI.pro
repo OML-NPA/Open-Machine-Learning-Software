@@ -33,6 +33,7 @@ DISTFILES += \
     Controls/Button.qml \
     Controls/CheckBox.qml \
     Controls/ComboBox.qml \
+    Controls/Frame.qml \
     Controls/Label.qml \
     Controls/MenuButton.qml \
     Controls/ScrollView.qml \
@@ -42,4 +43,5 @@ DISTFILES += \
     LocalTraining.qml \
     Main.qml \
     Options.qml \
+    Plus.png \
     qtquickcontrols2.conf

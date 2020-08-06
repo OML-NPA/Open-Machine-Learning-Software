@@ -33,8 +33,8 @@ ApplicationWindow {
     onClosing: {
         window.visible = false
         close.accepted = terminate
-
     }
+
 
     GridLayout {
         id: gridLayout
@@ -67,6 +67,8 @@ ApplicationWindow {
                     }
                     ColumnLayout {
                         TextField {
+                            id: name
+                            text: featureModel.get(indTree).name
                             Layout.alignment : Qt.AlignLeft
                             Layout.preferredWidth: 0.7*buttonWidth
                             Layout.preferredHeight: buttonHeight
@@ -129,10 +131,10 @@ ApplicationWindow {
                 }
                 TextField {
                     id: red
-                    text: colorR
+                    text: featureModel.get(indTree).colorR
                     Layout.preferredWidth: 0.25*buttonWidth
                     Layout.preferredHeight: buttonHeight
-                    validator: IntValidator { bottom: 0; top: 255;}
+                    validator: IntValidator { bottom: 0; top: 999;}
                     onEditingFinished: {
                     if (parseFloat(red.text)>255) {
                             red.text = "255"
@@ -145,10 +147,10 @@ ApplicationWindow {
                 }
                 TextField {
                     id: green
-                    text: colorG
+                    text: featureModel.get(indTree).colorG
                     Layout.preferredWidth: 0.25*buttonWidth
                     Layout.preferredHeight: buttonHeight
-                    validator: IntValidator { bottom: 0; top: 255;}
+                    validator: IntValidator { bottom: 0; top: 999;}
                     onEditingFinished: {
                         if (parseFloat(green.text)>255) {
                             green.text = "255"
@@ -161,11 +163,13 @@ ApplicationWindow {
                 }
                 TextField {
                     id: blue
-                    text: colorB
+                    text: featureModel.get(indTree).colorB
                     Layout.preferredWidth: 0.25*buttonWidth
                     Layout.preferredHeight: buttonHeight
-                    validator: IntValidator { bottom: 0; top: 255;}
+                    maximumLength: 3
+                    validator: IntValidator { bottom: 0; top: 999;}
                     onEditingFinished: {
+                        console.log(parseFloat(blue.text))
                         if (parseFloat(blue.text)>255) {
                             blue.text = "255"
                         }
@@ -179,16 +183,29 @@ ApplicationWindow {
                     text: "Apply"
                     Layout.preferredWidth: buttonWidth/2
                     Layout.preferredHeight: buttonHeight
+                    onClicked: {
+                        featureModel.get(indTree).colorR = parseFloat(red.text)
+                        featureModel.get(indTree).colorG = parseFloat(green.text)
+                        featureModel.get(indTree).colorB = parseFloat(blue.text)
+                        featureModel.get(indTree).name = name.text
+                        featureView.itemAtIndex(indTree).children[0].children[0].colorRGB =
+                                [featureModel.get(indTree).colorR,
+                                 featureModel.get(indTree).colorG,
+                                 featureModel.get(indTree).colorB]
+                    }
                 }
                 Button {
                     text: "Delete"
                     Layout.preferredWidth: buttonWidth/2
                     Layout.preferredHeight: buttonHeight
+                    onClicked: {
+                        featureModel.remove(indTree)
+                        window.visible = false
+                    }
                 }
             }
             }
         }
-
     }
 }
 
