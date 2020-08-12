@@ -42,18 +42,20 @@ T.Button {
     background: Rectangle {
         implicitWidth: size
         implicitHeight: size
-        radius: size
+        radius: 2*size
         visible: !control.flat || control.down || control.checked || control.highlighted
         color: Color.blend(control.checked || control.highlighted ? control.palette.dark : "#fafafa",
                                                                     control.palette.mid, control.down ? 0.5 : 0.0)
         border.color: control.palette.dark
         border.width: (Screen.width/3840)*(control.visualFocus ? 4 : 2)
         Rectangle {
-            x: size/2
-            y: size/2
-            width: size/2
-            height: size/2
-            color: control.palette.dark
+            x: 1.08*size
+            y: 1.08*size
+            width: 1.15*size
+            height: 1.15*size
+            radius: 0.1*size
+            color: Color.blend(control.checked || control.highlighted ? "#333333" : systempalette.shadow,
+                               "#333333", control.down ? 0.5 : 0.0)
         }
     }
 }

@@ -29,13 +29,6 @@ ApplicationWindow {
 
     property bool terminate: false
 
-
-    onClosing: {
-        window.visible = false
-        close.accepted = terminate
-
-    }
-
     FolderDialog {
             id: folderDialog
             onAccepted: {
@@ -44,8 +37,7 @@ ApplicationWindow {
             }
     }
 
-    Loader { id: optionsLoader
-    }
+    onClosing: { optionsLoader.sourceComponent = undefined }
 
     GridLayout {
         id: gridLayout
@@ -130,7 +122,7 @@ ApplicationWindow {
                 Layout.margins: 0.5*margin
                 Layout.row: 2
                 Layout.alignment: Qt.AlignTop
-                Layout.preferredWidth: 2*buttonWidth
+                Layout.preferredWidth: 2.125*buttonWidth
                 StackView {
                     id: stack
                     initialItem: generalView
@@ -197,6 +189,12 @@ ApplicationWindow {
                                             text: "Downsize images:"
                                             bottomPadding: 0.05*margin
                                         }
+                                        Label {
+                                            Layout.alignment : Qt.AlignLeft
+                                            Layout.row: 1
+                                            text: "Reduce framerate (video):"
+                                            bottomPadding: 0.05*margin
+                                        }
                                     }
                                     ColumnLayout {
                                         ComboBox {
@@ -228,7 +226,7 @@ ApplicationWindow {
                                         ComboBox {
                                         editable: false
                                         model: ListModel {
-                                            id: modelResize
+                                            id: resizeModel
                                             ListElement { text: "Disable" }
                                             ListElement { text: "1.5x" }
                                             ListElement { text: "2x" }
@@ -239,7 +237,21 @@ ApplicationWindow {
                                             if (find(editText) === -1)
                                                 model.append({text: editText})
                                         }
-                                    }
+                                        }
+                                        ComboBox {
+                                        editable: false
+                                        model: ListModel {
+                                            id: skipframesModel
+                                            ListElement { text: "Disable" }
+                                            ListElement { text: "2x" }
+                                            ListElement { text: "3x" }
+                                            ListElement { text: "4x" }
+                                        }
+                                        onAccepted: {
+                                            if (find(editText) === -1)
+                                                model.append({text: editText})
+                                        }
+                                        }
                                     }
                                 }
                             }
@@ -267,9 +279,13 @@ ApplicationWindow {
                                     text: "Neural Network:"
                                     bottomPadding: 0.05*margin
                                 }
-                                TextField {
-                                    Layout.preferredWidth: 0.7*buttonWidth
-                                    Layout.preferredHeight: buttonHeight
+                                ComboBox {
+                                    editable: false
+                                    Layout.preferredWidth: 0.9*buttonWidth
+                                    model: ListModel {
+                                        id: netModel
+                                        ListElement { text: "defaultNetE5D4Yeast" }
+                                    }
                                 }
                                 Button {
                                     Layout.preferredWidth: buttonWidth/2
@@ -352,10 +368,6 @@ ApplicationWindow {
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
                                         Layout.row: 3
-                                        Text {
-                                            text: "."
-                                            color: menucolor
-                                        }
                                     }
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
@@ -435,10 +447,6 @@ ApplicationWindow {
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
                                         Layout.row: 3
-                                        Text {
-                                            text: "."
-                                            color: menucolor
-                                        }
                                     }
                                     Label {
                                         Layout.alignment : Qt.AlignLeft

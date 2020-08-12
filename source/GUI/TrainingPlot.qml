@@ -27,6 +27,11 @@ ApplicationWindow {
     property double buttonHeight: 0.03*Screen.height
     property color defaultcolor: systempalette.window
 
+    property double iteration
+    property double maxitearions
+    property double lossmaxvalue: 5
+
+    onClosing: { trainingplotLoader.sourceComponent = undefined }
 
     GridLayout {
         id: gridLayout
@@ -83,6 +88,8 @@ ApplicationWindow {
                                 id: accuracy
                                 axisX: axisX
                                 axisY: axisY
+                                width: 0.04*buttonHeight
+                                color: "#3498db"
                                 XYPoint { x: 0; y: 5 }
                                 XYPoint { x: 1; y: 30 }
                                 XYPoint { x: 2; y: 50 }
@@ -133,13 +140,16 @@ ApplicationWindow {
                             ValueAxis {
                                     id: lossaxisY
                                     labelsFont.pointSize: 10
+                                    min: 0
+                                    max: lossmaxvalue
                                 }
                             LineSeries {
                                 id: loss
                                 axisX: lossaxisX
                                 axisY: lossaxisY
-                                color: "orange"
-                                XYPoint { x: 0; y: 5 }
+                                color: "#e67e22"
+                                width: 0.04*buttonHeight
+                                XYPoint { x: 0; y: 4.8 }
                                 XYPoint { x: 1; y: 3 }
                                 XYPoint { x: 2; y: 1.5 }
                                 XYPoint { x: 3; y: 0.7 }
@@ -165,15 +175,17 @@ ApplicationWindow {
                 ColumnLayout {
                     ColumnLayout {
                         Layout.margins: 0.5*margin
+                        Label {
+                            id: progressbarheader
+                            text: "Training iteration  of  "
+                        }
                         RowLayout {
                             ProgressBar {
                                 id: progressbar
-                                Layout.preferredWidth: buttonWidth
+                                Layout.preferredWidth: 1.2*buttonWidth
                                 Layout.preferredHeight: buttonHeight
                                 Layout.alignment: Qt.AlignVCenter
-                                //Layout.leftMargin: margin
                                 backgroundHeight: 0.8*buttonHeight
-                                value: 0.5
                             }
                             StopButton {
                                 id: stoptraining
@@ -181,6 +193,115 @@ ApplicationWindow {
                                 Layout.preferredHeight: buttonHeight
                                 Layout.leftMargin: 0.3*margin
                             }
+                        }
+                        RowLayout {
+                            ColumnLayout {
+                                Label {
+                                    Layout.topMargin: 0.5*margin
+                                    text: "Training time"
+                                    font.bold: true
+                                }
+                                Label {
+                                    Layout.topMargin: 0.2*margin
+                                    text: "Start time:"
+                                }
+                                Label {
+                                    Layout.topMargin: 0.2*margin
+                                    text: "Elapsed time:"
+                                }
+                                Label {
+                                    Layout.topMargin: 0.5*margin
+                                    text: "Training cycle"
+                                    font.bold: true
+                                }
+                                Label {
+                                    Layout.topMargin: 0.2*margin
+                                    text: "Epoch:"
+                                }
+                                Label {
+                                    Layout.topMargin: 0.2*margin
+                                    text: "Iterations per epoch:"
+                                }
+                                Label {
+                                    Layout.topMargin: 0.2*margin
+                                    text: "Iteration:"
+                                }
+                                Label {
+                                    Layout.topMargin: 0.2*margin
+                                    text: "Maximum iterations:"
+                                }
+                                Label {
+                                    Layout.topMargin: 0.5*margin
+                                    text: "Other information:"
+                                    font.bold: true
+                                }
+                                Label {
+                                    Layout.topMargin: 0.2*margin
+                                    text: "Hardware resource:"
+                                }
+                                Label {
+                                    Layout.topMargin: 0.2*margin
+                                    text: "Learning rate:"
+                                }
+                            }
+                            ColumnLayout {
+                                Label {
+                                    Layout.topMargin: 0.5*margin
+                                    text: ""
+                                    font.bold: true
+                                }
+                                Label {
+                                    id: starttime
+                                    Layout.topMargin: 0.2*margin
+                                    text: ""
+                                }
+                                Label {
+                                    id: elapsedtime
+                                    Layout.topMargin: 0.2*margin
+                                    text: ""
+                                }
+                                Label {
+                                    Layout.topMargin: 0.5*margin
+                                    text: ""
+                                    font.bold: true
+                                }
+                                Label {
+                                    id: epoch
+                                    Layout.topMargin: 0.2*margin
+                                    text: ""
+                                }
+                                Label {
+                                    id: iterationsperepoch
+                                    Layout.topMargin: 0.2*margin
+                                    text: ""
+                                }
+                                Label {
+                                    id: iteration
+                                    Layout.topMargin: 0.2*margin
+                                    text: ""
+                                }
+                                Label {
+                                    id: maxiterations
+                                    Layout.topMargin: 0.2*margin
+                                    text: ""
+                                }
+                                Label {
+                                    Layout.topMargin: 0.5*margin
+                                    text: ""
+                                    font.bold: true
+                                }
+                                Label {
+                                    id:hardwareresource
+                                    Layout.topMargin: 0.2*margin
+                                    text: ""
+                                }
+                                Label {
+                                    id: learningrate
+                                    Layout.topMargin: 0.2*margin
+                                    text: ""
+                                }
+                            }
+
                         }
                     }
                 }

@@ -18,5 +18,7 @@
         <file>Controls/ColorBox.qml</file>
         <file>Controls/ProgressBar.qml</file>
         <file>Controls/StopButton.qml</file>
+        <file>Customization.qml</file>
+        <file>Analysis.qml</file>
     </qresource>
 </RCC>

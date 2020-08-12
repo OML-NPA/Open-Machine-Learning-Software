@@ -35,13 +35,7 @@ ApplicationWindow {
     property string colorB: "0"
     property int indTree: 0
 
-    property bool featureOpen: false
-
-    onClosing: {
-        window.visible = false
-        close.accepted = terminate
-
-    }
+    onClosing: { LocalTrainingLoader.sourceComponent = undefined }
 
     FolderDialog {
             id: folderDialog
@@ -53,6 +47,7 @@ ApplicationWindow {
     }
 
     Loader { id: featuredialogLoader}
+    Loader { id: customizationLoader}
     Loader { id: trainingplotLoader}
 
     GridLayout {
@@ -153,53 +148,61 @@ ApplicationWindow {
                             //topPadding: 0.01*margin
                             spacing: 0
                             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                            Item {
-                                ListView {
-                                    id: featureView
-                                    height: childrenRect.height
-                                    spacing: 0
-                                    boundsBehavior: Flickable.StopAtBounds
-                                    model: ListModel {id: featureModel}
-                                    delegate: TreeButton {
-                                        id: control
+                            Flickable {
+                                boundsBehavior: Flickable.StopAtBounds
+                                contentHeight: featureView.height+buttonHeight-2
+                                Item {
+                                    ListView {
+                                        id: featureView
+                                        height: childrenRect.height
+                                        spacing: 0
+                                        boundsBehavior: Flickable.StopAtBounds
+                                        model: ListModel {id: featureModel}
+                                        delegate: TreeButton {
+                                            id: control
+                                            width: buttonWidth + 0.5*margin-4
+                                            height: buttonHeight-2
+                                            onClicked: {
+                                                if (featuredialogLoader.sourceComponent === undefined) {
+                                                    indTree = index
+                                                    featuredialogLoader.source = "FeatureDialog.qml"
+                                                }
+
+                                                featuredialogLoader.source = ""
+
+                                            }
+                                            RowLayout {
+                                                anchors.fill: parent.fill
+                                                ColorBox {
+                                                    Layout.leftMargin: 0.2*margin
+                                                    Layout.bottomMargin: 0.03*margin
+                                                    Layout.preferredWidth: 0.4*margin
+                                                    Layout.preferredHeight: 0.4*margin
+                                                    height: 10*margin
+                                                    Layout.alignment: Qt.AlignBottom
+                                                    colorRGB: [255,255,255]
+                                                }
+                                                Label {
+                                                    topPadding: 0.15*margin
+                                                    leftPadding: 0.10*margin
+                                                    text: name
+                                                    Layout.alignment: Qt.AlignBottom
+                                                }
+                                            }
+                                        }
+                                    }
+                                    TreeButton {
+                                        anchors.top: featureView.bottom
                                         width: buttonWidth + 0.5*margin-4
                                         height: buttonHeight-2
-                                        onClicked: {
-                                            indTree = index
-                                            featuredialogLoader.source = ""
-                                            featuredialogLoader.source = "FeatureDialog.qml"
+                                        Label {
+                                            topPadding: 0.15*margin
+                                            leftPadding: 0.2*margin
+                                            text: "Add more"
                                         }
-                                        RowLayout {
-                                            anchors.fill: parent.fill
-                                            ColorBox {
-                                                Layout.leftMargin: 0.2*margin
-                                                Layout.bottomMargin: 0.03*margin
-                                                Layout.preferredWidth: 0.4*margin
-                                                Layout.preferredHeight: 0.4*margin
-                                                height: 10*margin
-                                                Layout.alignment: Qt.AlignBottom
-                                                colorRGB: [255,255,255]
-                                            }
-                                            Label {
-                                                topPadding: 0.15*margin
-                                                leftPadding: 0.10*margin
-                                                text: name
-                                                Layout.alignment: Qt.AlignBottom
-                                            }
+                                        onClicked: {featureModel.append({ "name": "feature",
+                                                    "colorR": 255, "colorG": 255, "colorB": 255})
                                         }
-                                    }
-                                }
-                                TreeButton {
-                                    anchors.top: featureView.bottom
-                                    width: buttonWidth + 0.5*margin-4
-                                    height: buttonHeight-2
-                                    Label {
-                                        topPadding: 0.15*margin
-                                        leftPadding: 0.2*margin
-                                        text: "Add more"
-                                    }
-                                    onClicked: {featureModel.append({ "name": "feature",
-                                                "colorR": 255, "colorG": 255, "colorB": 255})
                                     }
                                 }
                             }
@@ -209,17 +212,31 @@ ApplicationWindow {
                 ColumnLayout {
                     spacing: 0.3*margin
                     Button {
-                        id: customize
+                        id: customizeButton
                         text: "Customize"
+                        Layout.preferredWidth: buttonWidth
+                        Layout.preferredHeight: buttonHeight
+                        onClicked: {
+                            if (customizationLoader.sourceComponent === undefined) {
+                                customizationLoader.source = "Customization.qml"
+                            }
+                        }
+                    }
+                    Button {
+                        id: validateButton
+                        text: "Validate"
                         Layout.preferredWidth: buttonWidth
                         Layout.preferredHeight: buttonHeight
                     }
                     Button {
-                        id: starttraining
+                        id: starttrainingButton
                         text: "Start training"
                         Layout.preferredWidth: buttonWidth
                         Layout.preferredHeight: buttonHeight
-                        onClicked: trainingplotLoader.source = "TrainingPlot.qml"
+                        onClicked: {
+                            if (trainingplotLoader.sourceComponent === undefined) {
+                                trainingplotLoader.source = "TrainingPlot.qml"}
+                            }
                     }
                 }
             }

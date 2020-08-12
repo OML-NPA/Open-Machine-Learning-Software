@@ -4,12 +4,12 @@ using Observables
 
 cd("C:\\Users\\a_ill\\Documents\\GitHub\\Deep-Image-Analysis\\App")
 
-function browsefolder(folder)
+function returnfolder(folder)
   folder = QString(folder)
   folder = folder[8:length(folder)]
-  println(folder)
+  return (folder)
 end
 
-@qmlfunction browsefolder
+@qmlfunction returnfolder
 load("GUI//Main.qml")
 exec()

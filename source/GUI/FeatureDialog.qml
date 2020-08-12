@@ -30,10 +30,7 @@ ApplicationWindow {
 
     property bool terminate: false
 
-    onClosing: {
-        window.visible = false
-        close.accepted = terminate
-    }
+    onClosing: { featuredialogLoader.sourceComponent = undefined }
 
 
     GridLayout {
