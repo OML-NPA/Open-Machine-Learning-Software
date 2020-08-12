@@ -20,6 +20,7 @@ Project can be supported in two ways:
    - Display of a customizable add banner
 
 Being a supporter allows a user to request features and affect the feature queue based on the amount of support.
+
 Financial report is published monthly.
 
 
