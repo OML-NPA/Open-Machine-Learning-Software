@@ -1,5 +1,6 @@
 # Deep-Image-Analysis
-This software is designed to both allow people not familiar with coding or machine learning to easily design and apply neural netwowrks and image processing functions as well as to speed up the workflow of professionals for extracting data from images or videos.
+This software is designed to both allow people not familiar with coding or machine learning as well as for professionals in these fields to easily design and apply neural networks and image processing functions for extracting data from images or videos.
+This is a community based project similar to GIMP and Mozilla and, therefore, the software is made by users and for users.
 
 ### Goals
 1. Ease of set-up and use
