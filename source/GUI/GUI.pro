@@ -47,5 +47,17 @@ DISTFILES += \
     Main.qml \
     Options.qml \
     Plus.png \
+    Templates/Button.qml \
+    Templates/CheckBox.qml \
+    Templates/ColorBox.qml \
+    Templates/ComboBox.qml \
+    Templates/Frame.qml \
+    Templates/Label.qml \
+    Templates/MenuButton.qml \
+    Templates/ProgressBar.qml \
+    Templates/ScrollView.qml \
+    Templates/StopButton.qml \
+    Templates/TextField.qml \
+    Templates/TreeButton.qml \
     TrainingPlot.qml \
     qtquickcontrols2.conf

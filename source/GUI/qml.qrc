@@ -20,5 +20,17 @@
         <file>Controls/StopButton.qml</file>
         <file>Customization.qml</file>
         <file>Analysis.qml</file>
+        <file>Templates/Button.qml</file>
+        <file>Templates/CheckBox.qml</file>
+        <file>Templates/ColorBox.qml</file>
+        <file>Templates/ComboBox.qml</file>
+        <file>Templates/Frame.qml</file>
+        <file>Templates/Label.qml</file>
+        <file>Templates/MenuButton.qml</file>
+        <file>Templates/ProgressBar.qml</file>
+        <file>Templates/ScrollView.qml</file>
+        <file>Templates/StopButton.qml</file>
+        <file>Templates/TextField.qml</file>
+        <file>Templates/TreeButton.qml</file>
     </qresource>
 </RCC>
