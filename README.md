@@ -11,4 +11,4 @@ This is a community based project similar to GIMP and Mozilla and, therefore, th
       - High number of built-in functions
       - Support of neural networks and custom functions written in different languages
 3. High processing speed
-      - Intrinsic advantage of Julia
+      - Intrinsic advantage of Julia programming language
