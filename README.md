@@ -1,5 +1,5 @@
 # Deep-Image-Analysis
-This software is designed to allow people not familiar with coding or machine learning to easily design and apply neural netwowrks and image processing functions for extracting data from images or videos.
+This software is designed to both allow people not familiar with coding or machine learning to easily design and apply neural netwowrks and image processing functions as well as to speed up the workflow of professionals for extracting data from images or videos.
 
 ### Goals
 1. Ease of set-up and use
