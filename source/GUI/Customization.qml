@@ -31,6 +31,8 @@ ApplicationWindow {
     property double defaultWidth: buttonWidth*5/2
     property double defaultHeight: buttonHeight*20
 
+    property double paneHeight: window.height-buttonHeight
+
     property bool optionsOpen: false
     property bool localtrainingOpen: false
 
@@ -294,7 +296,7 @@ ApplicationWindow {
                     anchors.top: layersColumn.bottom
                     Label {
                         width: leftFrame.width
-                        text: "Modules:"
+                        text: "Layer groups:"
                         padding: 0.2*margin
                         leftPadding: 0.2*margin
                         background: Rectangle {
@@ -314,11 +316,11 @@ ApplicationWindow {
                             clip: true
                             height: 0.4*window.height
                             width: leftFrame.width
-                            contentHeight: 1.25*buttonHeight*(deafultmodulesView.count)
+                            contentHeight: 1.25*buttonHeight*(defaultgroupsView.count)
                                            +0.75*buttonHeight
                             ScrollBar.horizontal.visible: false
                             Item {
-                                id: modulesRow
+                                id: groupsRow
                                 Label {
                                     id: defaultLabel
                                     width: leftFrame.width-4*pix
@@ -326,7 +328,7 @@ ApplicationWindow {
                                     font.pointSize: 10
                                     color: "#777777"
                                     topPadding: 0.10*defaultLabel.height
-                                    text: "Default modules"
+                                    text: "Default layer groups"
                                     leftPadding: 0.25*margin
                                     background: Rectangle {
                                         anchors.fill: parent.fill
@@ -337,24 +339,24 @@ ApplicationWindow {
                                     }
                                 }
                                 ListView {
-                                        id: deafultmodulesView
+                                        id: defaultgroupsView
                                         height: childrenRect.height
                                         anchors.top: defaultLabel.bottom
                                         spacing: 0
                                         boundsBehavior: Flickable.StopAtBounds
                                         model: ListModel {id: deafultmodulesModel
                                                           ListElement{
-                                                              name: "Module 1" // @disable-check M16
+                                                              name: "Group 1" // @disable-check M16
                                                               colorR: 0 // @disable-check M16
                                                               colorG: 0 // @disable-check M16
                                                               colorB: 0} // @disable-check M16
                                                           ListElement{
-                                                              name: "Module 2" // @disable-check M16
+                                                              name: "Group 2" // @disable-check M16
                                                               colorR: 0 // @disable-check M16
                                                               colorG: 0 // @disable-check M16
                                                               colorB: 0} // @disable-check M16
                                                           ListElement{
-                                                              name: "Module 3" // @disable-check M16
+                                                              name: "Group 3" // @disable-check M16
                                                               colorR: 0 // @disable-check M16
                                                               colorG: 0 // @disable-check M16
                                                               colorB: 0} // @disable-check M16
@@ -392,7 +394,7 @@ ApplicationWindow {
             ScrollableItem{
                id: flickableMainPane
                width : window.width/2
-               height : window.height-buttonHeight
+               height : paneHeight
                clip: true
                 Pane {
                     id: mainPane
@@ -403,9 +405,9 @@ ApplicationWindow {
                         moduleNN.createObject(mainPane);
                         moduleNN.createObject(mainPane);
                         flickableMainPane.contentWidth = Math.max(window.width/2)
-                        flickableMainPane.contentHeight = Math.max(window.height)
+                        flickableMainPane.contentHeight = Math.max(paneHeight)
                         mainPane.width = window.width/2
-                        mainPane.height = window.height
+                        mainPane.height = paneHeight
                         flickableMainPane.ScrollBar.vertical.visible = false
                         flickableMainPane.ScrollBar.horizontal.visible = false
                     }
@@ -518,9 +520,12 @@ ApplicationWindow {
                     downNode.visible = false
                 }
                 onReleased: {
+
+                    var windowHeight = window.height-buttonHeight
+
                     var minheight = -Math.min(0,gettop(unit))
                     var minwidth = -Math.min(0,getleft(unit))
-                    var maxheight = Math.max(window.height,getbottom(unit))
+                    var maxheight = Math.max(windowHeight,getbottom(unit))
                     var maxwidth = Math.max(window.width/2,getright(unit))
                     var minheightchildren = -Math.min(0,gettopchild(mainPane))
                     var minwidthchildren = -Math.min(0,getleftchild(mainPane))
@@ -540,8 +545,8 @@ ApplicationWindow {
                             mainPane.children[i].y = mainPane.children[i].y+minheight
                         }
                     }
-                    if (maxheight>paneHeight || maxheight!==(window.height+flickableMainPane.contentY)) {
-                        flickableMainPane.contentY = (maxheight-(window.height))
+                    if (maxheight>paneHeight || maxheight!==(windowHeight+flickableMainPane.contentY)) {
+                        flickableMainPane.contentY = (maxheight-(windowHeight))
                     }
                     if (minwidth!==0) {
                         for (i = 1; i < mainPane.children.length; i++) {
