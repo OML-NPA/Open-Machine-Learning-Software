@@ -26,7 +26,7 @@ Project can be supported in two ways:
 
 Being a supporter allows a user to request features and affect the feature queue based on the amount of support.
 
-Financial report is published monthly.
+Financial report detailing incomes and expenditures is published monthly.
 
 
 
