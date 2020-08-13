@@ -4,20 +4,9 @@
         <file>qtquickcontrols2.conf</file>
         <file>Options.qml</file>
         <file>test.qml</file>
-        <file>Controls/Button.qml</file>
-        <file>Controls/MenuButton.qml</file>
-        <file>Controls/CheckBox.qml</file>
-        <file>Controls/TextField.qml</file>
-        <file>Controls/Label.qml</file>
         <file>LocalTraining.qml</file>
-        <file>Controls/ScrollView.qml</file>
-        <file>Controls/TreeButton.qml</file>
         <file>FeatureDialog.qml</file>
-        <file>Controls/Frame.qml</file>
         <file>Plus.png</file>
-        <file>Controls/ColorBox.qml</file>
-        <file>Controls/ProgressBar.qml</file>
-        <file>Controls/StopButton.qml</file>
         <file>Customization.qml</file>
         <file>Analysis.qml</file>
         <file>Templates/Button.qml</file>
@@ -32,5 +21,11 @@
         <file>Templates/StopButton.qml</file>
         <file>Templates/TextField.qml</file>
         <file>Templates/TreeButton.qml</file>
+        <file>Templates/Pane.qml</file>
+        <file>Templates/RoundButton.qml</file>
+        <file>Templates/ScrollableItem.qml</file>
+        <file>Templates/moduleNN.qml</file>
+        <file>Templates/ScrollBar.qml</file>
+        <file>Templates/ButtonNN.qml</file>
     </qresource>
 </RCC>

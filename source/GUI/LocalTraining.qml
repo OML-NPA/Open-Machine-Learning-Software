@@ -35,7 +35,7 @@ ApplicationWindow {
     property string colorB: "0"
     property int indTree: 0
 
-    onClosing: { LocalTrainingLoader.sourceComponent = undefined }
+    onClosing: { localtrainingLoader.sourceComponent = null }
 
     FolderDialog {
             id: folderDialog
@@ -163,13 +163,10 @@ ApplicationWindow {
                                             width: buttonWidth + 0.5*margin-4
                                             height: buttonHeight-2
                                             onClicked: {
-                                                if (featuredialogLoader.sourceComponent === undefined) {
+                                                if (featuredialogLoader.sourceComponent === null) {
                                                     indTree = index
                                                     featuredialogLoader.source = "FeatureDialog.qml"
                                                 }
-
-                                                featuredialogLoader.source = ""
-
                                             }
                                             RowLayout {
                                                 anchors.fill: parent.fill
@@ -217,7 +214,7 @@ ApplicationWindow {
                         Layout.preferredWidth: buttonWidth
                         Layout.preferredHeight: buttonHeight
                         onClicked: {
-                            if (customizationLoader.sourceComponent === undefined) {
+                            if (customizationLoader.sourceComponent === null) {
                                 customizationLoader.source = "Customization.qml"
                             }
                         }
@@ -234,7 +231,7 @@ ApplicationWindow {
                         Layout.preferredWidth: buttonWidth
                         Layout.preferredHeight: buttonHeight
                         onClicked: {
-                            if (trainingplotLoader.sourceComponent === undefined) {
+                            if (trainingplotLoader.sourceComponent === null) {
                                 trainingplotLoader.source = "TrainingPlot.qml"}
                             }
                     }

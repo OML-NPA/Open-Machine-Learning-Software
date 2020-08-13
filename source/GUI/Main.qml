@@ -31,13 +31,14 @@ ApplicationWindow {
 
 
     onClosing: {
-        if (optionsLoader.source.length !== undefined) {
+        if (optionsLoader.sourceComponent !== null) {
+            console.log()
             optionsLoader.item.terminate = true
         }
-        if (localtrainingLoader.source.length !== undefined) {
+        if (localtrainingLoader.sourceComponent !== null) {
             localtrainingLoader.item.terminate = true
         }
-        if (analysisLoader.source.length !== undefined) {
+        if (analysisLoader.sourceComponent !== null) {
             analysisLoader.item.terminate = true
         }
     }
@@ -61,7 +62,7 @@ ApplicationWindow {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
-                    if (optionsLoader.sourceComponent == undefined) {
+                    if (optionsLoader.sourceComponent == null) {
                         optionsLoader.source = "Options.qml"
 
                     }
@@ -75,7 +76,7 @@ ApplicationWindow {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
-                    if (localtrainingLoader.sourceComponent == undefined) {
+                    if (localtrainingLoader.sourceComponent == null) {
                         localtrainingLoader.source = "LocalTraining.qml"
                     }
                 }
@@ -98,7 +99,7 @@ ApplicationWindow {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
-                    if (analysisLoader.sourceComponent == undefined) {
+                    if (analysisLoader.sourceComponent == null) {
                         analysisLoader.source = "Analysis.qml"
                     }
                 }

@@ -4,9 +4,9 @@ import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
 import QtQuick.Templates 2.12 as T
 
-T.Frame {
+T.Pane {
     id: control
-    property var colorRGB: [1,1,1]
+    property color backgroundColor: control.palette.window
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
@@ -15,9 +15,6 @@ T.Frame {
     padding: 12
 
     background: Rectangle {
-        anchors.fill: parent.fill
-
-        color: typeof(colorRGB)=="undefined" ? "white" : Qt.rgba(colorRGB[0],colorRGB[1],colorRGB[2],1.0)
-        border.width: 1
+        color: backgroundColor
     }
 }

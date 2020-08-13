@@ -28,9 +28,7 @@ ApplicationWindow {
     property color menucolor: "#fafafa"
     property color defaultcolor: systempalette.window
 
-    property bool terminate: false
-
-    onClosing: { featuredialogLoader.sourceComponent = undefined }
+    onClosing: { featuredialogLoader.sourceComponent = null }
 
 
     GridLayout {

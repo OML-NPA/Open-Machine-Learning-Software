@@ -54,7 +54,9 @@ DISTFILES += \
     Templates/Frame.qml \
     Templates/Label.qml \
     Templates/MenuButton.qml \
+    Templates/Pane.qml \
     Templates/ProgressBar.qml \
+    Templates/ScrollBar.qml \
     Templates/ScrollView.qml \
     Templates/StopButton.qml \
     Templates/TextField.qml \
