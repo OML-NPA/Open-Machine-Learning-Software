@@ -85,16 +85,6 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 Layout.row: 2
                 Layout.column: 1
-                text: "Visualisation"
-                Layout.preferredWidth: buttonWidth
-                Layout.preferredHeight: buttonHeight
-                onClicked: {
-                }
-            }
-            Button {
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                Layout.row: 2
-                Layout.column: 1
                 text: "Analysis"
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
@@ -102,6 +92,16 @@ ApplicationWindow {
                     if (analysisLoader.sourceComponent == null) {
                         analysisLoader.source = "Analysis.qml"
                     }
+                }
+            }
+            Button {
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                Layout.row: 2
+                Layout.column: 1
+                text: "Visualisation"
+                Layout.preferredWidth: buttonWidth
+                Layout.preferredHeight: buttonHeight
+                onClicked: {
                 }
             }
         }

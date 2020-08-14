@@ -27,5 +27,6 @@
         <file>Templates/moduleNN.qml</file>
         <file>Templates/ScrollBar.qml</file>
         <file>Templates/ButtonNN.qml</file>
+        <file>SelectNeuralNetwork.qml</file>
     </qresource>
 </RCC>

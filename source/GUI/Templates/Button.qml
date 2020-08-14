@@ -8,6 +8,8 @@ import QtQuick.Window 2.2
 T.Button {
     id: control
 
+    property double radius: 8*Screen.width/3840
+
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
@@ -40,7 +42,7 @@ T.Button {
     background: Rectangle {
         implicitWidth: 100
         implicitHeight: 40
-        radius: 8*Screen.width/3840
+        radius: radius
         visible: !control.flat || control.down || control.checked || control.highlighted
         color: Color.blend(control.checked || control.highlighted ? control.palette.dark : "#fafafa",
                                                                     control.palette.mid, control.down ? 0.5 : 0.0)

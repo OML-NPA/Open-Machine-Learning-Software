@@ -56,6 +56,7 @@ ApplicationWindow {
     }
 
     Loader { id: analysisoptionsLoader }
+    Loader { id: selectneuralnetworkLoader }
 
     GridLayout {
         id: gridLayout
@@ -86,15 +87,24 @@ ApplicationWindow {
                         Layout.preferredHeight: buttonHeight
                         onClicked: {folderDialog.open()}
                     }
-                    ComboBox {
-                        editable: false
+                    Button {
+                        //editable: false
                         Layout.preferredWidth: buttonWidth + 0.5*margin
+                        Layout.preferredHeight: buttonHeight
+                        radius: 0
                         Layout.leftMargin: 0.5*margin
-                        model: ListModel {
-                            id: netModel
-                            // @disable-check M16
-                            ListElement { text: "defaultNetE5D4Yeast" }
+                        text: "Select neural network"
+                        onClicked: {
+                            if (selectneuralnetworkLoader.sourceComponent === null) {
+                                selectneuralnetworkLoader.source = "SelectNeuralNetwork.qml"
+
+                            }
                         }
+
+                        //model: ListModel {
+                        //    id: netModel
+                        //   ListElement { text: "defaultNetE5D4Yeast" }
+                        //}
                     }
                 }
                 RowLayout {

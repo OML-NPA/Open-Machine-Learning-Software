@@ -150,12 +150,12 @@ ApplicationWindow {
                                     Layout.alignment : Qt.AlignHCenter
                                     spacing: 0.55*margin
                                     Label {
-                                        Layout.alignment : Qt.AlignRight
+                                        Layout.alignment : Qt.AlignLeft
                                         Layout.row: 1
                                         text: "Execution environment:"
                                     }
                                     Label {
-                                        Layout.alignment : Qt.AlignRight
+                                        Layout.alignment : Qt.AlignLeft
                                         Layout.row: 1
                                         text: "Parallel processing:"
                                         bottomPadding: 0.05*margin
@@ -212,7 +212,7 @@ ApplicationWindow {
                                 text: "This software allows to design and apply neural networks and data "+
                                        "processing functions to images, videos or "+
                                         "data in any other format.\n\n"+
-                                        "Copyright (C) 2020 Aleksandr Illarionov\n"
+                                        "Copyright (C) 2020 Aleksandr Illarionov and Daria Aborneva\n"
                             }
                             Label {
                                 id: licenseLabel
@@ -263,7 +263,7 @@ ApplicationWindow {
                                            "or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public "+
                                            "License for more details.\n\n"+
                                            "You should have received a copy of the GNU General Public License "+
-                                           "along with Deep Data Analysis. If not, see: https://www.gnu.org/licenses/"
+                                           "along with this program. If not, see: https://www.gnu.org/licenses/"
                                 }
                             }
                         }
