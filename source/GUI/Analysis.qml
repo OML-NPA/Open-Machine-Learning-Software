@@ -55,6 +55,8 @@ ApplicationWindow {
             onAccepted: { updatefolder(folderDialog.folder) }
     }
 
+    Loader { id: analysisoptionsLoader }
+
     GridLayout {
         id: gridLayout
         RowLayout {
@@ -225,6 +227,20 @@ ApplicationWindow {
             ColumnLayout {
                 spacing: 0.4*margin
                 id: columnLayout
+                Button {
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    Layout.row: 2
+                    Layout.column: 1
+                    text: "Options"
+                    Layout.preferredWidth: buttonWidth
+                    Layout.preferredHeight: buttonHeight
+                    onClicked: {
+                           if (analysisoptionsLoader.sourceComponent === null) {
+                               analysisoptionsLoader.source = "AnalysisOptions.qml"
+
+                           }
+                    }
+                }
                 Button {
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     Layout.row: 2

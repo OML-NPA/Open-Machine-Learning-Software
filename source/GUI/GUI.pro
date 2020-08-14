@@ -30,6 +30,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
+    AnalysisOptions.qml \
     Controls/Button.qml \
     Controls/CheckBox.qml \
     Controls/ColorBox.qml \
@@ -42,6 +43,7 @@ DISTFILES += \
     Controls/ScrollView.qml \
     Controls/TextField.qml \
     Controls/TreeButton.qml \
+    Customization.qml \
     FeatureDialog.qml \
     LocalTraining.qml \
     Main.qml \
@@ -58,8 +60,10 @@ DISTFILES += \
     Templates/ProgressBar.qml \
     Templates/ScrollBar.qml \
     Templates/ScrollView.qml \
+    Templates/ScrollableItem.qml \
     Templates/StopButton.qml \
     Templates/TextField.qml \
     Templates/TreeButton.qml \
+    Training.qml \
     TrainingPlot.qml \
     qtquickcontrols2.conf

@@ -7,6 +7,7 @@ Flickable{
     contentHeight: pane.implicitHeight
     boundsBehavior: Flickable.StopAtBounds
     flickableDirection: Flickable.AutoFlickIfNeeded
+    clip: true
     property double pix: Screen.width/3840
     default property alias content : pane.contentItem
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }

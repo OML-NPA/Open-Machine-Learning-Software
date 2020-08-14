@@ -26,6 +26,7 @@ ApplicationWindow {
     property double tabmargin: 0.5*margin
     property color menucolor: "#fafafa"
     property color defaultcolor: systempalette.window
+    property double pix: Screen.width/3840
 
     property bool terminate: false
 
@@ -61,64 +62,40 @@ ApplicationWindow {
                 ColumnLayout {
                     spacing: 0
                     MenuButton {
-                        id: general
+                        id: generalMenuButton
                         Layout.row: 1
                         Layout.preferredWidth: 1.3*buttonWidth
                         Layout.preferredHeight: buttonHeight
                         onClicked: {stack.push(generalView)}
                         text: "General"
-
                     }
                     MenuButton {
-                        id: mask
+                        id: hardwareMenuButton
                         Layout.row: 1
                         Layout.preferredWidth: 1.3*buttonWidth
                         Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(maskView)}
-                        text: "Mask"
+                        onClicked: {stack.push(hardwareView)}
+                        text: "Hardware resources"
                     }
                     MenuButton {
-                        id: cellvolume
+                        id: aboutMenuButton
                         Layout.row: 1
                         Layout.preferredWidth: 1.3*buttonWidth
                         Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(cellvolumeView)}
-                        text: "Cell volume"
-                    }
-                    MenuButton {
-                        id: vacuolarvolume
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(vacuolarvolumeView)}
-                        text: "Vacuolar volume"
-                    }
-                    MenuButton {
-                        id: motherdaugtherassignment
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(motherdaugtherassignmentView)}
-                        text: "Mother/daugther assignment"
-                    }
-                    MenuButton {
-                        id: advanced
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(advancedView)}
-                        text: "Advanced"
+                        onClicked: {stack.push(aboutView)}
+                        text: "About"
                     }
                     Rectangle {
                         Layout.row: 1
                         Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: 5*buttonHeight
+                        Layout.preferredHeight: 8*buttonHeight
                         color: menucolor
                     }
 
                 }
             }
             ColumnLayout {
+                id: columnLayout
                 Layout.margins: 0.5*margin
                 Layout.row: 2
                 Layout.alignment: Qt.AlignTop
@@ -160,362 +137,11 @@ ApplicationWindow {
                 Component {
                         id: generalView
                         Column {
-                            spacing: 0.5*margin
-                            ColumnLayout {
-                                spacing: 0.4*margin
-                                Label {
-                                    Layout.alignment : Qt.AlignLeft
-                                    Layout.row: 1
-                                    text: "Output:"
-                                }
-                                RowLayout {
-                                    spacing: 0.3*margin
-                                    ColumnLayout {
-                                        Layout.alignment : Qt.AlignHCenter
-                                        spacing: 0.6*margin
-                                        Label {
-                                            Layout.alignment : Qt.AlignLeft
-                                            Layout.row: 1
-                                            text: "Output data type:"
-                                        }
-                                        Label {
-                                            Layout.alignment : Qt.AlignLeft
-                                            Layout.row: 1
-                                            text: "Output image type:"
-                                        }
-                                        Label {
-                                            Layout.alignment : Qt.AlignLeft
-                                            Layout.row: 1
-                                            text: "Downsize images:"
-                                            bottomPadding: 0.05*margin
-                                        }
-                                        Label {
-                                            Layout.alignment : Qt.AlignLeft
-                                            Layout.row: 1
-                                            text: "Reduce framerate (video):"
-                                            bottomPadding: 0.05*margin
-                                        }
-                                    }
-                                    ColumnLayout {
-                                        ComboBox {
-                                            editable: false
-                                            model: ListModel {
-                                                id: modelData
-                                                ListElement { text: "XLSX" }
-                                                ListElement { text: "XLS" }
-                                                ListElement { text: "CSV" }
-                                                ListElement { text: "TXT" }
-                                            }
-                                            onAccepted: {
-                                                if (find(editText) === -1)
-                                                    model.append({text: editText})
-                                            }
-                                        }
-                                        ComboBox {
-                                            editable: false
-                                            model: ListModel {
-                                                id: modelImages
-                                                ListElement { text: "PNG" }
-                                                ListElement { text: "TIFF" }
-                                            }
-                                            onAccepted: {
-                                                if (find(editText) === -1)
-                                                    model.append({text: editText})
-                                            }
-                                        }
-                                        ComboBox {
-                                        editable: false
-                                        model: ListModel {
-                                            id: resizeModel
-                                            ListElement { text: "Disable" }
-                                            ListElement { text: "1.5x" }
-                                            ListElement { text: "2x" }
-                                            ListElement { text: "3x" }
-                                            ListElement { text: "4x" }
-                                        }
-                                        onAccepted: {
-                                            if (find(editText) === -1)
-                                                model.append({text: editText})
-                                        }
-                                        }
-                                        ComboBox {
-                                        editable: false
-                                        model: ListModel {
-                                            id: skipframesModel
-                                            ListElement { text: "Disable" }
-                                            ListElement { text: "2x" }
-                                            ListElement { text: "3x" }
-                                            ListElement { text: "4x" }
-                                        }
-                                        onAccepted: {
-                                            if (find(editText) === -1)
-                                                model.append({text: editText})
-                                        }
-                                        }
-                                    }
-                                }
-                            }
-                            RowLayout {
-                                spacing: 0.3*margin
-                                Label {
-                                    text: "Scaling:"
-                                    bottomPadding: 0.05*margin
-                                }
-                                TextField {
-                                    Layout.preferredWidth: 0.3*buttonWidth
-                                    Layout.preferredHeight: buttonHeight
-                                    maximumLength: 6
-                                    validator: DoubleValidator { bottom: 0.0001; top: 999999;
-                                        decimals: 4; notation: DoubleValidator.StandardNotation}
-                                }
-                                Label {
-                                    text: "pixels per µm"
-                                    bottomPadding: 0.05*margin
-                                }
-                            }
-                            RowLayout {
-                                spacing: 0.3*margin
-                                Label {
-                                    text: "Neural Network:"
-                                    bottomPadding: 0.05*margin
-                                }
-                                ComboBox {
-                                    editable: false
-                                    Layout.preferredWidth: 0.9*buttonWidth
-                                    model: ListModel {
-                                        id: netModel
-                                        ListElement { text: "defaultNetE5D4Yeast" }
-                                    }
-                                }
-                                Button {
-                                    Layout.preferredWidth: buttonWidth/2
-                                    Layout.preferredHeight: buttonHeight
-                                    text: "Browse"
-                                }
-                            }
-                        }
-                    }
-                Component {
-                        id: maskView
-                        Column {
-                            spacing: 0.2*margin
-                            Label {
-                                text: "Outputs:"
-                            }
-                            CheckBox {
-                                text: "Mask"
-
-                            }
-                        }
-                    }
-                Component {
-                        id: cellvolumeView
-                        Column {
-                            spacing: 0.2*margin
-                            Label {
-                                text: "Outputs:"
-                            }
-                            CheckBox {
-                                text: "Cell volume distribution"
-                            }
-                            CheckBox {
-                                text: "Individual cell volume "
-                            }
-                            Rectangle {
-                                height: 0.2*margin
-                                width: 0.2*margin
-                                color: defaultcolor
-                            }
-
-                            Label {
-                                text: "Histogram options:"
-                            }
-                            RowLayout {
-                                spacing: 0.3*margin
-                                ColumnLayout {
-                                    spacing: 0.55*margin
-                                    Label {
-                                        id: label
-                                        Layout.alignment : Qt.AlignRight
-                                        Layout.row: 1
-                                        text: "Number of bins:"
-                                    }
-                                    Label {
-                                        Layout.alignment : Qt.AlignRight
-                                        Layout.row: 1
-                                        text: "Maximum volume:"
-                                        bottomPadding: 0.05*margin
-                                    }
-                                }
-                                ColumnLayout {
-                                    TextField {
-                                        Layout.row: 2
-                                        Layout.preferredWidth: 0.25*buttonWidth
-                                        Layout.preferredHeight: buttonHeight
-                                        maximumLength: 5
-                                        validator: IntValidator { bottom: 1; top: 99999;}
-                                    }
-                                    TextField {
-                                        Layout.row: 2
-                                        Layout.preferredWidth: 0.25*buttonWidth
-                                        Layout.preferredHeight: buttonHeight
-                                        maximumLength: 5
-                                        validator: IntValidator { bottom: 1; top: 99999;}
-                                    }
-                                }
-                                ColumnLayout {
-                                    spacing: 0.6*margin
-                                    Label {
-                                        Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 3
-                                    }
-                                    Label {
-                                        Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 3
-                                        text: "fL"
-                                    }
-                                }
-
-                            }
-
 
                         }
                     }
                 Component {
-                        id: vacuolarvolumeView
-                        Column {
-                            spacing: 0.2*margin
-                            Label {
-                                text: "Outputs:"
-                            }
-                            CheckBox {
-                                text: "Vacuolar volume distribution"
-                            }
-                            CheckBox {
-                                text: "Individual vacuolar cell volume "
-                            }
-                            CheckBox {
-                                text: "Mean vacuolar volume per cell volume"
-                            }
-                            CheckBox {
-                                text: "Vacuole to cell ratio"
-                            }
-                            Rectangle {
-                                height: 0.2*margin
-                                width: 0.2*margin
-                                color: defaultcolor
-                            }
-
-                            Label {
-                                text: "Histogram options:"
-                            }
-                            RowLayout {
-                                spacing: 0.3*margin
-                                ColumnLayout {
-                                    spacing: 0.55*margin
-                                    Label {
-                                        id: label
-                                        Layout.alignment : Qt.AlignRight
-                                        Layout.row: 1
-                                        text: "Number of bins:"
-                                    }
-                                    Label {
-                                        Layout.alignment : Qt.AlignRight
-                                        Layout.row: 1
-                                        text: "Maximum volume:"
-                                        bottomPadding: 0.05*margin
-                                    }
-                                }
-                                ColumnLayout {
-                                    TextField {
-                                        Layout.row: 2
-                                        Layout.preferredWidth: 0.25*buttonWidth
-                                        Layout.preferredHeight: buttonHeight
-                                        maximumLength: 5
-                                        validator: IntValidator { bottom: 1; top: 99999;}
-                                    }
-                                    TextField {
-                                        Layout.row: 2
-                                        Layout.preferredWidth: 0.25*buttonWidth
-                                        Layout.preferredHeight: buttonHeight
-                                        maximumLength: 5
-                                        validator: IntValidator { bottom: 1; top: 99999;}
-                                    }
-                                }
-                                ColumnLayout {
-                                    spacing: 0.5*margin
-                                    Label {
-                                        Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 3
-                                    }
-                                    Label {
-                                        Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 3
-                                        text: "fL"
-                                    }
-                                }
-
-                            }
-
-
-                        }
-                    }
-                Component {
-                        id: motherdaugtherassignmentView
-                        Column {
-                            spacing: 0.2*margin
-                            Label {
-                                text: "Outputs:"
-                            }
-                            CheckBox {
-                                text: "Mother and daugther assignment"
-                            }
-                            CheckBox {
-                                text: "Mother and daugther volume"
-                            }
-                            CheckBox {
-                                text: "Mother and daugther circularity"
-                            }
-                            Rectangle {
-                                height: 0.2*margin
-                                width: 0.2*margin
-                                color: defaultcolor
-                            }
-
-                            Label {
-                                text: "Bud definition:"
-                            }
-                            RowLayout {
-                                spacing: 0.3*margin
-                                Label {
-                                    Layout.alignment : Qt.AlignRight
-                                    Layout.row: 1
-                                    wrapMode: Label.WordWrap
-                                    text: "Maximum percentage of mother volume:"
-                                    bottomPadding: 0.05*margin
-                                }
-                                TextField {
-                                    Layout.row: 2
-                                    Layout.preferredWidth: 0.15*buttonWidth
-                                    Layout.preferredHeight: buttonHeight
-                                    maximumLength: 2
-                                    validator: RegularExpressionValidator { regularExpression: /[0-9]+/ }
-                                }
-                                Label {
-                                    Layout.alignment : Qt.AlignLeft
-                                    Layout.row: 1
-                                    wrapMode: Label.WordWrap
-                                    text: "%"
-                                    bottomPadding: 0.05*margin
-                                }
-
-                            }
-
-
-                        }
-                    }
-                Component {
-                        id: advancedView
+                        id: hardwareView
                         Column {
                             spacing: 0.2*margin
                             RowLayout {
@@ -569,6 +195,77 @@ ApplicationWindow {
                             }
 
 
+                        }
+                    }
+                Component {
+                        id: aboutView
+                        Column {
+                            spacing: 0.2*margin
+                            TextArea {
+                                id: descriptionTextArea
+                                width: 2*buttonWidth
+                                readOnly: true
+                                padding: 0
+                                anchors.left: parent.left
+                                wrapMode: TextEdit.WordWrap
+                                horizontalAlignment: TextEdit.AlignJustify
+                                text: "This software allows to design and apply neural networks and data "+
+                                       "processing functions to images, videos or "+
+                                        "data in any other format.\n\n"+
+                                        "Copyright (C) 2020 Aleksandr Illarionov\n"
+                            }
+                            Label {
+                                id: licenseLabel
+                                text: "License:"
+                                bottomPadding: 0.1*margin
+                            }
+                            Flickable {
+                                clip: true
+                                //anchors.top: licenseLabel.bottom
+                                leftMargin: 0
+                                height: 4*buttonHeight
+                                width: contentWidth
+                                contentWidth: licenseTextArea.width;
+                                contentHeight: licenseTextArea.height
+                                boundsBehavior: Flickable.StopAtBounds
+                                ScrollBar.vertical: ScrollBar{
+                                    id: vertical
+                                    policy: ScrollBar.AsNeeded
+                                    contentItem:
+                                        Rectangle {
+                                            implicitWidth: 25*pix
+                                            implicitHeight: 100
+                                            color: "transparent"
+                                            Rectangle {
+                                                anchors.right: parent.right
+                                                implicitWidth: 10*pix
+                                                implicitHeight: parent.height
+                                                radius: width / 2
+                                                color: vertical.pressed ? systempalette.dark : systempalette.mid
+                                            }
+                                    }
+                                }
+                                TextArea {
+                                    id: licenseTextArea
+                                    width: 2*buttonWidth+20*pix
+                                    readOnly: true
+                                    leftPadding: 0
+                                    rightPadding: 20*pix
+                                    anchors.left: parent.left
+                                    wrapMode: TextEdit.WordWrap
+                                    horizontalAlignment: TextEdit.AlignJustify
+                                    text: "This program is free software: you can redistribute it and/or modify "+
+                                           "it under the terms of the GNU General Public License as published "+
+                                           "by the Free Software Foundation; either version 3 of the License, "+
+                                           "or (at your option) any later version.\n\n"+
+                                           "This program is distributed in the hope that it will be useful, "+
+                                           "but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY "+
+                                           "or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public "+
+                                           "License for more details.\n\n"+
+                                           "You should have received a copy of the GNU General Public License "+
+                                           "along with Deep Data Analysis. If not, see: https://www.gnu.org/licenses/"
+                                }
+                            }
                         }
                     }
 

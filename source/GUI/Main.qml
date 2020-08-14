@@ -35,8 +35,8 @@ ApplicationWindow {
             console.log()
             optionsLoader.item.terminate = true
         }
-        if (localtrainingLoader.sourceComponent !== null) {
-            localtrainingLoader.item.terminate = true
+        if (trainingLoader.sourceComponent !== null) {
+            trainingLoader.item.terminate = true
         }
         if (analysisLoader.sourceComponent !== null) {
             analysisLoader.item.terminate = true
@@ -45,7 +45,7 @@ ApplicationWindow {
 
 
     Loader { id: optionsLoader }
-    Loader { id: localtrainingLoader }
+    Loader { id: trainingLoader }
     Loader { id: analysisLoader }
 
     GridLayout {
@@ -72,12 +72,12 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 Layout.row: 2
                 Layout.column: 1
-                text: "Local training"
+                text: "Training"
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
-                    if (localtrainingLoader.sourceComponent == null) {
-                        localtrainingLoader.source = "LocalTraining.qml"
+                    if (trainingLoader.sourceComponent == null) {
+                        trainingLoader.source = "Training.qml"
                     }
                 }
             }

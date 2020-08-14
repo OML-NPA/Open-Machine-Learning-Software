@@ -35,7 +35,7 @@ ApplicationWindow {
     property string colorB: "0"
     property int indTree: 0
 
-    onClosing: { localtrainingLoader.sourceComponent = null }
+    onClosing: { trainingLoader.sourceComponent = null }
 
     FolderDialog {
             id: folderDialog

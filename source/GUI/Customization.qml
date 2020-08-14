@@ -80,7 +80,6 @@ ApplicationWindow {
                         backgroundColor: systempalette.light
 
                         ScrollableItem {
-                            clip: true
                             height: 0.4*window.height
                             width: leftFrame.width
                             contentHeight: 1.25*buttonHeight*(multlayerView.count +
