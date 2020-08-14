@@ -3,9 +3,11 @@ This software is designed to both allow people not familiar with coding or machi
 This is a community based project similar to GIMP and Mozilla and, therefore, the software is made by users and for users.
 
 ### Features
-  - 1
-  - 2
-  - 3
+  - Design a neural network or use a community created one
+  - Train a neural network
+  - Use a neural network to analyse data
+  - Extract desired data from a neural network output
+  - Visualise data
 
 ### Goals
 1. Ease of set-up and use
