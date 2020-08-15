@@ -17,7 +17,8 @@ T.Frame {
     background: Rectangle {
         anchors.fill: parent.fill
 
-        color: typeof(colorRGB)=="undefined" ? "white" : Qt.rgba(colorRGB[0],colorRGB[1],colorRGB[2],1.0)
+        color: typeof(colorRGB)=="undefined" ? "white" :
+              Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255,1.0)
         border.width: 1
     }
 }

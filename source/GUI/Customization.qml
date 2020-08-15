@@ -42,12 +42,39 @@ ApplicationWindow {
         mainPane.height = window.height
     }
     onHeightChanged: {
-        mainPane.width = window.width/2
+        mainPane.width = window.width-leftFrame.width-rightFrame.width
     }
     onClosing: { customizationLoader.sourceComponent = undefined }
 
     header: ToolBar {
-        height: buttonHeight
+        height: 0.05*window.height
+    }
+
+    Component {
+        id: buttonComponent
+        ButtonNN {
+            x: +2
+            width: leftFrame.width-23*pix
+            height: 1.25*buttonHeight
+            RowLayout {
+                anchors.fill: parent.fill
+                ColorBox {
+                    Layout.leftMargin: 0.2*margin
+                    Layout.bottomMargin: 0.03*margin
+                    Layout.preferredWidth: 0.4*margin
+                    Layout.preferredHeight: 0.4*margin
+                    height: 20*margin
+                    Layout.alignment: Qt.AlignBottom
+                    colorRGB: [colorR,colorG,colorB]
+                }
+                Label {
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: name
+                    Layout.alignment: Qt.AlignBottom
+                }
+            }
+        }
     }
 
     GridLayout {
@@ -57,7 +84,7 @@ ApplicationWindow {
             Frame {
                 id: leftFrame
                 height: window.height
-                width: 0.25*window.width
+                width: 500*pix
                 padding:0
                 Column {
                     id: layersColumn
@@ -74,16 +101,17 @@ ApplicationWindow {
                         }
                     }
                     Frame {
-                        height: 0.4*window.height+2*pix
+                        height: 0.45*window.height
                         width: leftFrame.width
                         padding: 0
-                        backgroundColor: systempalette.light
-
+                        backgroundColor: "#FDFDFD"
                         ScrollableItem {
-                            height: 0.4*window.height
-                            width: leftFrame.width
+                            id: layersFlickable
+                            height: 0.45*window.height-2*pix
+                            width: leftFrame.width-1*pix
                             contentHeight: 1.25*buttonHeight*(multlayerView.count +
-                                normlayerView.count + activationlayerView.count)+0.75*buttonHeight
+                                normlayerView.count + activationlayerView.count +
+                                otherlayerView.count) + 4*0.75*buttonHeight
                             ScrollBar.horizontal.visible: false
                             Item {
                                 id: layersRow
@@ -127,29 +155,7 @@ ApplicationWindow {
                                                               colorG: 255 // @disable-check M16
                                                               colorB: 0} // @disable-check M16
                                                         }
-                                        delegate: ButtonNN {
-                                            x: +2
-                                            width: leftFrame.width-4
-                                            height: 1.25*buttonHeight
-                                            RowLayout {
-                                                anchors.fill: parent.fill
-                                                ColorBox {
-                                                    Layout.leftMargin: 0.2*margin
-                                                    Layout.bottomMargin: 0.03*margin
-                                                    Layout.preferredWidth: 0.4*margin
-                                                    Layout.preferredHeight: 0.4*margin
-                                                    height: 20*margin
-                                                    Layout.alignment: Qt.AlignBottom
-                                                    colorRGB: [colorR,colorG,colorB]
-                                                }
-                                                Label {
-                                                    topPadding: 0.28*margin
-                                                    leftPadding: 0.10*margin
-                                                    text: name
-                                                    Layout.alignment: Qt.AlignBottom
-                                                }
-                                            }
-                                        }
+                                        delegate: buttonComponent
                                     }
                                 Label {
                                     id: normLabel
@@ -187,29 +193,7 @@ ApplicationWindow {
                                                           colorG: 255 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                     }
-                                    delegate: ButtonNN {
-                                        x: +2
-                                        width: leftFrame.width-4
-                                        height: 1.25*buttonHeight
-                                        RowLayout {
-                                            anchors.fill: parent.fill
-                                            ColorBox {
-                                                Layout.leftMargin: 0.2*margin
-                                                Layout.bottomMargin: 0.03*margin
-                                                Layout.preferredWidth: 0.4*margin
-                                                Layout.preferredHeight: 0.4*margin
-                                                height: 20*margin
-                                                Layout.alignment: Qt.AlignBottom
-                                                colorRGB: [colorR,colorG,colorB]
-                                            }
-                                            Label {
-                                                topPadding: 0.28*margin
-                                                leftPadding: 0.10*margin
-                                                text: name
-                                                Layout.alignment: Qt.AlignBottom
-                                            }
-                                        }
-                                    }
+                                    delegate: buttonComponent
                                 }
                                 Label {
                                     id: activationLabel
@@ -262,31 +246,46 @@ ApplicationWindow {
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                     }
-                                    delegate: ButtonNN {
-                                        x: +2
-                                        width: leftFrame.width-4
-                                        height: 1.25*buttonHeight
-                                        RowLayout {
-                                            anchors.fill: parent.fill
-                                            ColorBox {
-                                                Layout.leftMargin: 0.2*margin
-                                                Layout.bottomMargin: 0.03*margin
-                                                Layout.preferredWidth: 0.4*margin
-                                                Layout.preferredHeight: 0.4*margin
-                                                height: 20*margin
-                                                Layout.alignment: Qt.AlignBottom
-                                                colorRGB: [colorR,colorG,colorB]
-                                            }
-                                            Label {
-                                                topPadding: 0.28*margin
-                                                leftPadding: 0.10*margin
-                                                text: name
-                                                Layout.alignment: Qt.AlignBottom
-                                            }
-                                        }
+                                    delegate: buttonComponent
+                                }
+                                Label {
+                                    id: otherLabel
+                                    anchors.top: activationlayerView.bottom
+                                    width: leftFrame.width-4*pix
+                                    height: 0.75*buttonHeight
+                                    font.pointSize: 10
+                                    color: "#777777"
+                                    topPadding: 0.10*activationLabel.height
+                                    text: "Other layers"
+                                    leftPadding: 0.25*margin
+                                    background: Rectangle {
+                                        anchors.fill: parent.fill
+                                        x: 2*pix
+                                        color: systempalette.window
+                                        width: leftFrame.width-4*pix
+                                        height: 0.75*buttonHeight
                                     }
                                 }
-
+                                ListView {
+                                    id: otherlayerView
+                                    anchors.top: otherLabel.bottom
+                                    height: childrenRect.height
+                                    spacing: 0
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    model: ListModel {id: otherlayerModel
+                                                      ListElement{
+                                                          name: "Catenation" // @disable-check M16
+                                                          colorR: 180 // @disable-check M16
+                                                          colorG: 180 // @disable-check M16
+                                                          colorB: 180} // @disable-check M16
+                                                      ListElement{
+                                                          name: "Decatenation" // @disable-check M16
+                                                          colorR: 180 // @disable-check M16
+                                                          colorG: 180 // @disable-check M16
+                                                          colorB: 180} // @disable-check M16
+                                                    }
+                                    delegate: buttonComponent
+                                }
                             }
                         }
                     }
@@ -306,15 +305,15 @@ ApplicationWindow {
                         }
                     }
                     Frame {
-                        height: 0.4*window.height+2*pix
+                        height: 0.4*window.height-4*pix
                         width: leftFrame.width
                         padding: 0
-                        backgroundColor: systempalette.light
+                        backgroundColor: "#FDFDFD"
 
                         ScrollableItem {
                             clip: true
-                            height: 0.4*window.height
-                            width: leftFrame.width
+                            height: 0.4*window.height-6*pix
+                            width: leftFrame.width-1*pix
                             contentHeight: 1.25*buttonHeight*(defaultgroupsView.count)
                                            +0.75*buttonHeight
                             ScrollBar.horizontal.visible: false
@@ -362,7 +361,7 @@ ApplicationWindow {
                                                         }
                                         delegate: ButtonNN {
                                             x: +2
-                                            width: leftFrame.width-4
+                                            width: leftFrame.width-23*pix
                                             height: 1.25*buttonHeight
                                             RowLayout {
                                                 anchors.fill: parent.fill
@@ -392,7 +391,7 @@ ApplicationWindow {
             }
             ScrollableItem{
                id: flickableMainPane
-               width : window.width/2
+               width : window.width-leftFrame.width-rightFrame.width
                height : paneHeight
                clip: true
                 Pane {
@@ -415,7 +414,7 @@ ApplicationWindow {
             Frame {
                 id: rightFrame
                 height: window.height
-                width: 0.25*window.width
+                width: 500*pix
             }
         }
     }

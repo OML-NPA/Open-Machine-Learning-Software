@@ -21,7 +21,7 @@ ApplicationWindow {
     color: systempalette.window
 
     property double margin: 0.02*Screen.width
-    property double fontsize: Math.round(11*Screen.height/2160)
+    property double pix: Screen.width/3840
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
     property double tabmargin: 0.5*margin
@@ -30,32 +30,62 @@ ApplicationWindow {
 
     onClosing: { selectneuralnetworkLoader.sourceComponent = null }
 
+    ListModel {
+        id: emptyModel
+        ListElement { text: "" }
+    }
+
 
     GridLayout {
         id: gridLayout
-        RowLayout {
+        ColumnLayout {
             Layout.margins: margin
             spacing: 0.2*margin
-            ColumnLayout {
-                Layout.alignment : Qt.AlignHCenter
-                spacing: 0.55*margin
-                Label {
-                    Layout.alignment : Qt.AlignLeft
-                    Layout.row: 1
-                    text: "Data type:"
+            RowLayout {
+                spacing: 0.2*margin
+                ColumnLayout {
+                    Layout.alignment : Qt.AlignHCenter | Qt.AlignTop
+                    spacing: 0.55*margin
+                    Layout.topMargin: 0.2*margin
+                    Label {
+                        Layout.alignment : Qt.AlignLeft
+                        Layout.row: 1
+                        text: "Data type:"
+                    }
+                    Label {
+                        Layout.alignment : Qt.AlignLeft
+                        Layout.row: 1
+                        text: "Data subtype:"
+                        //bottomPadding: 0.05*margin
+                    }
+                    Label {
+                        Layout.alignment : Qt.AlignLeft
+                        Layout.row: 1
+                        text: "Cell subtype:"
+                        //bottomPadding: 0.05*margin
+                    }
+                    Label {
+                        Layout.alignment : Qt.AlignLeft
+                        Layout.row: 1
+                        text: "Neural network:"
+                    }
+                    Label {
+                        Layout.alignment : Qt.AlignLeft
+                        Layout.row: 1
+                        text: "Encoder length:"
+                    }
+                    Label {
+                        Layout.alignment : Qt.AlignLeft
+                        Layout.row: 1
+                        text: "Decoder length:"
+                    }
                 }
-                Label {
-                    Layout.alignment : Qt.AlignLeft
-                    Layout.row: 1
-                    text: "Data subtype:"
-                    bottomPadding: 0.05*margin
-                }
-            }
-            ColumnLayout {
+                ColumnLayout {
                 ComboBox {
                     editable: false
                     Layout.preferredWidth: buttonWidth + 0.5*margin
                     Layout.leftMargin: 0.5*margin
+                    onActivated: {}
                     model: ListModel {
                         id: datatypeModel
                         ListElement { text: "Image" }
@@ -72,8 +102,61 @@ ApplicationWindow {
                         ListElement { text: "Other" }
                     }
                 }
+                ComboBox {
+                    editable: false
+                    Layout.preferredWidth: buttonWidth + 0.5*margin
+                    Layout.leftMargin: 0.5*margin
+                    model: ListModel {
+                        id: datasubsubtypeModel
+                        ListElement { text: "Bacteria" }
+                        ListElement { text: "Yeast" }
+                        ListElement { text: "Mammalian" }
+                    }
+                }
+                ComboBox {
+                    editable: false
+                    Layout.preferredWidth: buttonWidth + 0.5*margin
+                    Layout.leftMargin: 0.5*margin
+                    model: ListModel {
+                        id: neuralnetworkModel
+                        ListElement { text: "defaultnet" }
+                        ListElement { text: "net1" }
+                        ListElement { text: "net2" }
+                    }
+                }
+                ComboBox {
+                    editable: false
+                    Layout.preferredWidth: buttonWidth + 0.5*margin
+                    Layout.leftMargin: 0.5*margin
+                    currentIndex: 5
+                    model: ListModel {
+                        id: encoderModel
+                        ListElement { text: "1" }
+                        ListElement { text: "2" }
+                        ListElement { text: "3" }
+                        ListElement { text: "4" }
+                        ListElement { text: "5" }
+                        ListElement { text: "6" }
+                    }
+                }
+                ComboBox {
+                    editable: false
+                    Layout.preferredWidth: buttonWidth + 0.5*margin
+                    Layout.leftMargin: 0.5*margin
+                    currentIndex: 4
+                    model: ListModel {
+                        id: decoderModel
+                        ListElement { text: "1" }
+                        ListElement { text: "2" }
+                        ListElement { text: "3" }
+                        ListElement { text: "4" }
+                        ListElement { text: "5" }
+                        ListElement { text: "6" }
+                    }
+                }
             }
         }
+       }
     }
 }
 

@@ -23,6 +23,7 @@ ApplicationWindow {
     color: systempalette.window
 
     property double margin: 0.02*Screen.width
+    property double pix: Screen.width/3840
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
     property color defaultcolor: systempalette.window
@@ -87,13 +88,30 @@ ApplicationWindow {
                         Layout.preferredHeight: buttonHeight
                         onClicked: {folderDialog.open()}
                     }
-                    Button {
-                        //editable: false
+                   ComboBox {
                         Layout.preferredWidth: buttonWidth + 0.5*margin
                         Layout.preferredHeight: buttonHeight
-                        radius: 0
                         Layout.leftMargin: 0.5*margin
-                        text: "Select neural network"
+                        currentIndex: -1
+                        displayText: currentIndex==-1 ? "Select neural network" : currentText
+                        model: ListModel {
+                           id: netModel
+                           ListElement { text: "defaultNetE5D4Yeast" } //@disable-check M16
+                           ListElement { text: "net2E3D2Yeast" } //@disable-check M16
+                        }
+                    }
+                    /*Button {
+                        Layout.preferredWidth: buttonWidth + 0.5*margin
+                        Layout.preferredHeight: buttonHeight
+                        backgroundRadius: 0
+                        Layout.leftMargin: 0.5*margin
+                        Text {
+                           text: "Select neural network"
+                           font.pointSize: 9
+                           topPadding: 15*pix
+                           leftPadding: 15*pix
+                           anchors.fill: parent.fill
+                        }
                         onClicked: {
                             if (selectneuralnetworkLoader.sourceComponent === null) {
                                 selectneuralnetworkLoader.source = "SelectNeuralNetwork.qml"
@@ -105,7 +123,7 @@ ApplicationWindow {
                         //    id: netModel
                         //   ListElement { text: "defaultNetE5D4Yeast" }
                         //}
-                    }
+                    }*/
                 }
                 RowLayout {
                     spacing: margin

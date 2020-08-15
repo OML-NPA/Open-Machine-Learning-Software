@@ -116,7 +116,7 @@ ApplicationWindow {
                         Layout.preferredWidth: 0.55*buttonWidth
                     }
                     TextField {
-                        Layout.preferredWidth: 1*buttonWidth
+                        Layout.preferredWidth: 1.4*buttonWidth
                         Layout.preferredHeight: buttonHeight
                     }
                 }

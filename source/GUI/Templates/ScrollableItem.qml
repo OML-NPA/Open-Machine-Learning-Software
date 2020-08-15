@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Window 2.2
 
 Flickable{
+    id: flickable
     contentWidth: pane.implicitWidth
     contentHeight: pane.implicitHeight
     boundsBehavior: Flickable.StopAtBounds
@@ -11,6 +12,7 @@ Flickable{
     property double pix: Screen.width/3840
     default property alias content : pane.contentItem
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
+
     Pane {
         id:pane
         padding: 0
@@ -18,13 +20,20 @@ Flickable{
     ScrollBar.vertical: ScrollBar{
         id: vertical
         policy: ScrollBar.AsNeeded
+        background: Rectangle {
+            width: 20*pix
+            anchors.right: parent.right
+            color: systempalette.window
+        }
+
         contentItem:
             Rectangle {
                 implicitWidth: 25*pix
                 implicitHeight: 100
                 color: "transparent"
                 Rectangle {
-                    anchors.right: parent.right
+                    //anchors.right: parent.right
+                    x: 13*pix
                     implicitWidth: 10*pix
                     implicitHeight: parent.height
                     radius: width / 2
@@ -35,6 +44,7 @@ Flickable{
     ScrollBar.horizontal: ScrollBar{
         id: horizontal
         policy: ScrollBar.AsNeeded
+
         contentItem:
             Rectangle {
                 implicitWidth: 100
