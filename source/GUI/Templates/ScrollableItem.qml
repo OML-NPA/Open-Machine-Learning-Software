@@ -10,10 +10,11 @@ Flickable{
     flickableDirection: Flickable.AutoFlickIfNeeded
     clip: true
     property double pix: Screen.width/3840
+    property bool showBackground: true
     default property alias content : pane.contentItem
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
 
-    Pane {
+    Frame {
         id:pane
         padding: 0
     }
@@ -23,7 +24,7 @@ Flickable{
         background: Rectangle {
             width: 20*pix
             anchors.right: parent.right
-            color: systempalette.window
+            color: showBackground ? systempalette.window : "transparent"
         }
 
         contentItem:
@@ -45,17 +46,24 @@ Flickable{
         id: horizontal
         policy: ScrollBar.AsNeeded
 
+        background: Rectangle {
+            height: 20*pix
+            anchors.bottom: parent.bottom
+            color: showBackground ? systempalette.window : "transparent"
+        }
+
         contentItem:
             Rectangle {
-                implicitWidth: 100
                 implicitHeight: 25*pix
+                implicitWidth: 100
                 color: "transparent"
                 Rectangle {
-                    anchors.bottom: parent.bottom
-                    implicitWidth: parent.width
+                    //anchors.right: parent.right
+                    y: 13*pix
                     implicitHeight: 10*pix
-                    radius: height / 2
-                    color: horizontal.pressed ? systempalette.dark : systempalette.mid
+                    implicitWidth: parent.height
+                    radius: width / 2
+                    color: vertical.pressed ? systempalette.dark : systempalette.mid
                 }
         }
     }

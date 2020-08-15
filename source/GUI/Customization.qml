@@ -31,7 +31,8 @@ ApplicationWindow {
     property double defaultWidth: buttonWidth*5/2
     property double defaultHeight: buttonHeight*20
 
-    property double paneHeight: window.height-buttonHeight
+    property double paneHeight: window.height - header.height - 4*pix
+    property double paneWidth: window.width-leftFrame.width-rightFrame.width-4*pix
 
     property bool optionsOpen: false
     property bool localtrainingOpen: false
@@ -39,56 +40,30 @@ ApplicationWindow {
     property string currentfolder: Qt.resolvedUrl(".")
 
     onWidthChanged: {
-        mainPane.height = window.height
+        mainPane.height = window.height - header.height - 4*pix
     }
     onHeightChanged: {
-        mainPane.width = window.width-leftFrame.width-rightFrame.width
+        mainPane.width = window.width-leftFrame.width-rightFrame.width-4*pix
     }
     onClosing: { customizationLoader.sourceComponent = undefined }
 
     header: ToolBar {
-        height: 0.05*window.height
+        id: header
+        height: 200*pix
     }
-
-    Component {
-        id: buttonComponent
-        ButtonNN {
-            x: +2
-            width: leftFrame.width-23*pix
-            height: 1.25*buttonHeight
-            RowLayout {
-                anchors.fill: parent.fill
-                ColorBox {
-                    Layout.leftMargin: 0.2*margin
-                    Layout.bottomMargin: 0.03*margin
-                    Layout.preferredWidth: 0.4*margin
-                    Layout.preferredHeight: 0.4*margin
-                    height: 20*margin
-                    Layout.alignment: Qt.AlignBottom
-                    colorRGB: [colorR,colorG,colorB]
-                }
-                Label {
-                    topPadding: 0.28*margin
-                    leftPadding: 0.10*margin
-                    text: name
-                    Layout.alignment: Qt.AlignBottom
-                }
-            }
-        }
-    }
-
     GridLayout {
         id: gridLayout
         Row {
             spacing: 0
             Frame {
                 id: leftFrame
-                height: window.height
+                height: window.height - header.height
                 width: 500*pix
                 padding:0
                 Column {
                     id: layersColumn
                     Label {
+                        id: layersLabel
                         width: leftFrame.width
                         text: "Layers:"
                         padding: 0.2*margin
@@ -101,17 +76,17 @@ ApplicationWindow {
                         }
                     }
                     Frame {
-                        height: 0.45*window.height
+                        height: 0.6*(window.height - header.height - 2*layersLabel.height)
                         width: leftFrame.width
                         padding: 0
                         backgroundColor: "#FDFDFD"
                         ScrollableItem {
                             id: layersFlickable
-                            height: 0.45*window.height-2*pix
-                            width: leftFrame.width-1*pix
+                            height: 0.6*(window.height - header.height - 2*layersLabel.height)-2*pix
+                            width: leftFrame.width-2*pix
                             contentHeight: 1.25*buttonHeight*(multlayerView.count +
                                 normlayerView.count + activationlayerView.count +
-                                otherlayerView.count) + 4*0.75*buttonHeight
+                                resizinglayerView.count + otherlayerView.count) + 5*0.75*buttonHeight
                             ScrollBar.horizontal.visible: false
                             Item {
                                 id: layersRow
@@ -140,19 +115,22 @@ ApplicationWindow {
                                         boundsBehavior: Flickable.StopAtBounds
                                         model: ListModel {id: multlayerModel
                                                           ListElement{
-                                                              name: "Convolution layer" // @disable-check M16
-                                                              colorR: 255 // @disable-check M16
-                                                              colorG: 255 // @disable-check M16
+                                                              type: "Convolution" // @disable-check M16
+                                                              name: "conv"// @disable-check M16
+                                                              colorR: 250 // @disable-check M16
+                                                              colorG: 250 // @disable-check M16
                                                               colorB: 0} // @disable-check M16
                                                           ListElement{
-                                                              name: "Transposed conv layer" // @disable-check M16
-                                                              colorR: 255 // @disable-check M16
-                                                              colorG: 255 // @disable-check M16
+                                                              type: "Transposed convolution" // @disable-check M16
+                                                              name: "tconv" // @disable-check M16
+                                                              colorR: 250 // @disable-check M16
+                                                              colorG: 250 // @disable-check M16
                                                               colorB: 0} // @disable-check M16
                                                           ListElement{
-                                                              name: "Fully connected layer" // @disable-check M16
-                                                              colorR: 255 // @disable-check M16
-                                                              colorG: 255 // @disable-check M16
+                                                              type: "Fully connected" // @disable-check M16
+                                                              name: "fullycon" // @disable-check M16
+                                                              colorR: 250 // @disable-check M16
+                                                              colorG: 250 // @disable-check M16
                                                               colorB: 0} // @disable-check M16
                                                         }
                                         delegate: buttonComponent
@@ -183,14 +161,15 @@ ApplicationWindow {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: normlayerModel
                                                       ListElement{
-                                                          name: "Drop-out layer" // @disable-check M16
+                                                          type: "Drop-out" // @disable-check M16
+                                                          name: "fullycon" // @disable-check M16
                                                           colorR: 0 // @disable-check M16
-                                                          colorG: 255 // @disable-check M16
+                                                          colorG: 250 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
-                                                          name: "Batch normalisation layer" // @disable-check M16
+                                                          type: "Batch normalisation" // @disable-check M16
                                                           colorR: 0 // @disable-check M16
-                                                          colorG: 255 // @disable-check M16
+                                                          colorG: 250 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
@@ -221,36 +200,93 @@ ApplicationWindow {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: activationlayerModel
                                                       ListElement{
-                                                          name: "RelU layer" // @disable-check M16
-                                                          colorR: 255 // @disable-check M16
+                                                          type: "RelU" // @disable-check M16
+                                                          name: "relu" // @disable-check M16
+                                                          colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
-                                                          name: "Laeky RelU layer" // @disable-check M16
-                                                          colorR: 255 // @disable-check M16
+                                                          type: "Laeky RelU" // @disable-check M16
+                                                          name: "relu" // @disable-check M16
+                                                          colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
-                                                          name: "ElU layer" // @disable-check M16
-                                                          colorR: 255 // @disable-check M16
+                                                          type: "ElU" // @disable-check M16
+                                                          name: "elu" // @disable-check M16
+                                                          colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
-                                                          name: "Tanh layer" // @disable-check M16
-                                                          colorR: 255 // @disable-check M16
+                                                          type: "Tanh" // @disable-check M16
+                                                          name: "tanh" // @disable-check M16
+                                                          colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
-                                                          name: "Sigmoid layer" // @disable-check M16
-                                                          colorR: 255 // @disable-check M16
+                                                          type: "Sigmoid" // @disable-check M16
+                                                          name: "sigmoid" // @disable-check M16
+                                                          colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
                                 Label {
-                                    id: otherLabel
+                                    id: resizingLabel
                                     anchors.top: activationlayerView.bottom
+                                    width: leftFrame.width-4*pix
+                                    height: 0.75*buttonHeight
+                                    font.pointSize: 10
+                                    color: "#777777"
+                                    topPadding: 0.10*activationLabel.height
+                                    text: "Resizing layers"
+                                    leftPadding: 0.25*margin
+                                    background: Rectangle {
+                                        anchors.fill: parent.fill
+                                        x: 2*pix
+                                        color: systempalette.window
+                                        width: leftFrame.width-4*pix
+                                        height: 0.75*buttonHeight
+                                    }
+                                }
+                                ListView {
+                                    id: resizinglayerView
+                                    anchors.top: resizingLabel.bottom
+                                    height: childrenRect.height
+                                    spacing: 0
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    model: ListModel {id: resizinglayerModel
+                                                      ListElement{
+                                                          type: "Catenation" // @disable-check M16
+                                                          name: "cat" // @disable-check M16
+                                                          colorR: 180 // @disable-check M16
+                                                          colorG: 180 // @disable-check M16
+                                                          colorB: 180} // @disable-check M16
+                                                      ListElement{
+                                                          type: "Decatenation" // @disable-check M16
+                                                          name: "decat" // @disable-check M16
+                                                          colorR: 180 // @disable-check M16
+                                                          colorG: 180 // @disable-check M16
+                                                          colorB: 180} // @disable-check M16
+                                                      ListElement{
+                                                          type: "Scaling" // @disable-check M16
+                                                          name: "scaling" // @disable-check M16
+                                                          colorR: 180 // @disable-check M16
+                                                          colorG: 180 // @disable-check M16
+                                                          colorB: 180} // @disable-check M16
+                                                      ListElement{
+                                                          type: "Resizing" // @disable-check M16
+                                                          name: "resizing" // @disable-check M16
+                                                          colorR: 180 // @disable-check M16
+                                                          colorG: 180 // @disable-check M16
+                                                          colorB: 180} // @disable-check M16
+                                                    }
+                                    delegate: buttonComponent
+                                }
+                                Label {
+                                    id: otherLabel
+                                    anchors.top: resizinglayerView.bottom
                                     width: leftFrame.width-4*pix
                                     height: 0.75*buttonHeight
                                     font.pointSize: 10
@@ -274,15 +310,11 @@ ApplicationWindow {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: otherlayerModel
                                                       ListElement{
-                                                          name: "Catenation" // @disable-check M16
-                                                          colorR: 180 // @disable-check M16
-                                                          colorG: 180 // @disable-check M16
-                                                          colorB: 180} // @disable-check M16
-                                                      ListElement{
-                                                          name: "Decatenation" // @disable-check M16
-                                                          colorR: 180 // @disable-check M16
-                                                          colorG: 180 // @disable-check M16
-                                                          colorB: 180} // @disable-check M16
+                                                          type: "Something" // @disable-check M16
+                                                          name: "something" // @disable-check M16
+                                                          colorR: 250 // @disable-check M16
+                                                          colorG: 250 // @disable-check M16
+                                                          colorB: 250} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -293,6 +325,7 @@ ApplicationWindow {
                 Column {
                     anchors.top: layersColumn.bottom
                     Label {
+                        id: layergroupsLabel
                         width: leftFrame.width
                         text: "Layer groups:"
                         padding: 0.2*margin
@@ -305,15 +338,15 @@ ApplicationWindow {
                         }
                     }
                     Frame {
-                        height: 0.4*window.height-4*pix
+                        height: 0.4*(window.height - header.height - 2*layergroupsLabel.height)-0*pix
                         width: leftFrame.width
                         padding: 0
                         backgroundColor: "#FDFDFD"
 
                         ScrollableItem {
                             clip: true
-                            height: 0.4*window.height-6*pix
-                            width: leftFrame.width-1*pix
+                            height: 0.4*(window.height - header.height - 2*layergroupsLabel.height)-2*pix
+                            width: leftFrame.width-2*pix
                             contentHeight: 1.25*buttonHeight*(defaultgroupsView.count)
                                            +0.75*buttonHeight
                             ScrollBar.horizontal.visible: false
@@ -389,25 +422,28 @@ ApplicationWindow {
                 }
 
             }
-            ScrollableItem{
-               id: flickableMainPane
-               width : window.width-leftFrame.width-rightFrame.width
-               height : paneHeight
-               clip: true
-                Pane {
-                    id: mainPane
-                    padding: 0
-                    backgroundColor: "#FDFDFD"
-                    Component.onCompleted: {
-                        moduleNN.createObject(mainPane);
-                        moduleNN.createObject(mainPane);
-                        moduleNN.createObject(mainPane);
-                        flickableMainPane.contentWidth = Math.max(window.width/2)
-                        flickableMainPane.contentHeight = Math.max(paneHeight)
-                        mainPane.width = window.width/2
-                        mainPane.height = paneHeight
-                        flickableMainPane.ScrollBar.vertical.visible = false
-                        flickableMainPane.ScrollBar.horizontal.visible = false
+            Frame {
+                width : window.width-leftFrame.width-rightFrame.width
+                height : paneHeight+4*pix
+                padding: 2*pix
+                ScrollableItem{
+                   id: flickableMainPane
+                   width : paneWidth
+                   height : paneHeight
+                   showBackground: false
+                   clip: true
+                   Pane {
+                        id: mainPane
+                        padding: 0
+                        backgroundColor: "#FDFDFD"
+                        Component.onCompleted: {
+                            flickableMainPane.contentWidth = Math.max(paneWidth)
+                            flickableMainPane.contentHeight = Math.max(paneHeight)
+                            mainPane.width = window.width/2
+                            mainPane.height = paneHeight
+                            flickableMainPane.ScrollBar.vertical.visible = false
+                            flickableMainPane.ScrollBar.horizontal.visible = false
+                        }
                     }
                 }
             }
@@ -415,21 +451,90 @@ ApplicationWindow {
                 id: rightFrame
                 height: window.height
                 width: 500*pix
+                padding:0
+                Column {
+                    id: propertiesColumn
+                    Label {
+                        id: propertiesLabel
+                        width: rightFrame.width
+                        text: "Properties:"
+                        padding: 0.2*margin
+                        leftPadding: 0.2*margin
+                        background: Rectangle {
+                            anchors.fill: parent.fill
+                            color: defaultcolor
+                            border.color: systempalette.dark
+                            border.width: 2
+                        }
+                    }
+                    Frame {
+                        height: 0.6*(window.height - header.height - 2*layersLabel.height)
+                        width: rightFrame.width
+                        padding: 0
+                        backgroundColor: "#FDFDFD"
+                        ScrollableItem {
+                            id: propertiesFlickable
+                            height: 0.6*(window.height - header.height - 2*layersLabel.height)-2*pix
+                            width: rightFrame.width-2*pix
+                            contentHeight: 0.6*(window.height - header.height - 2*layersLabel.height)-2*pix
+                            ScrollBar.horizontal.visible: false
+                            Item {
+
+                            }
+                        }
+                    }
+                }
+                Column {
+                    anchors.top: propertiesColumn.bottom
+                    Label {
+                        id: overviewLabel
+                        width: rightFrame.width
+                        text: "Overview:"
+                        padding: 0.2*margin
+                        leftPadding: 0.2*margin
+                        background: Rectangle {
+                            anchors.fill: parent.fill
+                            color: defaultcolor
+                            border.color: systempalette.dark
+                            border.width: 2
+                        }
+                    }
+                    Frame {
+                        height: 0.4*(window.height - header.height - 2*layersLabel.height)
+                        width: rightFrame.width
+                        padding: 0
+                        backgroundColor: "#FDFDFD"
+                        ScrollableItem {
+                            id: overviewFlickable
+                            height: 0.4*(window.height - header.height - 2*layersLabel.height)-2*pix
+                            width: rightFrame.width-2*pix
+                            showBackground: false
+                            contentHeight: 0.4*(window.height - header.height - 2*layersLabel.height)-2*pix
+                            Item {
+
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
 
-//---------------------------------------------------------------------------
+//--FUNCTIONS--------------------------------------------------------------------
+
     function getleft(item) {
         return(item.x)
     }
+
     function getright(item) {
         return(item.x+item.width)
     }
+
     function gettop(item) {
         return(item.y)
     }
+
     function getbottom(item) {
         return(item.y+item.height)
     }
@@ -447,6 +552,7 @@ ApplicationWindow {
         }
         return(max)
     }
+
     function getleftchild(item) {
         var min = 0;
         if (item.children.length===0) {
@@ -460,6 +566,7 @@ ApplicationWindow {
         }
         return(min)
     }
+
     function getbottomchild(item) {
         var max = 0;
         if (item.children.length===0) {
@@ -473,6 +580,7 @@ ApplicationWindow {
         }
         return(max)
     }
+
     function gettopchild(item) {
         var min = 0;
         if (item.children.length===0) {
@@ -487,25 +595,64 @@ ApplicationWindow {
         return(min)
     }
 
+    function adjustcolor(colorRGB) {
+
+        if (colorRGB[0]===colorRGB[1] && colorRGB[0]===colorRGB[2]) {
+            colorRGB[0] = 200 + colorRGB[0]/255*55
+            colorRGB[1] = 200 + colorRGB[1]/255*55
+            colorRGB[2] = 200 + colorRGB[2]/255*55
+        }
+        else {
+            var max = 255/Math.max(colorRGB[0],colorRGB[1],colorRGB[2])
+
+            for (var i=0;i<=2;i++) {
+                if (colorRGB[i]===0) {
+                    colorRGB[i] = 245
+                }
+                else {
+                    colorRGB[i] = colorRGB[i] * max
+                }
+            }
+        }
+        return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
+    }
+
+//--COMPONENTS--------------------------------------------------------------------
+
     Component {
         id: moduleNN
+
+
         Rectangle {
             id: unit
-            height: buttonWidth/2
-            width: buttonWidth/2
+            height: 1.5*buttonHeight
+            width: 0.9*buttonWidth
             radius: 8*pix
-            color: "#fafafa"
             border.color: systempalette.mid
             border.width: 3*pix
+            property string name: "test"
+            property string type: "test"
+            color: "#000000"
+            Column {
+                anchors.fill: parent.fill
+                topPadding: 8*pix
+                leftPadding: 14*pix
+                spacing: 5*pix
+                Label {
+                    id: nameLabel
+                    text: name
+                    font.pointSize: 10
+                }
+                Label {
+                    id: typeLabel
+                    text: type
+                    color: "#777777"
+                }
+            }
+
             MouseArea {
                 anchors.fill: parent
                 drag.target: parent
-                /*
-                drag.axis: Drag.XAndYAxis
-                drag.minimumX: 0
-                drag.maximumX: mainPane.width - unit.width
-                drag.minimumY: 0
-                */
                 hoverEnabled: true
                 onEntered: {
                     unit.border.color = "#666666"
@@ -579,6 +726,7 @@ ApplicationWindow {
                                  "mainpaneWidth: ",flickableMainPane.width])*/
                 }
             }
+
             Rectangle {
                 id: upNode
                 width: buttonHeight/3
@@ -588,7 +736,7 @@ ApplicationWindow {
                 border.width: 3*pix
                 visible: false
                 x: unit.width/2-upNode.radius/2
-                y: -upNode.radius/2 + 1.5*pix
+                y: -upNode.radius/2 + 2*pix
             }
             Rectangle {
                 width: 2*buttonHeight/3
@@ -622,8 +770,8 @@ ApplicationWindow {
                 border.color: systempalette.mid
                 border.width: 3*pix
                 visible: false
-                x: unit.width/2-downNode.radius/2
-                y: 0.88*unit.height+downNode.radius/2
+                x: unit.width/2 - downNode.radius/2
+                y: unit.height - downNode.radius/2 - 2*pix
             }
             Rectangle {
                 width: 2*buttonHeight/3
@@ -651,4 +799,45 @@ ApplicationWindow {
 
         }
     }
+
+    Component {
+        id: buttonComponent
+        ButtonNN {
+            x: +2
+            width: leftFrame.width-23*pix
+            height: 1.25*buttonHeight
+            onClicked: {
+                moduleNN.createObject(mainPane,{"color" : adjustcolor([colorR,colorG,colorB]),
+                                               "name" : name,
+                                               "type" : type});
+            }
+
+            RowLayout {
+                anchors.fill: parent.fill
+                ColorBox {
+                    Layout.leftMargin: 0.2*margin
+                    Layout.bottomMargin: 0.03*margin
+                    Layout.preferredWidth: 0.4*margin
+                    Layout.preferredHeight: 0.4*margin
+                    height: 20*margin
+                    Layout.alignment: Qt.AlignBottom
+                    colorRGB: [colorR,colorG,colorB]
+                }
+                Label {
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    Layout.alignment: Qt.AlignBottom
+                }
+            }
+        }
+    }
+
+//--Layers
+
+
+
+
+
+
 }
