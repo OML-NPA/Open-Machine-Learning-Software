@@ -20,7 +20,6 @@ Flickable{
     }
     ScrollBar.vertical: ScrollBar{
         id: vertical
-        policy: ScrollBar.AsNeeded
         background: Rectangle {
             width: 20*pix
             anchors.right: parent.right
@@ -38,14 +37,13 @@ Flickable{
                     implicitWidth: 10*pix
                     implicitHeight: parent.height
                     radius: width / 2
+                    visible: contentHeight > flickable.height
                     color: vertical.pressed ? systempalette.dark : systempalette.mid
                 }
         }
     }
     ScrollBar.horizontal: ScrollBar{
         id: horizontal
-        policy: ScrollBar.AsNeeded
-
         background: Rectangle {
             height: 20*pix
             anchors.bottom: parent.bottom
@@ -54,16 +52,16 @@ Flickable{
 
         contentItem:
             Rectangle {
-                implicitHeight: 25*pix
                 implicitWidth: 100
+                implicitHeight: 25*pix
                 color: "transparent"
                 Rectangle {
-                    //anchors.right: parent.right
-                    y: 13*pix
+                    anchors.bottom: parent.bottom
+                    implicitWidth: parent.width
                     implicitHeight: 10*pix
-                    implicitWidth: parent.height
-                    radius: width / 2
-                    color: vertical.pressed ? systempalette.dark : systempalette.mid
+                    radius: height / 2
+                    visible: contentWidth > flickable.width
+                    color: horizontal.pressed ? systempalette.dark : systempalette.mid
                 }
         }
     }

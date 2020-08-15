@@ -8,7 +8,8 @@ import QtQuick.Window 2.2
 T.Frame {
     id: control
     property color backgroundColor: control.palette.window
-    property real borderWidth: Screen.width/3840*2
+    property double pix: Screen.width/3840
+    property double borderWidth: pix*2
     property color borderColor: control.palette.dark
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             contentWidth + leftPadding + rightPadding)

@@ -5,6 +5,7 @@ import QtQuick.Window 2.2
 import QtQuick.Layouts 1.2
 import Qt.labs.platform 1.1
 import QtQml.Models 2.15
+import QtQuick.Shapes 1.15
 import Qt.labs.folderlistmodel 2.15
 import "Templates"
 //import org.julialang 1.0
@@ -23,9 +24,9 @@ ApplicationWindow {
     color: systempalette.window
 
     property double margin: 0.02*Screen.width
-    property double buttonWidth: 0.1*Screen.width
-    property double buttonHeight: 0.03*Screen.height
     property double pix: Screen.width/3840
+    property double buttonWidth: 380*pix
+    property double buttonHeight: 65*pix
     property color defaultcolor: systempalette.window
 
     property double defaultWidth: buttonWidth*5/2
@@ -50,6 +51,10 @@ ApplicationWindow {
     header: ToolBar {
         id: header
         height: 200*pix
+        Frame {
+            height: header.height
+            width: header.width
+        }
     }
     GridLayout {
         id: gridLayout
@@ -60,8 +65,8 @@ ApplicationWindow {
                 height: window.height - header.height
                 width: 500*pix
                 padding:0
-                Column {
-                    id: layersColumn
+                Item {
+                    id: layersItem
                     Label {
                         id: layersLabel
                         width: leftFrame.width
@@ -76,13 +81,16 @@ ApplicationWindow {
                         }
                     }
                     Frame {
+                        id: layersFrame
+                        y: layersLabel.height -2*pix
                         height: 0.6*(window.height - header.height - 2*layersLabel.height)
                         width: leftFrame.width
                         padding: 0
                         backgroundColor: "#FDFDFD"
                         ScrollableItem {
+                            y: 2*pix
                             id: layersFlickable
-                            height: 0.6*(window.height - header.height - 2*layersLabel.height)-2*pix
+                            height: 0.6*(window.height - header.height - 2*layersLabel.height)-4*pix
                             width: leftFrame.width-2*pix
                             contentHeight: 1.25*buttonHeight*(multlayerView.count +
                                 normlayerView.count + activationlayerView.count +
@@ -162,12 +170,13 @@ ApplicationWindow {
                                     model: ListModel {id: normlayerModel
                                                       ListElement{
                                                           type: "Drop-out" // @disable-check M16
-                                                          name: "fullycon" // @disable-check M16
+                                                          name: "dropout" // @disable-check M16
                                                           colorR: 0 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
                                                           type: "Batch normalisation" // @disable-check M16
+                                                          name: "batchnorm" // @disable-check M16
                                                           colorR: 0 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
@@ -310,8 +319,8 @@ ApplicationWindow {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: otherlayerModel
                                                       ListElement{
-                                                          type: "Something" // @disable-check M16
-                                                          name: "something" // @disable-check M16
+                                                          type: "Other" // @disable-check M16
+                                                          name: "other" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
                                                           colorB: 250} // @disable-check M16
@@ -322,8 +331,9 @@ ApplicationWindow {
                         }
                     }
                 }
-                Column {
-                    anchors.top: layersColumn.bottom
+                Item {
+                    id: layergroupsItem
+                    y: layersLabel.height + layersFrame.height - 2*pix
                     Label {
                         id: layergroupsLabel
                         width: leftFrame.width
@@ -338,14 +348,16 @@ ApplicationWindow {
                         }
                     }
                     Frame {
-                        height: 0.4*(window.height - header.height - 2*layergroupsLabel.height)-0*pix
+                        y: layergroupsLabel.height - 2*pix
+                        height: 0.4*(window.height - header.height - 2*layergroupsLabel.height)+4*pix
                         width: leftFrame.width
                         padding: 0
                         backgroundColor: "#FDFDFD"
 
                         ScrollableItem {
                             clip: true
-                            height: 0.4*(window.height - header.height - 2*layergroupsLabel.height)-2*pix
+                            y: 2*pix
+                            height: 0.4*(window.height - header.height - 2*layergroupsLabel.height)
                             width: leftFrame.width-2*pix
                             contentHeight: 1.25*buttonHeight*(defaultgroupsView.count)
                                            +0.75*buttonHeight
@@ -423,6 +435,7 @@ ApplicationWindow {
 
             }
             Frame {
+                id: mainFrame
                 width : window.width-leftFrame.width-rightFrame.width
                 height : paneHeight+4*pix
                 padding: 2*pix
@@ -452,7 +465,7 @@ ApplicationWindow {
                 height: window.height
                 width: 500*pix
                 padding:0
-                Column {
+                Item {
                     id: propertiesColumn
                     Label {
                         id: propertiesLabel
@@ -468,15 +481,18 @@ ApplicationWindow {
                         }
                     }
                     Frame {
+                        id: propertiesFrame
+                        y: propertiesLabel.height -2*pix
                         height: 0.6*(window.height - header.height - 2*layersLabel.height)
                         width: rightFrame.width
                         padding: 0
-                        backgroundColor: "#FDFDFD"
+                        backgroundColor: systempalette.window
                         ScrollableItem {
                             id: propertiesFlickable
-                            height: 0.6*(window.height - header.height - 2*layersLabel.height)-2*pix
+                            y: 2*pix
+                            height: 0.6*(window.height - header.height - 2*layersLabel.height) - 4*pix
                             width: rightFrame.width-2*pix
-                            contentHeight: 0.6*(window.height - header.height - 2*layersLabel.height)-2*pix
+                            contentHeight: 0.6*(window.height - header.height - 2*layersLabel.height) - 4*pix
                             ScrollBar.horizontal.visible: false
                             Item {
 
@@ -484,8 +500,9 @@ ApplicationWindow {
                         }
                     }
                 }
-                Column {
-                    anchors.top: propertiesColumn.bottom
+                Item {
+                    id: overviewItem
+                    y: propertiesLabel.height + propertiesFrame.height - 2*pix
                     Label {
                         id: overviewLabel
                         width: rightFrame.width
@@ -500,12 +517,15 @@ ApplicationWindow {
                         }
                     }
                     Frame {
-                        height: 0.4*(window.height - header.height - 2*layersLabel.height)
+                        id: overviewFrame
+                        y: overviewLabel.height - 2*pix
+                        height: 0.4*(window.height - header.height - 2*layersLabel.height) + 4*pix
                         width: rightFrame.width
                         padding: 0
                         backgroundColor: "#FDFDFD"
                         ScrollableItem {
                             id: overviewFlickable
+                            y: 2*pix
                             height: 0.4*(window.height - header.height - 2*layersLabel.height)-2*pix
                             width: rightFrame.width-2*pix
                             showBackground: false
@@ -617,6 +637,12 @@ ApplicationWindow {
         return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
     }
 
+    function debug(x) {
+        console.log(x)
+        return(x)
+    }
+
+
 //--COMPONENTS--------------------------------------------------------------------
 
     Component {
@@ -662,7 +688,9 @@ ApplicationWindow {
                 onExited: {
                     unit.border.color = systempalette.mid
                     upNode.visible = false
-                    downNode.visible = false
+                    if (!downNode.connected) {
+                        downNode.visible = false
+                    }
                 }
                 onReleased: {
 
@@ -729,9 +757,9 @@ ApplicationWindow {
 
             Rectangle {
                 id: upNode
-                width: buttonHeight/3
-                height: buttonHeight/3
-                radius: buttonHeight/3
+                width: 20*pix
+                height: 20*pix
+                radius: 20*pix
                 border.color: systempalette.mid
                 border.width: 3*pix
                 visible: false
@@ -739,24 +767,29 @@ ApplicationWindow {
                 y: -upNode.radius/2 + 2*pix
             }
             Rectangle {
-                width: 2*buttonHeight/3
-                height: 2*buttonHeight/3
+                id: upnodeRectangle
+                width: 2*upNode.radius
+                height: 2*upNode.radius
                 color: "transparent"
                 border.color: "transparent"
                 border.width: 0
                 x: unit.width/2-upNode.radius
-                y: -upNode.radius + 1.5*pix
+                y: -upNode.radius + 2*pix
                 MouseArea {
                     anchors.fill: parent
+                    drag.target: parent
                     hoverEnabled: true
                     onEntered: {
                         upNode.visible = true
                         downNode.visible = true
                         upNode.border.color = "#666666"
+                        console.log("entered")
                     }
                     onExited: {
                         upNode.visible = false
-                        downNode.visible = false
+                        if (!downNode.connected || downnodeMouseArea.moveTriggered) {
+                            downNode.visible = false
+                        }
                         upNode.border.color = systempalette.mid
                     }
                 }
@@ -764,35 +797,79 @@ ApplicationWindow {
 
             Rectangle {
                 id: downNode
-                width: buttonHeight/3
-                height: buttonHeight/3
-                radius: buttonHeight/3
+                width: 20*pix
+                height: 20*pix
+                radius: 20*pix
                 border.color: systempalette.mid
                 border.width: 3*pix
                 visible: false
+                property bool connected: false
                 x: unit.width/2 - downNode.radius/2
                 y: unit.height - downNode.radius/2 - 2*pix
             }
             Rectangle {
-                width: 2*buttonHeight/3
-                height: 2*buttonHeight/3
+                id: downnodeRectangle
+                width: 2*downNode.radius
+                height: 2*downNode.radius
+                opacity: 0.5
                 color: "transparent"
-                border.color: "transparent"
-                border.width: 0
-                x: unit.width/2-downNode.radius/2
-                y: 0.88*unit.height+downNode.radius/2
+                x: unit.width/2 - downNode.radius
+                y: unit.height - downNode.radius - 2*pix
                 MouseArea {
+                    id: downnodeMouseArea
                     anchors.fill: parent
                     hoverEnabled: true
+                    drag.target: downnodeRectangle
+                    property bool moveTriggered: false
                     onEntered: {
                         upNode.visible = true
                         downNode.visible = true
                         downNode.border.color = "#666666"
                     }
                     onExited: {
-                        upNode.visible = false
-                        downNode.visible = false
-                        downNode.border.color = systempalette.mid
+                        if (!moveTriggered) {
+                            upNode.visible = false
+                            downNode.visible = false
+                            downNode.border.color = systempalette.mid
+                        }
+                    }
+                    onPressed: {
+                        if (downNode.children.length===0) {
+                            var object = shapeComponent.createObject(downNode, {
+                                 "beginX": 10*pix,
+                                 "beginY": 10*pix,
+                                 "finishX": downnodeRectangle.x - unit.width/2 + downNode.radius + 10*pix,
+                                 "finishY": downnodeRectangle.y - unit.height + downNode.radius + 12*pix});
+                            moveTriggered = true
+                        }
+                    }
+                    onReleased: {
+                        for (var i=0;i<mainPane.children.length;i++) {
+                            main.children[i].destroy()
+                        }
+                        if (downNode.connected==false) {
+                            moveTriggered = false
+                            for (i=0;i<downNode.children.length;i++) {
+                                downNode.children[i].destroy()
+                            }
+                            downnodeRectangle.x = unit.width/2 - downNode.radius
+                            downnodeRectangle.y = unit.height - downNode.radius - 2*pix
+                            downNode.visible = false
+                            upNode.visible = false
+                        }
+                    }
+
+                    onPositionChanged: {
+                        if (moveTriggered && pressed) {
+                            for (var i=0;i<downNode.children.length;i++) {
+                                downNode.children[i].destroy()
+                            }
+                            var object = shapeComponent.createObject(downNode, {
+                                 "beginX": 10*pix,
+                                 "beginY": 10*pix,
+                                 "finishX": downnodeRectangle.x - unit.width/2 + downNode.radius + 10*pix,
+                                 "finishY": downnodeRectangle.y - unit.height + downNode.radius + 12*pix});
+                        }
                     }
                 }
             }
@@ -801,12 +878,49 @@ ApplicationWindow {
     }
 
     Component {
+        id: shapeComponent
+        Shape {
+            id: pathShape
+            property double beginX: 0
+            property double beginY: 0
+            property double finishX: 0
+            property double finishY: 0
+            ShapePath {
+                id: pathShapePath
+                strokeColor: "#666666"
+                strokeWidth: 4*pix
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+
+                property int joinStyleIndex: 0
+                //property var signal: console.log("created")
+
+                property variant styles: [
+                    ShapePath.BevelJoin,
+                    ShapePath.MiterJoin,
+                    ShapePath.RoundJoin
+                ]
+
+                joinStyle: styles[joinStyleIndex]
+
+                startX: beginX
+                startY: beginY
+                PathLine {
+                    x: finishX
+                    y: finishY
+                }
+            }
+        }
+    }
+
+
+    Component {
         id: buttonComponent
         ButtonNN {
             x: +2
             width: leftFrame.width-23*pix
             height: 1.25*buttonHeight
-            onClicked: {
+            onPressed: {
                 moduleNN.createObject(mainPane,{"color" : adjustcolor([colorR,colorG,colorB]),
                                                "name" : name,
                                                "type" : type});
@@ -832,12 +946,4 @@ ApplicationWindow {
             }
         }
     }
-
-//--Layers
-
-
-
-
-
-
 }
