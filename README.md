@@ -3,9 +3,7 @@ This software is designed to both allow people not familiar with coding or machi
 This is a community based project similar to GIMP and Mozilla and, therefore, the software is made by users and for users.
 
 ### Download
-  Windows (not implemented)
-  Mac (not implemented)
-  Linux (not implemented)
+Windows (not implemented), Mac (not implemented), Linux (not implemented)
 
 
 ### Features
