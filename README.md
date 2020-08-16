@@ -10,7 +10,7 @@ Windows (not implemented), Mac (not implemented), Linux (not implemented)
   - Design a neural network or use a community created one
   - Train a neural network
   - Use a neural network to analyse data
-  - Extract desired data from a neural network output
+  - Process neural network output
   - Visualise data
 
 ### Goals
