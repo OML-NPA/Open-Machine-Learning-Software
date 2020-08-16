@@ -34,8 +34,9 @@ Flickable{
                 Rectangle {
                     //anchors.right: parent.right
                     x: 13*pix
+                    y: 2*pix
                     implicitWidth: 10*pix
-                    implicitHeight: parent.height
+                    implicitHeight: parent.height - 4*pix
                     radius: width / 2
                     visible: contentHeight > flickable.height
                     color: vertical.pressed ? systempalette.dark : systempalette.mid
@@ -56,8 +57,9 @@ Flickable{
                 implicitHeight: 25*pix
                 color: "transparent"
                 Rectangle {
-                    anchors.bottom: parent.bottom
-                    implicitWidth: parent.width
+                    x: 2*pix
+                    y: 13*pix
+                    implicitWidth: parent.width - 4*pix
                     implicitHeight: 10*pix
                     radius: height / 2
                     visible: contentWidth > flickable.width

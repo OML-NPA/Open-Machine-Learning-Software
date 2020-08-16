@@ -1,4 +1,4 @@
-
+﻿
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.2
@@ -71,6 +71,7 @@ ApplicationWindow {
                         id: layersLabel
                         width: leftFrame.width
                         text: "Layers:"
+                        font.pointSize: 10
                         padding: 0.2*margin
                         leftPadding: 0.2*margin
                         background: Rectangle {
@@ -124,18 +125,21 @@ ApplicationWindow {
                                         model: ListModel {id: multlayerModel
                                                           ListElement{
                                                               type: "Convolution" // @disable-check M16
+                                                              group: "mult" // @disable-check M16
                                                               name: "conv"// @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
                                                               colorB: 0} // @disable-check M16
                                                           ListElement{
                                                               type: "Transposed convolution" // @disable-check M16
+                                                              group: "mult" // @disable-check M16
                                                               name: "tconv" // @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
                                                               colorB: 0} // @disable-check M16
                                                           ListElement{
                                                               type: "Fully connected" // @disable-check M16
+                                                              group: "mult" // @disable-check M16
                                                               name: "fullycon" // @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
@@ -170,12 +174,14 @@ ApplicationWindow {
                                     model: ListModel {id: normlayerModel
                                                       ListElement{
                                                           type: "Drop-out" // @disable-check M16
+                                                          group: "norm" // @disable-check M16
                                                           name: "dropout" // @disable-check M16
                                                           colorR: 0 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
                                                           type: "Batch normalisation" // @disable-check M16
+                                                          group: "norm" // @disable-check M16
                                                           name: "batchnorm" // @disable-check M16
                                                           colorR: 0 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
@@ -210,30 +216,35 @@ ApplicationWindow {
                                     model: ListModel {id: activationlayerModel
                                                       ListElement{
                                                           type: "RelU" // @disable-check M16
+                                                          group: "activation" // @disable-check M16
                                                           name: "relu" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
                                                           type: "Laeky RelU" // @disable-check M16
+                                                          group: "activation" // @disable-check M16
                                                           name: "leakyrelu" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
                                                           type: "ElU" // @disable-check M16
+                                                          group: "activation" // @disable-check M16
                                                           name: "elu" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
                                                           type: "Tanh" // @disable-check M16
+                                                          group: "activation" // @disable-check M16
                                                           name: "tanh" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0} // @disable-check M16
                                                       ListElement{
                                                           type: "Sigmoid" // @disable-check M16
+                                                          group: "activation" // @disable-check M16
                                                           name: "sigmoid" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
@@ -268,24 +279,28 @@ ApplicationWindow {
                                     model: ListModel {id: resizinglayerModel
                                                       ListElement{
                                                           type: "Catenation" // @disable-check M16
+                                                          group: "resizing" // @disable-check M16
                                                           name: "cat" // @disable-check M16
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
                                                           colorB: 180} // @disable-check M16
                                                       ListElement{
                                                           type: "Decatenation" // @disable-check M16
+                                                          group: "resizing" // @disable-check M16
                                                           name: "decat" // @disable-check M16
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
                                                           colorB: 180} // @disable-check M16
                                                       ListElement{
                                                           type: "Scaling" // @disable-check M16
+                                                          group: "resizing" // @disable-check M16
                                                           name: "scaling" // @disable-check M16
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
                                                           colorB: 180} // @disable-check M16
                                                       ListElement{
                                                           type: "Resizing" // @disable-check M16
+                                                          group: "resizing" // @disable-check M16
                                                           name: "resizing" // @disable-check M16
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
@@ -320,6 +335,7 @@ ApplicationWindow {
                                     model: ListModel {id: otherlayerModel
                                                       ListElement{
                                                           type: "Other" // @disable-check M16
+                                                          group: "other" // @disable-check M16
                                                           name: "other" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
@@ -338,6 +354,7 @@ ApplicationWindow {
                         id: layergroupsLabel
                         width: leftFrame.width
                         text: "Layer groups:"
+                        font.pointSize: 10
                         padding: 0.2*margin
                         leftPadding: 0.2*margin
                         background: Rectangle {
@@ -474,6 +491,7 @@ ApplicationWindow {
                         id: propertiesLabel
                         width: rightFrame.width
                         text: "Properties:"
+                        font.pointSize: 10
                         padding: 0.2*margin
                         leftPadding: 0.2*margin
                         background: Rectangle {
@@ -500,6 +518,36 @@ ApplicationWindow {
                             Item {
                                 StackView {
                                     id: propertiesStackView
+                                    initialItem: generalpropertiesComponent
+                                    pushEnter: Transition {
+                                        PropertyAnimation {
+                                            from: 0
+                                            to:1
+                                            duration: 0
+                                        }
+                                    }
+                                    pushExit: Transition {
+                                        PropertyAnimation {
+                                            from: 1
+                                            to:0
+                                            duration: 0
+                                        }
+                                    }
+                                    popEnter: Transition {
+                                        PropertyAnimation {
+                                            property: "opacity"
+                                            from: 0
+                                            to:1
+                                            duration: 0
+                                        }
+                                    }
+                                    popExit: Transition {
+                                        PropertyAnimation {
+                                            from: 1
+                                            to:0
+                                            duration: 0
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -512,6 +560,7 @@ ApplicationWindow {
                         id: overviewLabel
                         width: rightFrame.width
                         text: "Overview:"
+                        font.pointSize: 10
                         padding: 0.2*margin
                         leftPadding: 0.2*margin
                         background: Rectangle {
@@ -642,6 +691,11 @@ ApplicationWindow {
         return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
     }
 
+    function rgbtohtml(colorRGB) {
+        return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
+    }
+
+
     function debug(x) {
         console.log(x)
         return(x)
@@ -659,13 +713,35 @@ ApplicationWindow {
 
     }
 
+    function getconnectionsnum() {
+        var out = 0;
+        if (mainPane.children.length>1) {
+            for (var i=1;i<mainPane.children.length;i++) {
+                if (mainPane.children[i].children[2].connectedItem!==null) {
+                    out = out + 1
+                }
+            }
+        }
+        return(out)
+    }
+
+    function getirregularitiesnum() {
+        var out = 0;
+        if (mainPane.children.length>1) {
+            for (var i=1;i<mainPane.children.length;i++) {
+                if (mainPane.children[i].group==="activation") {
+                    out = out + 1
+                }
+            }
+        }
+        return(out)
+    }
+
 
 //--COMPONENTS--------------------------------------------------------------------
 
     Component {
         id: layerComponent
-
-
         Rectangle {
             id: unit
             height: 1.5*buttonHeight
@@ -673,9 +749,10 @@ ApplicationWindow {
             radius: 8*pix
             border.color: systempalette.mid
             border.width: 3*pix
-            property string name: "test"
-            property string type: "test"
-            color: "#000000"
+            property string name
+            property string type
+            property string group
+            property var labelColor
             Column {
                 anchors.fill: parent.fill
                 topPadding: 8*pix
@@ -711,6 +788,14 @@ ApplicationWindow {
                         downNode.visible = false
                     }
                 }
+                onClicked: {
+                    if (type=="Convolution") {
+                        propertiesStackView.push(convpropertiesComponent)
+                        propertiesStackView.currentItem.labelColor = labelColor
+                        propertiesStackView.currentItem.type = type
+                    }
+                }
+
                 onPositionChanged: {
 
                     if (upNode.connectedItem!==null && pressed) {
@@ -1028,8 +1113,6 @@ ApplicationWindow {
             }
         }
     }
-
-
     Component {
         id: buttonComponent
         ButtonNN {
@@ -1037,11 +1120,12 @@ ApplicationWindow {
             width: leftFrame.width-23*pix
             height: 1.25*buttonHeight
             onPressed: {
-                layerComponent.createObject(mainPane,{"color" : adjustcolor([colorR,colorG,colorB]),
-                                               "name" : name,
-                                               "type" : type});
+                var object = layerComponent.createObject(mainPane,{"color" : adjustcolor([colorR,colorG,colorB]),
+                                           "name": name,
+                                           "group": group,
+                                           "type": type,
+                                           "labelColor": [colorR,colorG,colorB]});
             }
-
             RowLayout {
                 anchors.fill: parent.fill
                 ColorBox {
@@ -1062,4 +1146,109 @@ ApplicationWindow {
             }
         }
     }
+
+//--Properties components
+    Component {
+        id: generalpropertiesComponent
+        RowLayout {
+            ColumnLayout {
+                Layout.leftMargin: 0.2*margin
+                Layout.topMargin: 0.2*margin
+                spacing: 0.2*margin
+                Label {
+                    text: "Number of layers: "
+                }
+                Label {
+                    text: "Number of connections: "
+                }
+                Label {
+                    text: "Number of irregularities: "
+                }
+            }
+            ColumnLayout {
+                Layout.leftMargin: 0.2*margin
+                Layout.topMargin: 0.2*margin
+                spacing: 0.2*margin
+                Label {
+                    text: mainPane.children.length - 1
+                }
+                Label {
+                    text: getconnectionsnum()
+                }
+                Label {
+                    text: getirregularitiesnum()
+                }
+            }
+        }
+    }
+    Component {
+        id: convpropertiesComponent
+        Column {
+            property string type
+            property var labelColor
+            RowLayout {
+                ColorBox {
+                    Layout.leftMargin: 0.4*margin
+                    Layout.bottomMargin: 0.03*margin
+                    Layout.preferredWidth: 0.4*margin
+                    Layout.preferredHeight: 0.4*margin
+                    height: 20*margin
+                    Layout.alignment: Qt.AlignBottom
+                    colorRGB: labelColor
+                }
+                Label {
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    Layout.alignment: Qt.AlignBottom
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Filter size","Number of filters",
+                            "Stride","Dilation factor"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    //spacing: 0.4*margin
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 700*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 700*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 700*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 700*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 700*pix
+                    }
+                }
+        }
+
+        }
+    }
+
 }

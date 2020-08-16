@@ -55,6 +55,7 @@ DISTFILES += \
     Templates/ComboBox.qml \
     Templates/Frame.qml \
     Templates/Label.qml \
+    Templates/LayerButton.qml \
     Templates/MenuButton.qml \
     Templates/Pane.qml \
     Templates/ProgressBar.qml \
