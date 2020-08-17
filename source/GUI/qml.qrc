@@ -28,5 +28,6 @@
         <file>Templates/ScrollBar.qml</file>
         <file>Templates/ButtonNN.qml</file>
         <file>SelectNeuralNetwork.qml</file>
+        <file>Templates/SpinBox.qml</file>
     </qresource>
 </RCC>

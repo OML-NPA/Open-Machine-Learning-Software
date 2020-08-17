@@ -171,11 +171,8 @@ ApplicationWindow {
                                             RowLayout {
                                                 anchors.fill: parent.fill
                                                 ColorBox {
-                                                    Layout.leftMargin: 0.2*margin
-                                                    Layout.bottomMargin: 0.03*margin
-                                                    Layout.preferredWidth: 0.4*margin
-                                                    Layout.preferredHeight: 0.4*margin
-                                                    height: 10*margin
+                                                    leftPadding: 0.2*margin
+                                                    bottomPadding: 2*pix
                                                     Layout.alignment: Qt.AlignBottom
                                                     colorRGB: [255,255,255]
                                                 }

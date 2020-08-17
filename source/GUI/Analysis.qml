@@ -100,30 +100,6 @@ ApplicationWindow {
                            ListElement { text: "net2E3D2Yeast" } //@disable-check M16
                         }
                     }
-                    /*Button {
-                        Layout.preferredWidth: buttonWidth + 0.5*margin
-                        Layout.preferredHeight: buttonHeight
-                        backgroundRadius: 0
-                        Layout.leftMargin: 0.5*margin
-                        Text {
-                           text: "Select neural network"
-                           font.pointSize: 9
-                           topPadding: 15*pix
-                           leftPadding: 15*pix
-                           anchors.fill: parent.fill
-                        }
-                        onClicked: {
-                            if (selectneuralnetworkLoader.sourceComponent === null) {
-                                selectneuralnetworkLoader.source = "SelectNeuralNetwork.qml"
-
-                            }
-                        }
-
-                        //model: ListModel {
-                        //    id: netModel
-                        //   ListElement { text: "defaultNetE5D4Yeast" }
-                        //}
-                    }*/
                 }
                 RowLayout {
                     spacing: margin
@@ -230,11 +206,8 @@ ApplicationWindow {
                                         RowLayout {
                                             anchors.fill: parent.fill
                                             ColorBox {
-                                                Layout.leftMargin: 0.2*margin
-                                                Layout.bottomMargin: 0.03*margin
-                                                Layout.preferredWidth: 0.4*margin
-                                                Layout.preferredHeight: 0.4*margin
-                                                height: 10*margin
+                                                leftPadding: 0.2*margin
+                                                bottomPadding: 2*pix
                                                 Layout.alignment: Qt.AlignBottom
                                                 colorRGB: [colorR,colorG,colorB]
                                             }

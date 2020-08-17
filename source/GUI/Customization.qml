@@ -794,6 +794,21 @@ ApplicationWindow {
                         propertiesStackView.currentItem.labelColor = labelColor
                         propertiesStackView.currentItem.type = type
                     }
+                    else if (type=="Transposed convolution") {
+                        propertiesStackView.push(tconvpropertiesComponent)
+                        propertiesStackView.currentItem.labelColor = labelColor
+                        propertiesStackView.currentItem.type = type
+                    }
+                    else if (type=="Fully connected") {
+                        propertiesStackView.push(fconnpropertiesComponent)
+                        propertiesStackView.currentItem.labelColor = labelColor
+                        propertiesStackView.currentItem.type = type
+                    }
+                    else {
+                        propertiesStackView.push(emptypropertiesComponent)
+                        propertiesStackView.currentItem.labelColor = labelColor
+                        propertiesStackView.currentItem.type = type
+                    }
                 }
 
                 onPositionChanged: {
@@ -900,112 +915,96 @@ ApplicationWindow {
                 }
             }
 
-            Rectangle {
-                id: upNode
-                width: 20*pix
-                height: 20*pix
-                radius: 20*pix
-                border.color: systempalette.mid
-                border.width: 3*pix
-                visible: false
-                property var connectedItem: null
-                x: unit.width/2-upNode.radius/2
-                y: -upNode.radius/2 + 2*pix
-            }
-            Rectangle {
-                id: upnodeRectangle
-                width: 2*upNode.radius
-                height: 2*upNode.radius
-                color: "transparent"
-                border.color: "transparent"
-                border.width: 0
-                x: unit.width/2-upNode.radius
-                y: -upNode.radius + 2*pix
-                MouseArea {
-                    anchors.fill: parent
-                    drag.target: parent
-                    hoverEnabled: true
-                    onEntered: {
-                        upNode.visible = true
-                        downNode.visible = true
-                        upNode.border.color = "#666666"
-                    }
-                    onExited: {
-                        if (upNode.connectedItem===null) {
-                            upNode.visible = false
+            Item {
+            id: nodesItem
+                Rectangle {
+                    id: upNode
+                    width: 20*pix
+                    height: 20*pix
+                    radius: 20*pix
+                    border.color: systempalette.mid
+                    border.width: 3*pix
+                    visible: false
+                    property var connectedItem: null
+                    x: unit.width/2-upNode.radius/2
+                    y: -upNode.radius/2 + 2*pix
+                }
+                Rectangle {
+                    id: upnodeRectangle
+                    width: 2*upNode.radius
+                    height: 2*upNode.radius
+                    color: "transparent"
+                    border.color: "transparent"
+                    border.width: 0
+                    x: unit.width/2-upNode.radius
+                    y: -upNode.radius + 2*pix
+                    MouseArea {
+                        anchors.fill: parent
+                        drag.target: parent
+                        hoverEnabled: true
+                        onEntered: {
+                            upNode.visible = true
+                            downNode.visible = true
+                            upNode.border.color = "#666666"
                         }
-                        if (!downnodeMouseArea.moveTriggered && downNode.connectedItem===null) {
-                            downNode.visible = false
+                        onExited: {
+                            if (upNode.connectedItem===null) {
+                                upNode.visible = false
+                            }
+                            if (!downnodeMouseArea.moveTriggered && downNode.connectedItem===null) {
+                                downNode.visible = false
+                            }
+                            upNode.border.color = systempalette.mid
                         }
-                        upNode.border.color = systempalette.mid
                     }
                 }
-            }
 
-            Rectangle {
-                id: downNode
-                width: 20*pix
-                height: 20*pix
-                radius: 20*pix
-                border.color: systempalette.mid
-                border.width: 3*pix
-                visible: false
-                property var connectedItem: null
-                x: unit.width/2 - downNode.radius/2
-                y: unit.height - downNode.radius/2 - 2*pix
-            }
-            Rectangle {
-                id: downnodeRectangle
-                width: 2*downNode.radius
-                height: 2*downNode.radius
-                //opacity: 0.4
-                color: "transparent"
-                property var origin: downNode
-                x: unit.width/2 - downNode.radius
-                y: unit.height - downNode.radius - 2*pix
-                MouseArea {
-                    id: downnodeMouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    drag.target: downnodeRectangle
-                    drag.smoothed: false
-                    property bool moveTriggered: false
-                    property var mouseAdjust: [0,0]
-                    onEntered: {
-                        upNode.visible = true
-                        downNode.visible = true
-                        downNode.border.color = "#666666"
-                    }
-                    onExited: {
-                        if (upNode.connectedItem===null) {
-                            upNode.visible = false
+                Rectangle {
+                    id: downNode
+                    width: 20*pix
+                    height: 20*pix
+                    radius: 20*pix
+                    border.color: systempalette.mid
+                    border.width: 3*pix
+                    visible: false
+                    property var connectedItem: null
+                    x: unit.width/2 - downNode.radius/2
+                    y: unit.height - downNode.radius/2 - 2*pix
+                }
+                Rectangle {
+                    id: downnodeRectangle
+                    width: 2*downNode.radius
+                    height: 2*downNode.radius
+                    //opacity: 0.4
+                    color: "transparent"
+                    property var origin: downNode
+                    x: unit.width/2 - downNode.radius
+                    y: unit.height - downNode.radius - 2*pix
+                    MouseArea {
+                        id: downnodeMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        drag.target: downnodeRectangle
+                        drag.smoothed: false
+                        property bool moveTriggered: false
+                        property var mouseAdjust: [0,0]
+                        onEntered: {
+                            upNode.visible = true
+                            downNode.visible = true
+                            downNode.border.color = "#666666"
                         }
-                        if (!moveTriggered && downNode.connectedItem===null) {
-                            downNode.visible = false
-                            downNode.border.color = systempalette.mid
-                        }
-                    }
-                    onPressed: {
-                        mouseAdjust[0] = mouse.x - downnodeRectangle.width/2;
-                        mouseAdjust[1] = mouse.y - downnodeRectangle.height/2;
-                        var object = shapeComponent.createObject(downNode, {
-                             "beginX": 10*pix,
-                             "beginY": 10*pix,
-                             "finishX": downnodeRectangle.x - unit.width/2 + downNode.radius +
-                                            10*pix + mouseAdjust[0],
-                             "finishY": downnodeRectangle.y - unit.height + downNode.radius +
-                                            12*pix + mouseAdjust[1]});
-                        moveTriggered = true
-                        for (var i=1;i<mainPane.children.length;i++) {
-                            mainPane.children[i].children[2].visible = true
-                        }
-                        unit.z = mainPane.children.length-1;
-                    }
-                    onPositionChanged: {
-                        if (moveTriggered && pressed) {
-                            for (var i=0;i<downNode.children.length;i++) {
-                                downNode.children[i].destroy()
+                        onExited: {
+                            if (upNode.connectedItem===null) {
+                                upNode.visible = false
                             }
+                            if (!moveTriggered && downNode.connectedItem===null) {
+                                downNode.visible = false
+                                downNode.border.color = systempalette.mid
+                            }
+                        }
+                        onPressed: {
+                            mouseAdjust[0] = mouse.x - downnodeRectangle.width/2;
+                            mouseAdjust[1] = mouse.y - downnodeRectangle.height/2;
                             var object = shapeComponent.createObject(downNode, {
                                  "beginX": 10*pix,
                                  "beginY": 10*pix,
@@ -1013,64 +1012,82 @@ ApplicationWindow {
                                                 10*pix + mouseAdjust[0],
                                  "finishY": downnodeRectangle.y - unit.height + downNode.radius +
                                                 12*pix + mouseAdjust[1]});
-                        }
-                    }
-                    onReleased: {
-                        for (var i=1;i<mainPane.children.length;i++) {
-                            if (mainPane.children[i].children[2].connectedItem===null) {
-                                mainPane.children[i].children[2].visible = false
+                            moveTriggered = true
+                            for (var i=1;i<mainPane.children.length;i++) {
+                                mainPane.children[i].children[2].children[0].visible = true
                             }
+                            unit.z = mainPane.children.length-1;
                         }
-                        for (i=1;i<mainPane.children.length;i++) {
-                            if (comparelocations(downnodeRectangle,mouse.x,mouse.y,
-                                        mainPane.children[i].children[3],mainPane) &&
-                                    (mainPane.children[i].children[2].connectedItem===null ||
-                                    mainPane.children[i].children[2].connectedItem===downNode) &&
-                                    mainPane.children[i].children[3]!==upnodeRectangle) {
-                                moveTriggered = false
-                                downNode.connectedItem = mainPane.children[i].children[3]
-                                mainPane.children[i].children[2].connectedItem = downnodeRectangle
-                                mainPane.children[i].children[2].visible = true
-                                mainPane.children[i].z = unit.z-1
-                                var upNodePoint = mainPane.children[i].children[3].mapToItem(mainPane,0,0)
-                                var downNodePoint = downnodeRectangle.mapToItem(mainPane,0,0)
-                                var adjX = downNodePoint.x - upNodePoint.x
-                                var adjY = downNodePoint.y - upNodePoint.y
-                                downnodeRectangle.x = downnodeRectangle.x - adjX
-                                downnodeRectangle.y = downnodeRectangle.y - adjY
-                                for (i=0;i<downNode.children.length;i++) {
+                        onPositionChanged: {
+                            if (moveTriggered && pressed) {
+                                for (var i=0;i<downNode.children.length;i++) {
                                     downNode.children[i].destroy()
                                 }
                                 var object = shapeComponent.createObject(downNode, {
                                      "beginX": 10*pix,
                                      "beginY": 10*pix,
                                      "finishX": downnodeRectangle.x - unit.width/2 + downNode.radius +
-                                                    10*pix,
+                                                    10*pix + mouseAdjust[0],
                                      "finishY": downnodeRectangle.y - unit.height + downNode.radius +
-                                                    12*pix});
-                                break
-                            }
-                            else {
-                                downNode.connectedItem = null
-                                if (mainPane.children[i].children[2].connectedItem===null ||
-                                        mainPane.children[i].children[2].connectedItem===downnodeRectangle) {
-                                    mainPane.children[i].children[2].visible = false
-                                    mainPane.children[i].children[2].connectedItem = null
-                                }
+                                                    12*pix + mouseAdjust[1]});
                             }
                         }
-                        if (downNode.connectedItem===null) {
-                            moveTriggered = false
-                            for (i=0;i<downNode.children.length;i++) {
-                                downNode.children[i].destroy()
+                        onReleased: {
+                            for (var i=1;i<mainPane.children.length;i++) {
+                                if (mainPane.children[i].children[2].children[0].connectedItem===null) {
+                                    mainPane.children[i].children[2].children[0].visible = false
+                                }
                             }
-                            downnodeRectangle.x = unit.width/2 - downNode.radius
-                            downnodeRectangle.y = unit.height - downNode.radius - 2*pix
+                            for (i=1;i<mainPane.children.length;i++) {
+                                if (comparelocations(downnodeRectangle,mouse.x,mouse.y,
+                                            mainPane.children[i].children[2].children[1],mainPane) &&
+                                        (mainPane.children[i].children[2].children[0].connectedItem===null ||
+                                        mainPane.children[i].children[2].children[0].connectedItem===downNode) &&
+                                        mainPane.children[i].children[2].children[1]!==upnodeRectangle) {
+                                    moveTriggered = false
+                                    downNode.connectedItem = mainPane.children[i].children[2].children[1]
+                                    mainPane.children[i].children[2].children[0].connectedItem = downnodeRectangle
+                                    mainPane.children[i].children[2].children[0].visible = true
+                                    mainPane.children[i].z = unit.z-1
+                                    var upNodePoint = mainPane.children[i].children[2].children[1].mapToItem(mainPane,0,0)
+                                    var downNodePoint = downnodeRectangle.mapToItem(mainPane,0,0)
+                                    var adjX = downNodePoint.x - upNodePoint.x
+                                    var adjY = downNodePoint.y - upNodePoint.y
+                                    downnodeRectangle.x = downnodeRectangle.x - adjX
+                                    downnodeRectangle.y = downnodeRectangle.y - adjY
+                                    for (i=0;i<downNode.children.length;i++) {
+                                        downNode.children[i].destroy()
+                                    }
+                                    var object = shapeComponent.createObject(downNode, {
+                                         "beginX": 10*pix,
+                                         "beginY": 10*pix,
+                                         "finishX": downnodeRectangle.x - unit.width/2 + downNode.radius +
+                                                        10*pix,
+                                         "finishY": downnodeRectangle.y - unit.height + downNode.radius +
+                                                        12*pix});
+                                    break
+                                }
+                                else {
+                                    downNode.connectedItem = null
+                                    if (mainPane.children[i].children[2].children[0].connectedItem===null ||
+                                            mainPane.children[i].children[2].connectedItem===downnodeRectangle) {
+                                        mainPane.children[i].children[2].children[0].visible = false
+                                        mainPane.children[i].children[2].children[0].connectedItem = null
+                                    }
+                                }
+                            }
+                            if (downNode.connectedItem===null) {
+                                moveTriggered = false
+                                for (i=0;i<downNode.children.length;i++) {
+                                    downNode.children[i].destroy()
+                                }
+                                downnodeRectangle.x = unit.width/2 - downNode.radius
+                                downnodeRectangle.y = unit.height - downNode.radius - 2*pix
+                            }
                         }
                     }
                 }
             }
-
         }
     }
 
@@ -1181,28 +1198,29 @@ ApplicationWindow {
             }
         }
     }
+
     Component {
         id: convpropertiesComponent
         Column {
             property string type
             property var labelColor
-            RowLayout {
+            Row {
+                leftPadding: 20*pix
                 ColorBox {
-                    Layout.leftMargin: 0.4*margin
-                    Layout.bottomMargin: 0.03*margin
-                    Layout.preferredWidth: 0.4*margin
-                    Layout.preferredHeight: 0.4*margin
-                    height: 20*margin
-                    Layout.alignment: Qt.AlignBottom
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
                     colorRGB: labelColor
                 }
                 Label {
+                    id: typeLabel
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
                     font.pointSize: 10
                     color: "#777777"
-                    Layout.alignment: Qt.AlignBottom
+                    wrapMode: Text.NoWrap
+                    //Layout.alignment: Qt.AlignBottom
                 }
             }
             RowLayout {
@@ -1212,7 +1230,7 @@ ApplicationWindow {
                     Layout.topMargin: 0.22*margin
                     spacing: 0.24*margin
                     Repeater {
-                        model: ["Name","Filter size","Number of filters",
+                        model: ["Name","Filters","Filter size",
                             "Stride","Dilation factor"]
                         Label {
                             text: modelData+": "
@@ -1224,26 +1242,29 @@ ApplicationWindow {
                 ColumnLayout {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 0.2*margin
-                    //spacing: 0.4*margin
                     TextField {
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 700*pix
+                        defaultWidth: 600*pix
                     }
                     TextField {
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 700*pix
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d{1,5}/ }
                     }
                     TextField {
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 700*pix
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
                     }
                     TextField {
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 700*pix
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
                     }
                     TextField {
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 700*pix
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
                     }
                 }
         }
@@ -1251,4 +1272,404 @@ ApplicationWindow {
         }
     }
 
+    Component {
+        id: tconvpropertiesComponent
+        Column {
+            property string type
+            property var labelColor
+            Row {
+                leftPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                    //Layout.alignment: Qt.AlignBottom
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Filters","Filter size",
+                            "Stride"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d{1,5}/ }
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
+                    }
+                }
+        }
+
+        }
+    }
+
+    Component {
+        id: fconnpropertiesComponent
+        Column {
+            property string type
+            property var labelColor
+            Row {
+                leftPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                    //Layout.alignment: Qt.AlignBottom
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Neurons"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d{1,5}/ }
+                    }
+                }
+        }
+
+        }
+    }
+
+    Component {
+        id: catpropertiesComponent
+        Column {
+            property string type
+            property var labelColor
+            Row {
+                leftPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Inputs"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d/ }
+                    }
+                }
+        }
+
+        }
+    }
+
+    Component {
+        id: decatpropertiesComponent
+        Column {
+            property string type
+            property var labelColor
+            Row {
+                leftPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Outputs"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d/ }
+                    }
+                }
+        }
+
+        }
+    }
+
+    Component {
+        id: scalingpropertiesComponent
+        Column {
+            property string type
+            property var labelColor
+            Row {
+                leftPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Multiplier"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /([1-9]\d) | (0,\d{1-2})/ }
+                    }
+                }
+        }
+
+        }
+    }
+
+    Component {
+        id: resizingpropertiesComponent
+        Column {
+            property string type
+            property var labelColor
+            Row {
+                leftPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","New size"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                    }
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d{1,3},[1,9]\d{1,3},[1,9]\d{1,3}/ }
+                    }
+                }
+            }
+
+        }
+    }
+
+
+    Component {
+        id: emptypropertiesComponent
+        Column {
+            property string type
+            property var labelColor
+            Row {
+                leftPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                    //Layout.alignment: Qt.AlignBottom
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: 600*pix
+                    }
+                }
+            }
+        }
+    }
 }
