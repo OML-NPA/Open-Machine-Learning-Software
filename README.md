@@ -33,7 +33,7 @@ Project can be supported in three ways:
 
 Being a supporter allows a user to request features and affect the feature queue based on the amount of support.
 
-Financial report detailing incomes and expenditures is published monthly.
+Financial report detailing incomes and expenses is published monthly.
 
 
 
