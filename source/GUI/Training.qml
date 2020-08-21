@@ -47,6 +47,7 @@ ApplicationWindow {
     }
 
     Loader { id: featuredialogLoader}
+    Loader { id: trainingoptionsLoader}
     Loader { id: customizationLoader}
     Loader { id: trainingplotLoader}
 
@@ -205,6 +206,17 @@ ApplicationWindow {
                 }
                 ColumnLayout {
                     spacing: 0.3*margin
+                    Button {
+                        id: optionsButton
+                        text: "Options"
+                        Layout.preferredWidth: buttonWidth
+                        Layout.preferredHeight: buttonHeight
+                        onClicked: {
+                            if (trainingoptionsLoader.sourceComponent === null) {
+                                trainingoptionsLoader.source = "TrainingOptions.qml"
+                            }
+                        }
+                    }
                     Button {
                         id: customizeButton
                         text: "Customize"

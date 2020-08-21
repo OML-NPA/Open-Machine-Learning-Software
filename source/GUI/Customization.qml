@@ -129,21 +129,27 @@ ApplicationWindow {
                                                               name: "conv"// @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
-                                                              colorB: 0} // @disable-check M16
+                                                              colorB: 0 // @disable-check M16
+                                                              input: 1 // @disable-check M16
+                                                              output: 1} // @disable-check M16
                                                           ListElement{
                                                               type: "Transposed convolution" // @disable-check M16
                                                               group: "mult" // @disable-check M16
                                                               name: "tconv" // @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
-                                                              colorB: 0} // @disable-check M16
+                                                              colorB: 0 // @disable-check M16
+                                                              input: 1 // @disable-check M16
+                                                              output: 1} // @disable-check M16
                                                           ListElement{
                                                               type: "Fully connected" // @disable-check M16
                                                               group: "mult" // @disable-check M16
                                                               name: "fullycon" // @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
-                                                              colorB: 0} // @disable-check M16
+                                                              colorB: 0 // @disable-check M16
+                                                              input: 1 // @disable-check M16
+                                                              output: 1} // @disable-check M16
                                                         }
                                         delegate: buttonComponent
                                     }
@@ -178,14 +184,18 @@ ApplicationWindow {
                                                           name: "dropout" // @disable-check M16
                                                           colorR: 0 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
-                                                          colorB: 0} // @disable-check M16
+                                                          colorB: 0 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Batch normalisation" // @disable-check M16
                                                           group: "norm" // @disable-check M16
                                                           name: "batchnorm" // @disable-check M16
                                                           colorR: 0 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
-                                                          colorB: 0} // @disable-check M16
+                                                          colorB: 0 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -220,35 +230,45 @@ ApplicationWindow {
                                                           name: "relu" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
-                                                          colorB: 0} // @disable-check M16
+                                                          colorB: 0 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Laeky RelU" // @disable-check M16
                                                           group: "activation" // @disable-check M16
                                                           name: "leakyrelu" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
-                                                          colorB: 0} // @disable-check M16
+                                                          colorB: 0 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "ElU" // @disable-check M16
                                                           group: "activation" // @disable-check M16
                                                           name: "elu" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
-                                                          colorB: 0} // @disable-check M16
+                                                          colorB: 0 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Tanh" // @disable-check M16
                                                           group: "activation" // @disable-check M16
                                                           name: "tanh" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
-                                                          colorB: 0} // @disable-check M16
+                                                          colorB: 0 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Sigmoid" // @disable-check M16
                                                           group: "activation" // @disable-check M16
                                                           name: "sigmoid" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
-                                                          colorB: 0} // @disable-check M16
+                                                          colorB: 0 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -283,28 +303,36 @@ ApplicationWindow {
                                                           name: "cat" // @disable-check M16
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
-                                                          colorB: 180} // @disable-check M16
+                                                          colorB: 180// @disable-check M16
+                                                          input: 2 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Decatenation" // @disable-check M16
                                                           group: "resizing" // @disable-check M16
                                                           name: "decat" // @disable-check M16
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
-                                                          colorB: 180} // @disable-check M16
+                                                          colorB: 180 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 2} // @disable-check M16
                                                       ListElement{
                                                           type: "Scaling" // @disable-check M16
                                                           group: "resizing" // @disable-check M16
                                                           name: "scaling" // @disable-check M16
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
-                                                          colorB: 180} // @disable-check M16
+                                                          colorB: 180 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Resizing" // @disable-check M16
                                                           group: "resizing" // @disable-check M16
                                                           name: "resizing" // @disable-check M16
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
-                                                          colorB: 180} // @disable-check M16
+                                                          colorB: 180 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -339,7 +367,9 @@ ApplicationWindow {
                                                           name: "other" // @disable-check M16
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
-                                                          colorB: 250} // @disable-check M16
+                                                          colorB: 250 // @disable-check M16
+                                                          input: 1 // @disable-check M16
+                                                          output: 1} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -405,21 +435,6 @@ ApplicationWindow {
                                         spacing: 0
                                         boundsBehavior: Flickable.StopAtBounds
                                         model: ListModel {id: deafultmodulesModel
-                                                          ListElement{
-                                                              name: "Group 1" // @disable-check M16
-                                                              colorR: 0 // @disable-check M16
-                                                              colorG: 0 // @disable-check M16
-                                                              colorB: 0} // @disable-check M16
-                                                          ListElement{
-                                                              name: "Group 2" // @disable-check M16
-                                                              colorR: 0 // @disable-check M16
-                                                              colorG: 0 // @disable-check M16
-                                                              colorB: 0} // @disable-check M16
-                                                          ListElement{
-                                                              name: "Group 3" // @disable-check M16
-                                                              colorR: 0 // @disable-check M16
-                                                              colorG: 0 // @disable-check M16
-                                                              colorB: 0} // @disable-check M16
                                                         }
                                         delegate: ButtonNN {
                                             x: +2
@@ -454,15 +469,15 @@ ApplicationWindow {
             Frame {
                 id: mainFrame
                 width : window.width-leftFrame.width-rightFrame.width
-                height : paneHeight+4*pix
+                height : window.height - header.height
                 padding: 2*pix
                 antialiasing: true
                 layer.enabled: true
                 layer.samples: 8
                 ScrollableItem{
                    id: flickableMainPane
-                   width : paneWidth
-                   height : paneHeight
+                   width : mainFrame.width - 4*pix
+                   height : mainFrame.height - 4*pix
                    showBackground: false
                    clip: true
                    Pane {
@@ -470,12 +485,18 @@ ApplicationWindow {
                         padding: 0
                         backgroundColor: "#FDFDFD"
                         Component.onCompleted: {
-                            flickableMainPane.contentWidth = Math.max(paneWidth)
-                            flickableMainPane.contentHeight = Math.max(paneHeight)
-                            mainPane.width = window.width/2
-                            mainPane.height = paneHeight
+                            flickableMainPane.contentWidth = flickableMainPane.width
+                            flickableMainPane.contentHeight = flickableMainPane.height
+                            mainPane.width = flickableMainPane.width
+                            mainPane.height = flickableMainPane.height
                             flickableMainPane.ScrollBar.vertical.visible = false
                             flickableMainPane.ScrollBar.horizontal.visible = false
+                        }
+                        Item {
+                            id: layers
+                        }
+                        Item {
+                            id: connections
                         }
                     }
                 }
@@ -614,12 +635,13 @@ ApplicationWindow {
     }
 
     function getrightchild(item) {
-        var max = 0;
+        var max = -10000000
         if (item.children.length===0) {
             return(0)
         }
-        for (var i = 1; i < item.children.length; i++) {
+        for (var i = 0; i < item.children.length; i++) {
             var temp = getright(item.children[i])
+            temp = item.mapToItem(mainPane,temp,0).x
             if (temp>max) {
                 max = temp;
             }
@@ -628,12 +650,13 @@ ApplicationWindow {
     }
 
     function getleftchild(item) {
-        var min = 0;
+        var min = 10000000
         if (item.children.length===0) {
             return(0)
         }
-        for (var i = 1; i < item.children.length; i++) {
+        for (var i = 0; i < item.children.length; i++) {
             var temp = getleft(item.children[i])
+            temp = item.mapToItem(mainPane,temp,0).x
             if (temp<min) {
                 min = temp;
             }
@@ -642,12 +665,13 @@ ApplicationWindow {
     }
 
     function getbottomchild(item) {
-        var max = 0;
+        var max = -10000000
         if (item.children.length===0) {
             return(0)
         }
-        for (var i = 1; i < item.children.length; i++) {
+        for (var i = 0; i < item.children.length; i++) {
             var temp = getbottom(item.children[i])
+            temp = item.mapToItem(mainPane,0,temp).y
             if (temp>max) {
                 max = temp;
             }
@@ -656,12 +680,13 @@ ApplicationWindow {
     }
 
     function gettopchild(item) {
-        var min = 0;
+        var min = 10000000
         if (item.children.length===0) {
             return(0)
         }
-        for (var i = 1; i < item.children.length; i++) {
+        for (var i = 0; i < item.children.length; i++) {
             var temp = gettop(item.children[i])
+            temp = item.mapToItem(mainPane,0,temp).y
             if (temp<min) {
                 min = temp;
             }
@@ -703,8 +728,8 @@ ApplicationWindow {
 
     function comparelocations(item1,mouseX,mouseY,item2,item) {
         var coor1 = item1.mapToItem(item, mouseX, mouseY)
-        var coor2 = item2.mapToItem(item, 20*pix, 20*pix)
-        if (Math.abs(coor2.x-coor1.x)<20*pix && Math.abs(coor2.y-coor1.y)<20*pix) {
+        var coor2 = item2.mapToItem(item, 10*pix, 10*pix)
+        if (Math.abs(coor2.x-coor1.x)<30*pix && Math.abs(coor2.y-coor1.y)<30*pix) {
             return(true)
         }
         else {
@@ -714,22 +739,14 @@ ApplicationWindow {
     }
 
     function getconnectionsnum() {
-        var out = 0;
-        if (mainPane.children.length>1) {
-            for (var i=1;i<mainPane.children.length;i++) {
-                if (mainPane.children[i].children[2].connectedItem!==null) {
-                    out = out + 1
-                }
-            }
-        }
-        return(out)
+        return(connections.children.length)
     }
 
     function getirregularitiesnum() {
         var out = 0;
-        if (mainPane.children.length>1) {
-            for (var i=1;i<mainPane.children.length;i++) {
-                if (mainPane.children[i].group==="activation") {
+        if (layers.children.length>1) {
+            for (var i=1;i<layers.children.length;i++) {
+                if (layers.children[i].group==="activation") {
                     out = out + 1
                 }
             }
@@ -753,6 +770,8 @@ ApplicationWindow {
             property string type
             property string group
             property var labelColor
+            property double input
+            property double output
             Column {
                 anchors.fill: parent.fill
                 topPadding: 8*pix
@@ -776,16 +795,24 @@ ApplicationWindow {
                 hoverEnabled: true
                 onEntered: {
                     unit.border.color = "#666666"
-                    upNode.visible = true
-                    downNode.visible = true
+                    for (var i=0;i<upNodes.children.length;i++) {
+                        upNodes.children[i].children[0].visible = true
+                    }
+                    for (i=0;i<downNodes.children.length;i++) {
+                        downNodes.children[i].children[0].visible = true
+                    }
                 }
                 onExited: {
                     unit.border.color = systempalette.mid
-                    if (upNode.connectedItem===null) {
-                        upNode.visible = false
+                    for (var i=0;i<upNodes.children.length;i++) {
+                        if (upNodes.children[i].children[0].connectedNode===null) {
+                            upNodes.children[i].children[0].visible = false
+                        }
                     }
-                    if (downNode.connectedItem===null) {
-                        downNode.visible = false
+                    for (i=0;i<downNodes.children.length;i++) {
+                        if (downNodes.children[i].children[1].connectedNode===null) {
+                            downNodes.children[i].children[0].visible = false
+                        }
                     }
                 }
                 onClicked: {
@@ -812,86 +839,137 @@ ApplicationWindow {
                 }
 
                 onPositionChanged: {
-
-                    if (upNode.connectedItem!==null && pressed) {
-
-                        var upNodePoint = upnodeRectangle.mapToItem(mainPane,0,0)
-                        var downNodePoint = upNode.connectedItem.mapToItem(mainPane,0,0)
-                        var adjX = downNodePoint.x - upNodePoint.x
-                        var adjY = downNodePoint.y - upNodePoint.y
-                        upNode.connectedItem.x = upNode.connectedItem.x - adjX
-                        upNode.connectedItem.y = upNode.connectedItem.y - adjY
-                        for (var i=0;i<upNode.connectedItem.origin.children.length;i++) {
-                            upNode.connectedItem.origin.children[i].destroy()
+                    if (pressed) {
+                        for (var i=0;i<upNodes.children.length;i++) {
+                            if (upNodes.children[i].children[0].connectedNode!==null) {
+                                var startX = upNodes.children[i].children[0].connectedItem.connection.data[0].startX;
+                                var startY = upNodes.children[i].children[0].connectedItem.connection.data[0].startY;
+                                upNodes.children[i].children[0].connectedItem.connection.destroy()
+                                upNodes.children[i].children[0].connectedItem.connection = shapeComponent.createObject(connections, {
+                                      "beginX": startX,
+                                      "beginY": startY,
+                                      "finishX": unit.x + unit.width*upNodes.children[i].index/(input+1),
+                                      "finishY": unit.y + 2*pix,
+                                      "origin": upNodes.children[i].children[0].connectedItem});
+                                var nodePoint = upNodes.children[i].children[0].
+                                mapToItem(upNodes.children[i].children[0].connectedItem.parent,0,0)
+                                upNodes.children[i].children[0].connectedItem.x = nodePoint.x - upNodes.children[i].children[0].radius/2
+                                upNodes.children[i].children[0].connectedItem.y = nodePoint.y - upNodes.children[i].children[0].radius/2
+                            }
                         }
-                        var object = shapeComponent.createObject(upNode.connectedItem.origin, {
-                             "beginX": 10*pix,
-                             "beginY": 10*pix,
-                             "finishX": upNode.connectedItem.x - unit.width/2 + downNode.radius +
-                                            10*pix,
-                             "finishY": upNode.connectedItem.y - unit.height + downNode.radius +
-                                            12*pix});
-                    }
-                    if (downNode.connectedItem!==null && pressed) {
-
-                        upNodePoint = downNode.connectedItem.mapToItem(mainPane,0,0)
-                        downNodePoint = downnodeRectangle.mapToItem(mainPane,0,0)
-                        adjX = downNodePoint.x - upNodePoint.x
-                        adjY = downNodePoint.y - upNodePoint.y
-                        downnodeRectangle.x = downnodeRectangle.x - adjX
-                        downnodeRectangle.y = downnodeRectangle.y - adjY
-                        for (i=0;i<downNode.children.length;i++) {
-                            downNode.children[i].destroy()
+                        for (i=0;i<downNodes.children.length;i++) {
+                            for (var j=1;j<downNodes.children[i].children.length;j++) {
+                                if (pressed && downNodes.children[i].children[j].connectedNode!==null) {
+                                    var finishX = downNodes.children[i].children[j].connection.data[0].pathElements[0].x
+                                    var finishY = downNodes.children[i].children[j].connection.data[0].pathElements[0].y
+                                    downNodes.children[i].children[j].connection.destroy()
+                                    downNodes.children[i].children[j].connection = shapeComponent.createObject(connections, {
+                                          "beginX": unit.x + unit.width*downNodes.children[i].index/(output+1),
+                                          "beginY": unit.y + unit.height - 2*pix,
+                                          "finishX": finishX,
+                                          "finishY": finishY,
+                                          "origin": downNodes.children[i].children[j]});
+                                    nodePoint = downNodes.children[i].children[j].connectedNode.
+                                        mapToItem(downNodes.children[i],0,0)
+                                    downNodes.children[i].children[j].x = nodePoint.x - downNodes.children[i].children[0].radius/2
+                                    downNodes.children[i].children[j].y = nodePoint.y - downNodes.children[i].children[0].radius/2 + 2*pix
+                                }
+                            }
                         }
-                        object = shapeComponent.createObject(downNode, {
-                             "beginX": 10*pix,
-                             "beginY": 10*pix,
-                             "finishX": downnodeRectangle.x - unit.width/2 + downNode.radius +
-                                            10*pix,
-                             "finishY": downnodeRectangle.y - unit.height + downNode.radius +
-                                            12*pix});
                     }
                 }
                 onReleased: {
-
-                    var windowHeight = window.height-buttonHeight
-
-                    var minheight = -Math.min(0,gettop(unit))
-                    var minwidth = -Math.min(0,getleft(unit))
-                    var maxheight = Math.max(windowHeight,getbottom(unit))
-                    var maxwidth = Math.max(window.width/2,getright(unit))
-                    var minheightchildren = -Math.min(0,gettopchild(mainPane))
-                    var minwidthchildren = -Math.min(0,getleftchild(mainPane))
-                    var maxheightchildren = Math.max(0,getbottomchild(mainPane))
-                    var maxwidthchildren = Math.max(0,getrightchild(mainPane))
                     var paneHeight = mainPane.height
                     var paneWidth = mainPane.width
-                    var changeHeight = (maxheight-mainPane.height)
-                    var changeWidth = (maxwidth-mainPane.width)
+                    var minheight = -Math.min(0,gettop(unit))
+                    var minwidth = -Math.min(0,getleft(unit))
+                    var maxheight = Math.max(paneHeight,getbottom(unit))
+                    var maxwidth = Math.max(paneWidth,getright(unit))
+                    var minheightchildren = -Math.min(gettopchild(layers))
+                    var minwidthchildren = -Math.min(getleftchild(layers))
+                    var maxheightchildren = Math.max(getbottomchild(layers))
+                    var maxwidthchildren = Math.max(getrightchild(layers))
 
-                    mainPane.height = Math.max(flickableMainPane.height,maxheightchildren + minheightchildren)
-                    mainPane.width = Math.max(flickableMainPane.width,maxwidthchildren + minwidthchildren)
-
-                    var i
-                    if (minheight!==0) {
-                        for (i = 1; i < mainPane.children.length; i++) {
-                            mainPane.children[i].y = mainPane.children[i].y+minheight
+                    if (layers.children.length===1) {
+                        if (layers.children[0].x + layers.children[0].width>paneWidth) {
+                            layers.children[0].x = paneWidth - layers.children[0].width - 20*pix
                         }
+                        if (layers.children[0].y + layers.children[0].height>paneHeight) {
+                            layers.children[0].y = paneHeight - layers.children[0].height - 20*pix
+                        }
+                        return
                     }
-                    if (maxheight>paneHeight || maxheight!==(windowHeight+flickableMainPane.contentY)) {
-                        flickableMainPane.contentY = (maxheight-(windowHeight))
-                    }
+
+                    var adjX = 0
+                    var adjY = 0
                     if (minwidth!==0) {
-                        for (i = 1; i < mainPane.children.length; i++) {
-                            mainPane.children[i].x = mainPane.children[i].x+minwidth
-                        }
+                        adjX = minwidth + 20*pix
                     }
-                    if (maxwidth>paneWidth || maxwidth!==(window.width/2+flickableMainPane.contentX)) {
-                        flickableMainPane.contentX = (maxwidth-(window.width/2))
+                    else {
+                        adjX = minwidthchildren + 20*pix
+                    }
+                    if (minheight!==0) {
+                        adjY = minheight + 20*pix
+                    }
+                    else {
+                        adjY = minheightchildren + 20*pix
+                    }
+                    if ((adjX===20 && minwidthchildren===0*pix) || (-minwidthchildren+maxwidthchildren)/2<=paneWidth/2) {
+                        adjX = 0
+                    }
+                    if ((adjY===20 && minheightchildren===0*pix) || (-minheightchildren+maxheightchildren)/2<=paneHeight/2) {
+                        adjY = 0
                     }
 
-                    flickableMainPane.contentHeight = maxheightchildren + minheightchildren
-                    flickableMainPane.contentWidth = maxwidthchildren + minwidthchildren
+                    if (adjX<0 && (-minwidthchildren+maxwidthchildren)/2>paneWidth/2) {
+                        adjX = -((-minwidthchildren+maxwidthchildren)/2-paneWidth/2)
+                    }
+                    if (adjY<0 && (-minheightchildren+maxheightchildren)/2>paneHeight/2) {
+                        adjY = -((-minheightchildren+maxheightchildren)/2-paneHeight/2)
+                    }
+                    if (adjX!==0 || adjY!==0) {
+                        for (var i = 0; i < layers.children.length; i++) {
+                            layers.children[i].x = layers.children[i].x + adjX
+                            layers.children[i].y = layers.children[i].y + adjY
+
+                        }
+                        var num = connections.children.length
+                        for (i = 0; i < num; i++) {
+                            var object = shapeComponent.createObject(connections, {
+                                  "beginX": connections.children[i].beginX + adjX,
+                                  "beginY": connections.children[i].beginY + adjY,
+                                  "finishX": connections.children[i].finishX + adjX,
+                                  "finishY": connections.children[i].finishY + adjY,
+                                  "origin": connections.children[i].origin});
+                            connections.children[i].origin.connection.destroy()
+                            connections.children[i].origin.connection = object
+                        }
+                    }
+
+                    paneHeight = mainPane.height
+                    paneWidth = mainPane.width
+                    minheight = -Math.min(0,gettop(unit))
+                    minwidth = -Math.min(0,getleft(unit))
+                    maxheight = Math.max(paneHeight,getbottom(unit))
+                    maxwidth = Math.max(paneWidth,getright(unit))
+                    minheightchildren = -Math.min(gettopchild(layers))
+                    minwidthchildren = -Math.min(getleftchild(layers))
+                    maxheightchildren = Math.max(getbottomchild(layers))
+                    maxwidthchildren = Math.max(getrightchild(layers))
+
+                    flickableMainPane.contentHeight = paneHeight
+                    flickableMainPane.contentWidth = paneWidth
+
+                    if (maxheight>paneHeight) {
+                        mainPane.height = maxheight + 20*pix
+                        flickableMainPane.contentHeight = mainPane.height
+                        flickableMainPane.contentY = maxheight - flickableMainPane.height + 20*pix
+                    }
+                    if (maxwidth>paneWidth) {
+                        mainPane.width = maxwidth + 20*pix
+                        flickableMainPane.contentWidth = mainPane.width
+                        flickableMainPane.contentX = maxwidth - flickableMainPane.width + 20*pix
+                    }
 
                     if (flickableMainPane.contentHeight>flickableMainPane.height) {
                         flickableMainPane.ScrollBar.vertical.visible = true
@@ -905,189 +983,377 @@ ApplicationWindow {
                     else {
                         flickableMainPane.ScrollBar.horizontal.visible = false
                     }
-                    /*console.log(["maxwidth: "+maxwidth,"minwidth: "+minwidth,
-                                 "panewidth: "+mainPane.width,"X:",flickableMainPane.contentX,
-                                 "minwidthchildren:", minwidthchildren,
-                                 "maxwidthchildren:", maxwidthchildren,
-                                 "changeHeight: ",changeHeight,
-                                 "contentWidth:",flickableMainPane.contentWidth,
-                                 "mainpaneWidth: ",flickableMainPane.width])*/
                 }
             }
 
             Item {
-            id: nodesItem
-                Rectangle {
-                    id: upNode
-                    width: 20*pix
-                    height: 20*pix
-                    radius: 20*pix
-                    border.color: systempalette.mid
-                    border.width: 3*pix
-                    visible: false
-                    property var connectedItem: null
-                    x: unit.width/2-upNode.radius/2
-                    y: -upNode.radius/2 + 2*pix
-                }
-                Rectangle {
-                    id: upnodeRectangle
-                    width: 2*upNode.radius
-                    height: 2*upNode.radius
-                    color: "transparent"
-                    border.color: "transparent"
-                    border.width: 0
-                    x: unit.width/2-upNode.radius
-                    y: -upNode.radius + 2*pix
-                    MouseArea {
-                        anchors.fill: parent
-                        drag.target: parent
-                        hoverEnabled: true
-                        onEntered: {
-                            upNode.visible = true
-                            downNode.visible = true
-                            upNode.border.color = "#666666"
-                        }
-                        onExited: {
-                            if (upNode.connectedItem===null) {
-                                upNode.visible = false
-                            }
-                            if (!downnodeMouseArea.moveTriggered && downNode.connectedItem===null) {
-                                downNode.visible = false
-                            }
-                            upNode.border.color = systempalette.mid
+            id: nodes
+                Item {
+                    id: upNodes
+                    Component.onCompleted: {
+                        for (var i=0;i<input;i++) {
+                            upNodeComponent.createObject(upNodes, {
+                                "unit": unit,
+                                "upNodes": upNodes,
+                                "downNodes": downNodes,
+                                "input": input,
+                                "index": i+1});
                         }
                     }
                 }
-
-                Rectangle {
-                    id: downNode
-                    width: 20*pix
-                    height: 20*pix
-                    radius: 20*pix
-                    border.color: systempalette.mid
-                    border.width: 3*pix
-                    visible: false
-                    property var connectedItem: null
-                    x: unit.width/2 - downNode.radius/2
-                    y: unit.height - downNode.radius/2 - 2*pix
-                }
-                Rectangle {
-                    id: downnodeRectangle
-                    width: 2*downNode.radius
-                    height: 2*downNode.radius
-                    //opacity: 0.4
-                    color: "transparent"
-                    property var origin: downNode
-                    x: unit.width/2 - downNode.radius
-                    y: unit.height - downNode.radius - 2*pix
-                    MouseArea {
-                        id: downnodeMouseArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        drag.target: downnodeRectangle
-                        drag.smoothed: false
-                        property bool moveTriggered: false
-                        property var mouseAdjust: [0,0]
-                        onEntered: {
-                            upNode.visible = true
-                            downNode.visible = true
-                            downNode.border.color = "#666666"
-                        }
-                        onExited: {
-                            if (upNode.connectedItem===null) {
-                                upNode.visible = false
-                            }
-                            if (!moveTriggered && downNode.connectedItem===null) {
-                                downNode.visible = false
-                                downNode.border.color = systempalette.mid
-                            }
-                        }
-                        onPressed: {
-                            mouseAdjust[0] = mouse.x - downnodeRectangle.width/2;
-                            mouseAdjust[1] = mouse.y - downnodeRectangle.height/2;
-                            var object = shapeComponent.createObject(downNode, {
-                                 "beginX": 10*pix,
-                                 "beginY": 10*pix,
-                                 "finishX": downnodeRectangle.x - unit.width/2 + downNode.radius +
-                                                10*pix + mouseAdjust[0],
-                                 "finishY": downnodeRectangle.y - unit.height + downNode.radius +
-                                                12*pix + mouseAdjust[1]});
-                            moveTriggered = true
-                            for (var i=1;i<mainPane.children.length;i++) {
-                                mainPane.children[i].children[2].children[0].visible = true
-                            }
-                            unit.z = mainPane.children.length-1;
-                        }
-                        onPositionChanged: {
-                            if (moveTriggered && pressed) {
-                                for (var i=0;i<downNode.children.length;i++) {
-                                    downNode.children[i].destroy()
-                                }
-                                var object = shapeComponent.createObject(downNode, {
-                                     "beginX": 10*pix,
-                                     "beginY": 10*pix,
-                                     "finishX": downnodeRectangle.x - unit.width/2 + downNode.radius +
-                                                    10*pix + mouseAdjust[0],
-                                     "finishY": downnodeRectangle.y - unit.height + downNode.radius +
-                                                    12*pix + mouseAdjust[1]});
-                            }
-                        }
-                        onReleased: {
-                            for (var i=1;i<mainPane.children.length;i++) {
-                                if (mainPane.children[i].children[2].children[0].connectedItem===null) {
-                                    mainPane.children[i].children[2].children[0].visible = false
-                                }
-                            }
-                            for (i=1;i<mainPane.children.length;i++) {
-                                if (comparelocations(downnodeRectangle,mouse.x,mouse.y,
-                                            mainPane.children[i].children[2].children[1],mainPane) &&
-                                        (mainPane.children[i].children[2].children[0].connectedItem===null ||
-                                        mainPane.children[i].children[2].children[0].connectedItem===downNode) &&
-                                        mainPane.children[i].children[2].children[1]!==upnodeRectangle) {
-                                    moveTriggered = false
-                                    downNode.connectedItem = mainPane.children[i].children[2].children[1]
-                                    mainPane.children[i].children[2].children[0].connectedItem = downnodeRectangle
-                                    mainPane.children[i].children[2].children[0].visible = true
-                                    mainPane.children[i].z = unit.z-1
-                                    var upNodePoint = mainPane.children[i].children[2].children[1].mapToItem(mainPane,0,0)
-                                    var downNodePoint = downnodeRectangle.mapToItem(mainPane,0,0)
-                                    var adjX = downNodePoint.x - upNodePoint.x
-                                    var adjY = downNodePoint.y - upNodePoint.y
-                                    downnodeRectangle.x = downnodeRectangle.x - adjX
-                                    downnodeRectangle.y = downnodeRectangle.y - adjY
-                                    for (i=0;i<downNode.children.length;i++) {
-                                        downNode.children[i].destroy()
-                                    }
-                                    var object = shapeComponent.createObject(downNode, {
-                                         "beginX": 10*pix,
-                                         "beginY": 10*pix,
-                                         "finishX": downnodeRectangle.x - unit.width/2 + downNode.radius +
-                                                        10*pix,
-                                         "finishY": downnodeRectangle.y - unit.height + downNode.radius +
-                                                        12*pix});
-                                    break
-                                }
-                                else {
-                                    downNode.connectedItem = null
-                                    if (mainPane.children[i].children[2].children[0].connectedItem===null ||
-                                            mainPane.children[i].children[2].connectedItem===downnodeRectangle) {
-                                        mainPane.children[i].children[2].children[0].visible = false
-                                        mainPane.children[i].children[2].children[0].connectedItem = null
-                                    }
-                                }
-                            }
-                            if (downNode.connectedItem===null) {
-                                moveTriggered = false
-                                for (i=0;i<downNode.children.length;i++) {
-                                    downNode.children[i].destroy()
-                                }
-                                downnodeRectangle.x = unit.width/2 - downNode.radius
-                                downnodeRectangle.y = unit.height - downNode.radius - 2*pix
-                            }
+                Item {
+                    id: downNodes
+                    Component.onCompleted: {
+                        for (var i=0;i<output;i++) {
+                            downNodeComponent.createObject(downNodes, {
+                                "unit": unit,
+                                "upNodes": upNodes,
+                                "downNodes": downNodes,
+                                "output": output,
+                                "index": i+1});
                         }
                     }
                 }
             }
+        }
+    }
+
+    Component {
+        id: downNodeComponent
+        Item {
+            id: downNodeItem
+            property var unit
+            property var upNodes
+            property var downNodes
+            property double output
+            property double index
+            Rectangle {
+                id: downNode
+                width: 20*pix
+                height: 20*pix
+                radius: 20*pix
+                border.color: systempalette.mid
+                border.width: 3*pix
+                visible: false
+                x: unit.width*index/(output+1) - downNode.radius/2
+                y: unit.height - downNode.radius/2 - 2*pix
+            }
+            Component.onCompleted: downNodeRectangleComponent.createObject(downNodeItem, {
+                "unit": unit,
+                "upNodes": upNodes,
+                "downNodes": downNodes,
+                "downNodeItem": downNodeItem,
+                "downNode": downNode,
+                "output": output,
+                "index": index});
+        }
+    }
+
+    Component {
+        id: downNodeRectangleComponent
+        Rectangle {
+            id: downNodeRectangle
+            property var unit
+            property var upNodes
+            property var downNodes
+            property var downNode
+            property var downNodeItem
+            property var connectedNode: null
+            property var connectedItem: null
+            property var connection: null
+            property double output
+            property double index
+            width: 2*downNode.radius
+            height: 2*downNode.radius
+            //opacity: 0.2
+            color: "transparent"
+            x: unit.width*index/(output+1) - downNode.radius
+            y: unit.height - downNode.radius - 2*pix
+            MouseArea {
+                id: downnodeMouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                drag.target: downNodeRectangle
+                drag.smoothed: false
+                property var mouseAdjust: [0,0]
+                onEntered: {
+                    for (var i=0;i<upNodes.children.length;i++) {
+                        upNodes.children[i].children[0].visible = true
+                    }
+                    for (i=0;i<downNodes.children.length;i++) {
+                        downNodes.children[i].children[0].visible = true
+                    }
+                    downNode.border.color = "#666666"
+                }
+                onExited: {
+                    for (var i=0;i<upNodes.children.length;i++) {
+                        if (upNodes.children[i].children[0].connectedNode===null) {
+                            upNodes.children[i].children[0].visible = false
+                        }
+                    }
+                    for (i=0;i<downNodes.children.length;i++) {
+                        if (downNodes.children[i].children[1].connectedNode===null) {
+                            downNodes.children[i].children[0].visible = false
+                        }
+                    }
+                    downNode.border.color = systempalette.mid
+                }
+                onPressed: {
+                    mouseAdjust[0] = 0//mouse.x - downNodeRectangle.width/2;
+                    mouseAdjust[1] = 0//mouse.y - downNodeRectangle.height/2;
+                    for (var i=0;i<layers.children.length;i++) {
+                        for (var j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
+                            layers.children[i].children[2].children[0].children[j].children[0].visible = true
+                        }
+                    }
+                }
+                onPositionChanged: {
+                    if (pressed) {
+                        if (downNodeRectangle.connection !== null) {
+                            downNodeRectangle.connection.destroy()
+                        }
+                        downNodeRectangle.connection = shapeComponent.createObject(connections, {
+                             "beginX": unit.x + unit.width*index/(output+1),
+                             "beginY": unit.y + unit.height - 2*pix,
+                             "finishX": unit.x + downNodeRectangle.x + downNode.radius +
+                                            mouseAdjust[0],
+                             "finishY": unit.y + downNodeRectangle.y + downNode.radius +
+                                            mouseAdjust[1] + 2*pix,
+                             "origin": downNodeRectangle});
+                    }
+                }
+                onReleased: {
+                    for (var i=0;i<layers.children.length;i++) {
+                        for (var j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
+                            if (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null) {
+                                layers.children[i].children[2].children[0].children[j].children[0].visible = false
+                            }
+                        }
+                    }
+                    for (i=0;i<layers.children.length;i++) {
+                        for (j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
+                            if (comparelocations(downNodeRectangle,mouse.x,mouse.y,
+                                    layers.children[i].children[2].children[0].children[j].children[0],layers) &&
+                                    (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null ||
+                                    (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===downNode &&
+                                    layers.children[i].children[2].children[0].children[j].children[0].connectedItem===downNodeRectangle)) &&
+                                    layers.children[i].children[2].children[0].children[0]!==
+                                    upNodes.children[0]) {
+                                debug(layers.children[i].children[2].children[0].children[j].children[0].parent.input)
+                                downNodeRectangle.connectedNode = layers.children[i].children[2].children[0].children[j].children[0]
+                                layers.children[i].children[2].children[0].children[j].children[0].connectedNode = downNode
+                                layers.children[i].children[2].children[0].children[j].children[0].connectedItem = downNodeRectangle
+                                layers.children[i].children[2].children[0].children[j].children[0].visible = true
+                                var upNodePoint = layers.children[i].children[2].children[0].children[j].children[1].mapToItem(layers,0,0)
+                                var downNodePoint = downNodeRectangle.mapToItem(layers,0,0)
+                                var adjX = downNodePoint.x - upNodePoint.x
+                                var adjY = downNodePoint.y - upNodePoint.y
+                                downNodeRectangle.x = downNodeRectangle.x - adjX
+                                downNodeRectangle.y = downNodeRectangle.y - adjY
+                                downNodeRectangle.connection.destroy()
+                                downNodeRectangle.connection = shapeComponent.createObject(connections, {
+                                     "beginX": unit.x + unit.width*index/(output+1),
+                                     "beginY": unit.y + unit.height - 2*pix,
+                                     "finishX": unit.x + downNodeRectangle.x + downNode.radius,
+                                     "finishY": unit.y + downNodeRectangle.y + downNode.radius,
+                                     "origin": downNodeRectangle});
+                                downNodeRectangleComponent.createObject(downNodeItem, {
+                                                "unit": unit,
+                                                "upNodes": upNodes,
+                                                "downNodes": downNodes,
+                                                "downNodeItem": downNodeItem,
+                                                "downNode": downNode,
+                                                "output": output,
+                                                "index": index});
+                                return
+                            }
+                        }
+                    }
+                    downNodeRectangle.connection.destroy()
+                    downNode.visible = false
+                    if (downNodeItem.children.length>2) {
+                        for (i=downNodeItem.children.length-1;i>=2;i--) {
+                            if (downNodeItem.children[i-1].connectedNode===null) {
+                                downNodeItem.children[i].destroy()
+                            }
+                        }
+                    }
+                    if (downNodeItem.children[1].connectedNode!==null) {
+                        downNode.visible = true
+                    }
+                    if (downNodeRectangle.connectedNode===null) {
+                        downNodeRectangle.x = unit.width*index/(output+1) - downNode.radius
+                        downNodeRectangle.y = unit.height - downNode.radius - 2*pix
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: upNodeComponent
+        Item {
+            id: upNodeItem
+            property var unit
+            property var upNodes
+            property var downNodes
+            property double input
+            property double index
+            Rectangle {
+                id: upNode
+                width: 20*pix
+                height: 20*pix
+                radius: 20*pix
+                border.color: systempalette.mid
+                border.width: 3*pix
+                visible: false
+                property var connectedNode: null
+                property var connectedItem: null
+                x: unit.width*index/(input+1)-upNode.radius/2
+                y: -upNode.radius/2 + 2*pix
+            }
+            Rectangle {
+                id: upNodeRectangle
+                width: 2*upNode.radius
+                height: 2*upNode.radius
+                //opacity: 0.2
+                color: "transparent"
+                border.width: 0
+                x: unit.width*index/(input+1)-upNode.radius
+                y: -upNode.radius + 2*pix
+                MouseArea {
+                    anchors.fill: parent
+                    drag.target: parent
+                    hoverEnabled: true
+                    property var mouseAdjust: [0,0]
+                    onEntered: {
+                        for (var i=0;i<upNodes.children.length;i++) {
+                            upNodes.children[i].children[0].visible = true
+                        }
+                        for (i=0;i<downNodes.children.length;i++) {
+                            downNodes.children[i].children[0].visible = true
+                        }
+                        upNode.border.color = "#666666"
+                    }
+                    onExited: {
+                        for (var i=0;i<upNodes.children.length;i++) {
+                            if (upNodes.children[i].children[0].connectedNode===null) {
+                                upNodes.children[i].children[0].visible = false
+                            }
+                        }
+                        for (i=0;i<downNodes.children.length;i++) {
+                            if (downNodes.children[i].children[1].connectedNode===null) {
+                                downNodes.children[i].children[0].visible = false
+                            }
+                        }
+                        upNode.border.color = systempalette.mid
+                    }
+                    onPressed: {
+                        if (upNode.connectedNode==null) {
+                            return
+                        }
+                        mouseAdjust[0] = 0//mouse.x - upNode.connectedItem.width/2;
+                        mouseAdjust[1] = 0//mouse.y - upNode.connectedItem.height/2;
+                        for (var i=0;i<layers.children.length;i++) {
+                            for (var j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
+                                layers.children[i].children[2].children[0].children[j].children[0].visible = true
+                            }
+                        }
+                    }
+                    onPositionChanged: {
+                        if (upNode.connectedNode==null) {
+                            return
+                        }
+                        if (pressed) {
+                            if (upNode.connectedItem.connection !== null) {
+                                upNode.connectedItem.connection.destroy()
+                            }
+                            var point = upNodeRectangle.mapToItem(layers,0,0)
+                            upNode.connectedItem.connection = shapeComponent.createObject(connections, {
+                                 "beginX": upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
+                                                upNode.connectedItem.index/(upNode.connectedItem.output+1),
+                                 "beginY": upNode.connectedItem.unit.y + upNode.connectedItem.unit.height - 2*pix,
+                                 "finishX": point.x +
+                                            upNode.connectedNode.radius + mouseAdjust[0],
+                                 "finishY": point.y +
+                                            upNode.connectedNode.radius + mouseAdjust[1] + 2*pix,
+                                 "origin": upNode.connectedItem})
+                        }
+                    }
+                    onReleased: {
+                        if (upNode.connectedNode==null) {
+                            upNodeRectangle.x = unit.width*index/(input+1)-upNode.radius
+                            upNodeRectangle.y = -upNode.radius + 2*pix
+                            return
+                        }
+                        for (var i=0;i<layers.children.length;i++) {
+                            for (var j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
+                                if (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null) {
+                                    layers.children[i].children[2].children[0].children[j].children[0].visible = false
+                                }
+                            }
+                        }
+                        for (i=0;i<layers.children.length;i++) {
+                            for (j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
+                                if (comparelocations(upNodeRectangle,mouse.x,mouse.y,
+                                        layers.children[i].children[2].children[0].children[j].children[0],layers) &&
+                                        (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null ||
+                                        layers.children[i].children[2].children[0].children[j].children[0].connectedNode===upNode.connectedNode) &&
+                                        layers.children[i].children[2].children[0].children[j].children[1]!==
+                                        upNode.connectedNode.parent.parent.parent.children[j].children[1]) {
+                                    upNode.connectedItem.connectedNode = layers.children[i].children[2].children[0].children[j].children[0]
+                                    layers.children[i].children[2].children[0].children[j].children[0].connectedNode = upNode.connectedNode
+                                    layers.children[i].children[2].children[0].children[j].children[0].connectedItem = upNode.connectedItem
+                                    layers.children[i].children[2].children[0].children[j].children[0].visible = true
+                                    var upNodePoint = layers.children[i].children[2].children[0].children[j].children[1].mapToItem(layers,0,0)
+                                    var downNodePoint = upNode.connectedItem.mapToItem(layers,0,0)
+                                    var adjX = downNodePoint.x - upNodePoint.x
+                                    var adjY = downNodePoint.y - upNodePoint.y
+                                    upNodeRectangle.x = unit.width*index/(output+1)-upNode.radius
+                                    upNodeRectangle.y = -upNode.radius + 2*pix
+                                    upNode.connectedItem.x = upNode.connectedItem.x - adjX
+                                    upNode.connectedItem.y = upNode.connectedItem.y - adjY
+                                    upNode.connectedItem.connection.destroy()
+                                    var point = layers.children[i].children[2].children[0].children[j].children[1].mapToItem(layers,0,0)
+                                    upNode.connectedItem.connection = shapeComponent.createObject(connections, {
+                                          "beginX": upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
+                                                        upNode.connectedItem.index/(upNode.connectedItem.output+1),
+                                          "beginY": upNode.connectedItem.unit.y + upNode.connectedItem.unit.height - 2*pix,
+                                          "finishX": point.x +
+                                                     upNode.connectedNode.radius + mouseAdjust[0],
+                                          "finishY": point.y +
+                                                     upNode.connectedNode.radius + mouseAdjust[1] + 2*pix,
+                                          "origin": upNode.connectedItem})
+                                    if (upNode!==layers.children[i].children[2].children[0].children[j].children[0]) {
+                                        upNode.connectedNode = null
+                                        upNode.connectedItem = null
+                                    }
+                                    return
+                                }
+                            }
+                        }
+                        upNode.connectedItem.connection.destroy()
+                        upNode.connectedItem.connectedNode = null
+                        upNode.connectedItem.destroy()
+
+                        upNode.connectedNode.visible = false
+                        upNode.connectedNode = null
+                        upNodeRectangle.x = unit.width*index/(input+1)-upNode.radius
+                        upNodeRectangle.y = -upNode.radius + 2*pix
+                        for (i=0;i<layers.children.length;i++) {
+                            for (j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
+                                if (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null) {
+                                    layers.children[i].children[2].children[0].children[j].children[0].visible = false
+                                }
+                            }
+                        }
+                        for (i=0;i<downNodes.children.length;i++) {
+                            downNodes.children[i].children[0].visible = false
+                        }
+                    }
+                }
+            }
+
         }
     }
 
@@ -1100,6 +1366,7 @@ ApplicationWindow {
             property double beginY: 0
             property double finishX: 0
             property double finishY: 0
+            property var origin: null
             antialiasing: true
             vendorExtensionsEnabled: false
             ShapePath {
@@ -1109,9 +1376,7 @@ ApplicationWindow {
                 fillColor: "transparent"
                 capStyle: ShapePath.RoundCap
 
-
                 property int joinStyleIndex: 0
-                //property var signal: console.log("created")
 
                 property variant styles: [
                     ShapePath.BevelJoin,
@@ -1130,6 +1395,7 @@ ApplicationWindow {
             }
         }
     }
+
     Component {
         id: buttonComponent
         ButtonNN {
@@ -1137,11 +1403,15 @@ ApplicationWindow {
             width: leftFrame.width-23*pix
             height: 1.25*buttonHeight
             onPressed: {
-                var object = layerComponent.createObject(mainPane,{"color" : adjustcolor([colorR,colorG,colorB]),
+                var object = layerComponent.createObject(layers,{"color" : adjustcolor([colorR,colorG,colorB]),
                                            "name": name,
                                            "group": group,
                                            "type": type,
-                                           "labelColor": [colorR,colorG,colorB]});
+                                           "labelColor": [colorR,colorG,colorB],
+                                           "input": input,
+                                           "output": output,
+                                           "x": 20*pix,
+                                           "y": 20*pix});
             }
             RowLayout {
                 anchors.fill: parent.fill
@@ -1220,7 +1490,6 @@ ApplicationWindow {
                     font.pointSize: 10
                     color: "#777777"
                     wrapMode: Text.NoWrap
-                    //Layout.alignment: Qt.AlignBottom
                 }
             }
             RowLayout {
@@ -1254,17 +1523,17 @@ ApplicationWindow {
                     TextField {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
                     }
                     TextField {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
                     }
                     TextField {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
                     }
                 }
         }
@@ -1327,12 +1596,12 @@ ApplicationWindow {
                     TextField {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
                     }
                     TextField {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d,[1,9]\d,[1,9]\d/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
                     }
                 }
         }
@@ -1445,7 +1714,7 @@ ApplicationWindow {
                     TextField {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,1}/ }
                     }
                 }
         }
@@ -1501,7 +1770,7 @@ ApplicationWindow {
                     TextField {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,1}/ }
                     }
                 }
         }
@@ -1557,7 +1826,7 @@ ApplicationWindow {
                     TextField {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /([1-9]\d) | (0,\d{1-2})/ }
+                        validator: RegExpValidator { regExp: /([1-9]\d{0,1}) | (0,\d{1-2})/ }
                     }
                 }
         }
@@ -1613,7 +1882,7 @@ ApplicationWindow {
                     TextField {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{1,3},[1,9]\d{1,3},[1,9]\d{1,3}/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{1,3},[1-9]\d{1,3},[1-9]\d{1,3}/ }
                     }
                 }
             }
