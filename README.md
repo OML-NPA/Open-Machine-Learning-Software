@@ -28,7 +28,7 @@ Windows (not implemented), Mac (not implemented), Linux (not implemented)
 We use a voluntary support scheme in order to finance the development and be able to compete with any proprietary commercial alternatives. 
 Project can be supported in three ways:
    - Direct donation
-   - Display of a customizable add banner
+   - Display of a customizable add banner with community selected adds
    - Commiting changes to the project source
 
 Being a supporter allows a user to request features and affect the feature queue based on the amount of support.
