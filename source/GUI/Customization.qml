@@ -40,12 +40,6 @@ ApplicationWindow {
 
     property string currentfolder: Qt.resolvedUrl(".")
 
-    onWidthChanged: {
-        mainPane.height = window.height - header.height - 4*pix
-    }
-    onHeightChanged: {
-        mainPane.width = window.width-leftFrame.width-rightFrame.width-4*pix
-    }
     onClosing: { customizationLoader.sourceComponent = undefined }
 
     header: ToolBar {
@@ -93,20 +87,20 @@ ApplicationWindow {
                             id: layersFlickable
                             height: 0.6*(window.height - header.height - 2*layersLabel.height)-4*pix
                             width: leftFrame.width-2*pix
-                            contentHeight: 1.25*buttonHeight*(multlayerView.count +
+                            contentHeight: 1.25*buttonHeight*(linearlayerView.count +
                                 normlayerView.count + activationlayerView.count +
                                 resizinglayerView.count + otherlayerView.count) + 5*0.75*buttonHeight
                             ScrollBar.horizontal.visible: false
                             Item {
                                 id: layersRow
                                 Label {
-                                    id: multLabel
+                                    id: linearLabel
                                     width: leftFrame.width-4*pix
                                     height: 0.75*buttonHeight
                                     font.pointSize: 10
                                     color: "#777777"
-                                    topPadding: 0.10*multLabel.height
-                                    text: "Multiplication layers"
+                                    topPadding: 0.10*linearLabel.height
+                                    text: "Linear layers"
                                     leftPadding: 0.25*margin
                                     background: Rectangle {
                                         anchors.fill: parent.fill
@@ -117,9 +111,9 @@ ApplicationWindow {
                                     }
                                 }
                                 ListView {
-                                        id: multlayerView
+                                        id: linearlayerView
                                         height: childrenRect.height
-                                        anchors.top: multLabel.bottom
+                                        anchors.top: linearLabel.bottom
                                         spacing: 0
                                         boundsBehavior: Flickable.StopAtBounds
                                         model: ListModel {id: multlayerModel
@@ -155,7 +149,7 @@ ApplicationWindow {
                                     }
                                 Label {
                                     id: normLabel
-                                    anchors.top: multlayerView.bottom
+                                    anchors.top: linearlayerView.bottom
                                     width: leftFrame.width-4*pix
                                     height: 0.75*buttonHeight
                                     font.pointSize: 10
@@ -474,24 +468,39 @@ ApplicationWindow {
                 antialiasing: true
                 layer.enabled: true
                 layer.samples: 8
-                ScrollableItem{
+                onWidthChanged: {
+                    flickableMainPane.width = mainFrame.width - 4*pix
+                    mainPane.width = flickableMainPane.width
+                }
+                onHeightChanged: {
+                    flickableMainPane.height = mainFrame.height - 4*pix
+                    mainPane.height = flickableMainPane.height
+                }
+                ScrollableItem {
                    id: flickableMainPane
                    width : mainFrame.width - 4*pix
                    height : mainFrame.height - 4*pix
+                   contentWidth: flickableMainPane.width
+                   contentHeight: flickableMainPane.height
                    showBackground: false
-                   clip: true
+                   clip: false
                    Pane {
                         id: mainPane
+                        width: flickableMainPane.width
+                        height: flickableMainPane.height
                         padding: 0
                         backgroundColor: "#FDFDFD"
                         Component.onCompleted: {
-                            flickableMainPane.contentWidth = flickableMainPane.width
-                            flickableMainPane.contentHeight = flickableMainPane.height
-                            mainPane.width = flickableMainPane.width
-                            mainPane.height = flickableMainPane.height
                             flickableMainPane.ScrollBar.vertical.visible = false
                             flickableMainPane.ScrollBar.horizontal.visible = false
                         }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                propertiesStackView.push(generalpropertiesComponent)
+                            }
+                        }
+
                         Item {
                             id: layers
                         }
@@ -885,39 +894,53 @@ ApplicationWindow {
                     var minwidth = -Math.min(0,getleft(unit))
                     var maxheight = Math.max(paneHeight,getbottom(unit))
                     var maxwidth = Math.max(paneWidth,getright(unit))
-                    var minheightchildren = -Math.min(gettopchild(layers))
-                    var minwidthchildren = -Math.min(getleftchild(layers))
-                    var maxheightchildren = Math.max(getbottomchild(layers))
-                    var maxwidthchildren = Math.max(getrightchild(layers))
-
+                    var minheightchildren = -gettopchild(layers)
+                    var minwidthchildren = -getleftchild(layers)
+                    var maxheightchildren = getbottomchild(layers)
+                    var maxwidthchildren = getrightchild(layers)
+                    var padding = 20*pix
                     if (layers.children.length===1) {
                         if (layers.children[0].x + layers.children[0].width>paneWidth) {
-                            layers.children[0].x = paneWidth - layers.children[0].width - 20*pix
+                            layers.children[0].x = paneWidth - layers.children[0].width - padding
                         }
                         if (layers.children[0].y + layers.children[0].height>paneHeight) {
-                            layers.children[0].y = paneHeight - layers.children[0].height - 20*pix
+                            layers.children[0].y = paneHeight - layers.children[0].height - padding
                         }
                         return
+                    }
+                    if((minwidthchildren+maxwidthchildren+2*padding)<mainFrame.width-4*pix &&
+                            paneWidth>(mainFrame.width-4*pix)) {
+                        mainPane.width = mainFrame.width-4*pix
+                        flickableMainPane.contentWidth = mainPane.width
+                        paneWidth = mainPane.width
+                    }
+                    if((minheightchildren+maxheightchildren+2*padding)<mainFrame.height-4*pix &&
+                            paneHeight>(mainFrame.height-4*pix)) {
+                        mainPane.height = mainFrame.height-4*pix
+                        flickableMainPane.contentHeight = mainPane.height
+                        paneHeight = mainPane.height
                     }
 
                     var adjX = 0
                     var adjY = 0
                     if (minwidth!==0) {
-                        adjX = minwidth + 20*pix
+                        adjX = minwidth + padding
                     }
                     else {
-                        adjX = minwidthchildren + 20*pix
+                        adjX = minwidthchildren + padding
                     }
                     if (minheight!==0) {
-                        adjY = minheight + 20*pix
+                        adjY = minheight + padding
                     }
                     else {
-                        adjY = minheightchildren + 20*pix
+                        adjY = minheightchildren + padding
                     }
-                    if ((adjX===20 && minwidthchildren===0*pix) || (-minwidthchildren+maxwidthchildren)/2<=paneWidth/2) {
+                    if ((adjX===padding && minwidthchildren===0*pix) ||
+                            (adjX<0 && (-minwidthchildren+maxwidthchildren)/2<=paneWidth/2)) {
                         adjX = 0
                     }
-                    if ((adjY===20 && minheightchildren===0*pix) || (-minheightchildren+maxheightchildren)/2<=paneHeight/2) {
+                    if ((adjY===padding && minheightchildren===0*pix) ||
+                            (adjY<0 && (-minheightchildren+maxheightchildren)/2<=paneHeight/2)) {
                         adjY = 0
                     }
 
@@ -931,8 +954,16 @@ ApplicationWindow {
                         for (var i = 0; i < layers.children.length; i++) {
                             layers.children[i].x = layers.children[i].x + adjX
                             layers.children[i].y = layers.children[i].y + adjY
-
+                            mainPane.width = mainPane.width
+                            mainPane.height = mainPane.height
                         }
+                        if (adjX!==0) {
+                            flickableMainPane.contentX = 0
+                        }
+                        if (adjY!==0) {
+                            flickableMainPane.contentY = 0
+                        }
+
                         var num = connections.children.length
                         for (i = 0; i < num; i++) {
                             var object = shapeComponent.createObject(connections, {
@@ -957,18 +988,24 @@ ApplicationWindow {
                     maxheightchildren = Math.max(getbottomchild(layers))
                     maxwidthchildren = Math.max(getrightchild(layers))
 
-                    flickableMainPane.contentHeight = paneHeight
-                    flickableMainPane.contentWidth = paneWidth
-
                     if (maxheight>paneHeight) {
-                        mainPane.height = maxheight + 20*pix
+                        mainPane.height = maxheight + padding
                         flickableMainPane.contentHeight = mainPane.height
-                        flickableMainPane.contentY = maxheight - flickableMainPane.height + 20*pix
+                        flickableMainPane.contentY = maxheight - flickableMainPane.height + padding
                     }
                     if (maxwidth>paneWidth) {
-                        mainPane.width = maxwidth + 20*pix
+                        mainPane.width = maxwidth + padding
                         flickableMainPane.contentWidth = mainPane.width
-                        flickableMainPane.contentX = maxwidth - flickableMainPane.width + 20*pix
+                        flickableMainPane.contentX = maxwidth - flickableMainPane.width + padding
+                    }
+
+                    if (maxheightchildren>paneHeight) {
+                        mainPane.height = maxheight + padding
+                        flickableMainPane.contentHeight = mainPane.height
+                    }
+                    if (maxwidthchildren>paneWidth) {
+                        mainPane.width = maxwidthchildren + padding
+                        flickableMainPane.contentWidth = mainPane.width
                     }
 
                     if (flickableMainPane.contentHeight>flickableMainPane.height) {
@@ -1434,7 +1471,7 @@ ApplicationWindow {
         }
     }
 
-//--Properties components
+//----Properties components
     Component {
         id: generalpropertiesComponent
         RowLayout {
@@ -1449,7 +1486,7 @@ ApplicationWindow {
                     text: "Number of connections: "
                 }
                 Label {
-                    text: "Number of irregularities: "
+                    text: "Number of nonlinearities: "
                 }
             }
             ColumnLayout {

@@ -14,8 +14,9 @@ Flickable{
     default property alias content : pane.contentItem
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
 
-    Frame {
+    Pane {
         id:pane
+        anchors.fill: parent
         padding: 0
     }
     ScrollBar.vertical: ScrollBar{

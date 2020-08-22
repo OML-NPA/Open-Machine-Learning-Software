@@ -15,6 +15,7 @@ T.Pane {
     padding: 12
 
     background: Rectangle {
+        anchors.fill: parent
         color: backgroundColor
     }
 }
