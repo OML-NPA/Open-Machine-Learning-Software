@@ -11,7 +11,7 @@ T.TextField {
     property double defaultWidth: 0.1*Screen.width
     property double defaultHeight: 0.03*Screen.height
 
-    implicitWidth: 0.25*defaultWidth
+    implicitWidth: defaultWidth
     implicitHeight: defaultHeight
 
     //implicitWidth: implicitBackgroundWidth + leftInset + rightInset
@@ -51,7 +51,7 @@ T.TextField {
     }
 
     background: Rectangle {
-        implicitWidth: 0.25*defaultWidth
+        implicitWidth: defaultWidth
         implicitHeight: defaultHeight
         border.width: control.activeFocus ? 2 : 1
         color: control.palette.base

@@ -164,7 +164,6 @@ ApplicationWindow {
                     maximumLength: 3
                     validator: IntValidator { bottom: 0; top: 999;}
                     onEditingFinished: {
-                        console.log(parseFloat(blue.text))
                         if (parseFloat(blue.text)>255) {
                             blue.text = "255"
                         }
@@ -183,10 +182,10 @@ ApplicationWindow {
                         featureModel.get(indTree).colorG = parseFloat(green.text)
                         featureModel.get(indTree).colorB = parseFloat(blue.text)
                         featureModel.get(indTree).name = name.text
-                        featureView.itemAtIndex(indTree).children[0].children[0].colorRGB =
-                                [featureModel.get(indTree).colorR,
-                                 featureModel.get(indTree).colorG,
-                                 featureModel.get(indTree).colorB]
+                        featureView.itemAtIndex(indTree).children[0].children[0].color =
+                                rgbtohtml([featureModel.get(indTree).colorR,
+                                           featureModel.get(indTree).colorG,
+                                           featureModel.get(indTree).colorB])
                     }
                 }
                 Button {
@@ -195,12 +194,17 @@ ApplicationWindow {
                     Layout.preferredHeight: buttonHeight
                     onClicked: {
                         featureModel.remove(indTree)
-                        window.visible = false
+                        featuredialogLoader.sourceComponent = null
                     }
                 }
             }
             }
         }
+    }
+//---FUNCTIONS----------------------------------------------------------
+
+    function rgbtohtml(colorRGB) {
+        return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
     }
 }
 

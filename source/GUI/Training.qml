@@ -21,6 +21,7 @@ ApplicationWindow {
     color: systempalette.window
 
     property double margin: 0.02*Screen.width
+    property double pix: Screen.width/3840
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
     property double tabmargin: 0.5*margin
@@ -171,11 +172,16 @@ ApplicationWindow {
                                             }
                                             RowLayout {
                                                 anchors.fill: parent.fill
-                                                ColorBox {
-                                                    leftPadding: 0.2*margin
-                                                    bottomPadding: 2*pix
+                                                Rectangle {
+                                                    id: colorRectangle
+                                                    Layout.leftMargin: 0.2*margin
+                                                    Layout.bottomMargin: 2*pix
                                                     Layout.alignment: Qt.AlignBottom
-                                                    colorRGB: [255,255,255]
+                                                    height: 30*pix
+                                                    width: 30*pix
+                                                    border.width: 2*pix
+                                                    radius: colorRectangle.width
+                                                    color: rgbtohtml([colorR,colorG,colorB])
                                                 }
                                                 Label {
                                                     topPadding: 0.15*margin
@@ -250,6 +256,12 @@ ApplicationWindow {
         }
 
     }
+//---FUNCTIONS----------------------------------------------------------
+
+    function rgbtohtml(colorRGB) {
+        return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
+    }
+
 }
 
 

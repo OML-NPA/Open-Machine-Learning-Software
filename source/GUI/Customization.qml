@@ -15,8 +15,8 @@ ApplicationWindow {
     id: window
     visible: true
     title: qsTr("Image Analysis Software")
-    minimumWidth: buttonWidth*5
-    minimumHeight: buttonHeight*20
+    minimumWidth: 2200*pix
+    minimumHeight: 1500*pix
     //maximumWidth: gridLayout.width
     //maximumHeight: gridLayout.height
 
@@ -39,25 +39,53 @@ ApplicationWindow {
     property bool localtrainingOpen: false
 
     property string currentfolder: Qt.resolvedUrl(".")
+    property var currentFocus: null
 
     onClosing: { customizationLoader.sourceComponent = undefined }
 
     header: ToolBar {
         id: header
-        height: 200*pix
-        Frame {
-            height: header.height
+        height: 50*pix
+        Row {
+            Button {
+                text: "Save"
+                padding: 0
+                backgroundRadius: 0
+                width: (header.width)/15
+                height: header.height + 1
+            }
+            Button {
+                text: "Arrange"
+                padding: 0
+                backgroundRadius: 0
+                width: (header.width)/15
+                height: header.height + 1
+            }
+        }
+        Rectangle {
             width: header.width
+            height: 2*pix
+            border.width: 0
+            y: header.height - 1
+            color: systempalette.dark
         }
     }
     GridLayout {
         id: gridLayout
+        focus: true
+        Keys.onPressed: {
+            if (event.key===Qt.Key_Backspace || event.key===Qt.Key_Delete) {
+                propertiesStackView.push(generalpropertiesComponent)
+                currentFocus.destroy()
+                currentFocus = null
+            }
+        }
         Row {
             spacing: 0
             Frame {
                 id: leftFrame
-                height: window.height - header.height
-                width: 500*pix
+                height: window.height - header.height + 1
+                width: 500*pix + 1
                 padding:0
                 Item {
                     id: layersItem
@@ -87,16 +115,62 @@ ApplicationWindow {
                             id: layersFlickable
                             height: 0.6*(window.height - header.height - 2*layersLabel.height)-4*pix
                             width: leftFrame.width-2*pix
-                            contentHeight: 1.25*buttonHeight*(linearlayerView.count +
-                                normlayerView.count + activationlayerView.count +
-                                resizinglayerView.count + otherlayerView.count) + 5*0.75*buttonHeight
+                            contentHeight: 1.25*buttonHeight*(inoutlayerView.count + linearlayerView.count +
+                                normlayerView.count + activationlayerView.count + poolinglayerView.count +
+                                resizinglayerView.count + otherlayerView.count) + 7*0.75*buttonHeight
                             ScrollBar.horizontal.visible: false
                             Item {
                                 id: layersRow
                                 Label {
+                                    id: inoutLabel
+                                    width: leftFrame.width-4*pix
+                                    height: 0.75*buttonHeight
+                                    font.pointSize: 10
+                                    color: "#777777"
+                                    topPadding: 0.10*linearLabel.height
+                                    text: "Input and output layers"
+                                    leftPadding: 0.25*margin
+                                    background: Rectangle {
+                                        anchors.fill: parent.fill
+                                        x: 2*pix
+                                        color: systempalette.window
+                                        width: leftFrame.width-4*pix
+                                        height: 0.75*buttonHeight
+                                    }
+                                }
+                                ListView {
+                                        id: inoutlayerView
+                                        height: childrenRect.height
+                                        anchors.top: inoutLabel.bottom
+                                        spacing: 0
+                                        boundsBehavior: Flickable.StopAtBounds
+                                        model: ListModel {id: inoutlayerModel
+                                                          ListElement{
+                                                              type: "Input" // @disable-check M16
+                                                              group: "inout" // @disable-check M16
+                                                              name: "inputnum"// @disable-check M16
+                                                              colorR: 0 // @disable-check M16
+                                                              colorG: 0 // @disable-check M16
+                                                              colorB: 250 // @disable-check M16
+                                                              inputnum: 0 // @disable-check M16
+                                                              outputnum: 1} // @disable-check M16
+                                                          ListElement{
+                                                              type: "Output" // @disable-check M16
+                                                              group: "inout" // @disable-check M16
+                                                              name: "outputnum" // @disable-check M16
+                                                              colorR: 0 // @disable-check M16
+                                                              colorG: 0 // @disable-check M16
+                                                              colorB: 250 // @disable-check M16
+                                                              inputnum: 1 // @disable-check M16
+                                                              outputnum: 0} // @disable-check M16
+                                                        }
+                                        delegate: buttonComponent
+                                    }
+                                Label {
                                     id: linearLabel
                                     width: leftFrame.width-4*pix
                                     height: 0.75*buttonHeight
+                                    anchors.top: inoutlayerView.bottom
                                     font.pointSize: 10
                                     color: "#777777"
                                     topPadding: 0.10*linearLabel.height
@@ -124,8 +198,8 @@ ApplicationWindow {
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
                                                               colorB: 0 // @disable-check M16
-                                                              input: 1 // @disable-check M16
-                                                              output: 1} // @disable-check M16
+                                                              inputnum: 1 // @disable-check M16
+                                                              outputnum: 1} // @disable-check M16
                                                           ListElement{
                                                               type: "Transposed convolution" // @disable-check M16
                                                               group: "mult" // @disable-check M16
@@ -133,8 +207,8 @@ ApplicationWindow {
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
                                                               colorB: 0 // @disable-check M16
-                                                              input: 1 // @disable-check M16
-                                                              output: 1} // @disable-check M16
+                                                              inputnum: 1 // @disable-check M16
+                                                              outputnum: 1} // @disable-check M16
                                                           ListElement{
                                                               type: "Fully connected" // @disable-check M16
                                                               group: "mult" // @disable-check M16
@@ -142,8 +216,8 @@ ApplicationWindow {
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
                                                               colorB: 0 // @disable-check M16
-                                                              input: 1 // @disable-check M16
-                                                              output: 1} // @disable-check M16
+                                                              inputnum: 1 // @disable-check M16
+                                                              outputnum: 1} // @disable-check M16
                                                         }
                                         delegate: buttonComponent
                                     }
@@ -179,8 +253,8 @@ ApplicationWindow {
                                                           colorR: 0 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
                                                           colorB: 0 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Batch normalisation" // @disable-check M16
                                                           group: "norm" // @disable-check M16
@@ -188,8 +262,8 @@ ApplicationWindow {
                                                           colorR: 0 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
                                                           colorB: 0 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -225,8 +299,8 @@ ApplicationWindow {
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Laeky RelU" // @disable-check M16
                                                           group: "activation" // @disable-check M16
@@ -234,8 +308,8 @@ ApplicationWindow {
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "ElU" // @disable-check M16
                                                           group: "activation" // @disable-check M16
@@ -243,8 +317,8 @@ ApplicationWindow {
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Tanh" // @disable-check M16
                                                           group: "activation" // @disable-check M16
@@ -252,8 +326,8 @@ ApplicationWindow {
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Sigmoid" // @disable-check M16
                                                           group: "activation" // @disable-check M16
@@ -261,14 +335,61 @@ ApplicationWindow {
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 0 // @disable-check M16
                                                           colorB: 0 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
                                 Label {
-                                    id: resizingLabel
+                                    id: poolingLabel
                                     anchors.top: activationlayerView.bottom
+                                    width: leftFrame.width-4*pix
+                                    height: 0.75*buttonHeight
+                                    font.pointSize: 10
+                                    color: "#777777"
+                                    topPadding: 0.10*poolingLabel.height
+                                    text: "Pooling layers"
+                                    leftPadding: 0.25*margin
+                                    background: Rectangle {
+                                        anchors.fill: parent.fill
+                                        x: 2*pix
+                                        color: systempalette.window
+                                        width: leftFrame.width-4*pix
+                                        height: 0.75*buttonHeight
+                                    }
+                                }
+                                ListView {
+                                    id: poolinglayerView
+                                    anchors.top: poolingLabel.bottom
+                                    height: childrenRect.height
+                                    spacing: 0
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    model: ListModel {id: poolinglayerModel
+                                                      ListElement{
+                                                          type: "Max pooling" // @disable-check M16
+                                                          group: "pooling" // @disable-check M16
+                                                          name: "maxpool" // @disable-check M16
+                                                          colorR: 150 // @disable-check M16
+                                                          colorG: 0 // @disable-check M16
+                                                          colorB: 255 // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
+                                                      ListElement{
+                                                          type: "Average pooling" // @disable-check M16
+                                                          group: "pooling" // @disable-check M16
+                                                          name: "avgpool" // @disable-check M16
+                                                          colorR: 150 // @disable-check M16
+                                                          colorG: 0 // @disable-check M16
+                                                          colorB: 255 // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
+                                                    }
+                                    delegate: buttonComponent
+                                }
+
+                                Label {
+                                    id: resizingLabel
+                                    anchors.top: poolinglayerView.bottom
                                     width: leftFrame.width-4*pix
                                     height: 0.75*buttonHeight
                                     font.pointSize: 10
@@ -298,8 +419,8 @@ ApplicationWindow {
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
                                                           colorB: 180// @disable-check M16
-                                                          input: 2 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 2 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Decatenation" // @disable-check M16
                                                           group: "resizing" // @disable-check M16
@@ -307,8 +428,8 @@ ApplicationWindow {
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
                                                           colorB: 180 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 2} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 2} // @disable-check M16
                                                       ListElement{
                                                           type: "Scaling" // @disable-check M16
                                                           group: "resizing" // @disable-check M16
@@ -316,8 +437,8 @@ ApplicationWindow {
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
                                                           colorB: 180 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Resizing" // @disable-check M16
                                                           group: "resizing" // @disable-check M16
@@ -325,8 +446,8 @@ ApplicationWindow {
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
                                                           colorB: 180 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -362,8 +483,8 @@ ApplicationWindow {
                                                           colorR: 250 // @disable-check M16
                                                           colorG: 250 // @disable-check M16
                                                           colorB: 250 // @disable-check M16
-                                                          input: 1 // @disable-check M16
-                                                          output: 1} // @disable-check M16
+                                                          inputnum: 1 // @disable-check M16
+                                                          outputnum: 1} // @disable-check M16
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -498,6 +619,7 @@ ApplicationWindow {
                             anchors.fill: parent
                             onClicked: {
                                 propertiesStackView.push(generalpropertiesComponent)
+                                currentFocus = null
                             }
                         }
 
@@ -705,23 +827,27 @@ ApplicationWindow {
 
     function adjustcolor(colorRGB) {
 
-        if (colorRGB[0]===colorRGB[1] && colorRGB[0]===colorRGB[2]) {
-            colorRGB[0] = 200 + colorRGB[0]/255*55
-            colorRGB[1] = 200 + colorRGB[1]/255*55
-            colorRGB[2] = 200 + colorRGB[2]/255*55
-        }
+        //if (colorRGB[0]===colorRGB[1] && colorRGB[0]===colorRGB[2]) {
+            colorRGB[0] = 240 + colorRGB[0]/255*15
+            colorRGB[1] = 240 + colorRGB[1]/255*15
+            colorRGB[2] = 240 + colorRGB[2]/255*15
+        /*}
         else {
             var max = 255/Math.max(colorRGB[0],colorRGB[1],colorRGB[2])
 
             for (var i=0;i<=2;i++) {
                 if (colorRGB[i]===0) {
-                    colorRGB[i] = 245
+                    colorRGB[i] = 255
+                }
+                else if (colorRGB[i]<245) {
+                    colorRGB[i] = 200 + colorRGB[i]/255*55
                 }
                 else {
                     colorRGB[i] = colorRGB[i] * max
                 }
             }
-        }
+            console.log(colorRGB)
+        }*/
         return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
     }
 
@@ -763,6 +889,30 @@ ApplicationWindow {
         return(out)
     }
 
+    function datacmp(data,type) {
+        if (data===undefined) {
+            if (type==="str") {
+                return("")
+            }
+            else if (type==="num") {
+                return(-1)
+            }
+            else {
+                return("")
+            }
+        }
+        else {
+            return(data)
+        }
+    }
+
+    function pushstack(comp,labelColor,type,name,unit,datastore) {
+        propertiesStackView.push(comp, {"labelColor": labelColor,
+            "type": type, "name": name,"unit": unit})
+        if (datastore!==undefined) {
+            propertiesStackView.currentItem.datastore = datastore
+        }
+    }
 
 //--COMPONENTS--------------------------------------------------------------------
 
@@ -779,8 +929,10 @@ ApplicationWindow {
             property string type
             property string group
             property var labelColor
-            property double input
-            property double output
+            property double inputnum
+            property double outputnum
+            property var datastore
+
             Column {
                 anchors.fill: parent.fill
                 topPadding: 8*pix
@@ -799,6 +951,7 @@ ApplicationWindow {
             }
 
             MouseArea {
+                id: unitMouseArea
                 anchors.fill: parent
                 drag.target: parent
                 hoverEnabled: true
@@ -825,25 +978,40 @@ ApplicationWindow {
                     }
                 }
                 onClicked: {
-                    if (type=="Convolution") {
-                        propertiesStackView.push(convpropertiesComponent)
-                        propertiesStackView.currentItem.labelColor = labelColor
-                        propertiesStackView.currentItem.type = type
-                    }
-                    else if (type=="Transposed convolution") {
-                        propertiesStackView.push(tconvpropertiesComponent)
-                        propertiesStackView.currentItem.labelColor = labelColor
-                        propertiesStackView.currentItem.type = type
-                    }
-                    else if (type=="Fully connected") {
-                        propertiesStackView.push(fconnpropertiesComponent)
-                        propertiesStackView.currentItem.labelColor = labelColor
-                        propertiesStackView.currentItem.type = type
-                    }
-                    else {
-                        propertiesStackView.push(emptypropertiesComponent)
-                        propertiesStackView.currentItem.labelColor = labelColor
-                        propertiesStackView.currentItem.type = type
+                    currentFocus = unit
+                    switch(type) {
+                    case "inputnum":
+                        return pushstack(inputpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Output":
+                        return pushstack(outputpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Convolution":
+                        return pushstack(convpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Transposed convolution":
+                        return pushstack(tconvpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Fully connected":
+                        return pushstack(fconnpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Drop-out":
+                        return pushstack(dropoutpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Batch normalisation":
+                        return pushstack(batchnormpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Leaky RelU":
+                        return pushstack(leakyrelupropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "ElU":
+                        return pushstack(elupropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Max pooling":
+                        return pushstack(poolpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Average pooling":
+                        return pushstack(poolpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Catenation":
+                        return pushstack(catpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Decatenation":
+                        return pushstack(decatpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Scaling":
+                        return pushstack(scalingpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Resizing":
+                        return pushstack(resizingpropertiesComponent,labelColor,type,name,unit,datastore)
+                    default:
+                        pushstack(emptypropertiesComponent,labelColor,type,name,unit,datastore)
                     }
                 }
 
@@ -857,7 +1025,7 @@ ApplicationWindow {
                                 upNodes.children[i].children[0].connectedItem.connection = shapeComponent.createObject(connections, {
                                       "beginX": startX,
                                       "beginY": startY,
-                                      "finishX": unit.x + unit.width*upNodes.children[i].index/(input+1),
+                                      "finishX": unit.x + unit.width*upNodes.children[i].index/(inputnum+1),
                                       "finishY": unit.y + 2*pix,
                                       "origin": upNodes.children[i].children[0].connectedItem});
                                 var nodePoint = upNodes.children[i].children[0].
@@ -873,7 +1041,7 @@ ApplicationWindow {
                                     var finishY = downNodes.children[i].children[j].connection.data[0].pathElements[0].y
                                     downNodes.children[i].children[j].connection.destroy()
                                     downNodes.children[i].children[j].connection = shapeComponent.createObject(connections, {
-                                          "beginX": unit.x + unit.width*downNodes.children[i].index/(output+1),
+                                          "beginX": unit.x + unit.width*downNodes.children[i].index/(outputnum+1),
                                           "beginY": unit.y + unit.height - 2*pix,
                                           "finishX": finishX,
                                           "finishY": finishY,
@@ -919,6 +1087,7 @@ ApplicationWindow {
                         mainPane.height = mainFrame.height-4*pix
                         flickableMainPane.contentHeight = mainPane.height
                         paneHeight = mainPane.height
+
                     }
 
                     var adjX = 0
@@ -998,9 +1167,8 @@ ApplicationWindow {
                         flickableMainPane.contentWidth = mainPane.width
                         flickableMainPane.contentX = maxwidth - flickableMainPane.width + padding
                     }
-
                     if (maxheightchildren>paneHeight) {
-                        mainPane.height = maxheight + padding
+                        mainPane.height = maxheightchildren + padding
                         flickableMainPane.contentHeight = mainPane.height
                     }
                     if (maxwidthchildren>paneWidth) {
@@ -1028,12 +1196,12 @@ ApplicationWindow {
                 Item {
                     id: upNodes
                     Component.onCompleted: {
-                        for (var i=0;i<input;i++) {
+                        for (var i=0;i<inputnum;i++) {
                             upNodeComponent.createObject(upNodes, {
                                 "unit": unit,
                                 "upNodes": upNodes,
                                 "downNodes": downNodes,
-                                "input": input,
+                                "inputnum": inputnum,
                                 "index": i+1});
                         }
                     }
@@ -1041,12 +1209,12 @@ ApplicationWindow {
                 Item {
                     id: downNodes
                     Component.onCompleted: {
-                        for (var i=0;i<output;i++) {
+                        for (var i=0;i<outputnum;i++) {
                             downNodeComponent.createObject(downNodes, {
                                 "unit": unit,
                                 "upNodes": upNodes,
                                 "downNodes": downNodes,
-                                "output": output,
+                                "outputnum": outputnum,
                                 "index": i+1});
                         }
                     }
@@ -1062,7 +1230,7 @@ ApplicationWindow {
             property var unit
             property var upNodes
             property var downNodes
-            property double output
+            property double outputnum
             property double index
             Rectangle {
                 id: downNode
@@ -1072,7 +1240,7 @@ ApplicationWindow {
                 border.color: systempalette.mid
                 border.width: 3*pix
                 visible: false
-                x: unit.width*index/(output+1) - downNode.radius/2
+                x: unit.width*index/(outputnum+1) - downNode.radius/2
                 y: unit.height - downNode.radius/2 - 2*pix
             }
             Component.onCompleted: downNodeRectangleComponent.createObject(downNodeItem, {
@@ -1081,7 +1249,7 @@ ApplicationWindow {
                 "downNodes": downNodes,
                 "downNodeItem": downNodeItem,
                 "downNode": downNode,
-                "output": output,
+                "outputnum": outputnum,
                 "index": index});
         }
     }
@@ -1098,13 +1266,13 @@ ApplicationWindow {
             property var connectedNode: null
             property var connectedItem: null
             property var connection: null
-            property double output
+            property double outputnum
             property double index
             width: 2*downNode.radius
             height: 2*downNode.radius
-            //opacity: 0.2
-            color: "transparent"
-            x: unit.width*index/(output+1) - downNode.radius
+            opacity: 0.2
+            color: "red"
+            x: unit.width*index/(outputnum+1) - downNode.radius
             y: unit.height - downNode.radius - 2*pix
             MouseArea {
                 id: downnodeMouseArea
@@ -1150,7 +1318,7 @@ ApplicationWindow {
                             downNodeRectangle.connection.destroy()
                         }
                         downNodeRectangle.connection = shapeComponent.createObject(connections, {
-                             "beginX": unit.x + unit.width*index/(output+1),
+                             "beginX": unit.x + unit.width*index/(outputnum+1),
                              "beginY": unit.y + unit.height - 2*pix,
                              "finishX": unit.x + downNodeRectangle.x + downNode.radius +
                                             mouseAdjust[0],
@@ -1176,7 +1344,6 @@ ApplicationWindow {
                                     layers.children[i].children[2].children[0].children[j].children[0].connectedItem===downNodeRectangle)) &&
                                     layers.children[i].children[2].children[0].children[0]!==
                                     upNodes.children[0]) {
-                                debug(layers.children[i].children[2].children[0].children[j].children[0].parent.input)
                                 downNodeRectangle.connectedNode = layers.children[i].children[2].children[0].children[j].children[0]
                                 layers.children[i].children[2].children[0].children[j].children[0].connectedNode = downNode
                                 layers.children[i].children[2].children[0].children[j].children[0].connectedItem = downNodeRectangle
@@ -1189,7 +1356,7 @@ ApplicationWindow {
                                 downNodeRectangle.y = downNodeRectangle.y - adjY
                                 downNodeRectangle.connection.destroy()
                                 downNodeRectangle.connection = shapeComponent.createObject(connections, {
-                                     "beginX": unit.x + unit.width*index/(output+1),
+                                     "beginX": unit.x + unit.width*index/(outputnum+1),
                                      "beginY": unit.y + unit.height - 2*pix,
                                      "finishX": unit.x + downNodeRectangle.x + downNode.radius,
                                      "finishY": unit.y + downNodeRectangle.y + downNode.radius,
@@ -1200,7 +1367,7 @@ ApplicationWindow {
                                                 "downNodes": downNodes,
                                                 "downNodeItem": downNodeItem,
                                                 "downNode": downNode,
-                                                "output": output,
+                                                "outputnum": outputnum,
                                                 "index": index});
                                 return
                             }
@@ -1219,7 +1386,7 @@ ApplicationWindow {
                         downNode.visible = true
                     }
                     if (downNodeRectangle.connectedNode===null) {
-                        downNodeRectangle.x = unit.width*index/(output+1) - downNode.radius
+                        downNodeRectangle.x = unit.width*index/(outputnum+1) - downNode.radius
                         downNodeRectangle.y = unit.height - downNode.radius - 2*pix
                     }
                 }
@@ -1234,7 +1401,7 @@ ApplicationWindow {
             property var unit
             property var upNodes
             property var downNodes
-            property double input
+            property double inputnum
             property double index
             Rectangle {
                 id: upNode
@@ -1246,7 +1413,7 @@ ApplicationWindow {
                 visible: false
                 property var connectedNode: null
                 property var connectedItem: null
-                x: unit.width*index/(input+1)-upNode.radius/2
+                x: unit.width*index/(inputnum+1)-upNode.radius/2
                 y: -upNode.radius/2 + 2*pix
             }
             Rectangle {
@@ -1256,7 +1423,7 @@ ApplicationWindow {
                 //opacity: 0.2
                 color: "transparent"
                 border.width: 0
-                x: unit.width*index/(input+1)-upNode.radius
+                x: unit.width*index/(inputnum+1)-upNode.radius
                 y: -upNode.radius + 2*pix
                 MouseArea {
                     anchors.fill: parent
@@ -1308,7 +1475,7 @@ ApplicationWindow {
                             var point = upNodeRectangle.mapToItem(layers,0,0)
                             upNode.connectedItem.connection = shapeComponent.createObject(connections, {
                                  "beginX": upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
-                                                upNode.connectedItem.index/(upNode.connectedItem.output+1),
+                                                upNode.connectedItem.index/(upNode.connectedItem.outputnum+1),
                                  "beginY": upNode.connectedItem.unit.y + upNode.connectedItem.unit.height - 2*pix,
                                  "finishX": point.x +
                                             upNode.connectedNode.radius + mouseAdjust[0],
@@ -1319,7 +1486,7 @@ ApplicationWindow {
                     }
                     onReleased: {
                         if (upNode.connectedNode==null) {
-                            upNodeRectangle.x = unit.width*index/(input+1)-upNode.radius
+                            upNodeRectangle.x = unit.width*index/(inputnum+1)-upNode.radius
                             upNodeRectangle.y = -upNode.radius + 2*pix
                             return
                         }
@@ -1346,7 +1513,7 @@ ApplicationWindow {
                                     var downNodePoint = upNode.connectedItem.mapToItem(layers,0,0)
                                     var adjX = downNodePoint.x - upNodePoint.x
                                     var adjY = downNodePoint.y - upNodePoint.y
-                                    upNodeRectangle.x = unit.width*index/(output+1)-upNode.radius
+                                    upNodeRectangle.x = unit.width*index/(outputnum+1)-upNode.radius
                                     upNodeRectangle.y = -upNode.radius + 2*pix
                                     upNode.connectedItem.x = upNode.connectedItem.x - adjX
                                     upNode.connectedItem.y = upNode.connectedItem.y - adjY
@@ -1354,7 +1521,7 @@ ApplicationWindow {
                                     var point = layers.children[i].children[2].children[0].children[j].children[1].mapToItem(layers,0,0)
                                     upNode.connectedItem.connection = shapeComponent.createObject(connections, {
                                           "beginX": upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
-                                                        upNode.connectedItem.index/(upNode.connectedItem.output+1),
+                                                        upNode.connectedItem.index/(upNode.connectedItem.outputnum+1),
                                           "beginY": upNode.connectedItem.unit.y + upNode.connectedItem.unit.height - 2*pix,
                                           "finishX": point.x +
                                                      upNode.connectedNode.radius + mouseAdjust[0],
@@ -1375,7 +1542,7 @@ ApplicationWindow {
 
                         upNode.connectedNode.visible = false
                         upNode.connectedNode = null
-                        upNodeRectangle.x = unit.width*index/(input+1)-upNode.radius
+                        upNodeRectangle.x = unit.width*index/(inputnum+1)-upNode.radius
                         upNodeRectangle.y = -upNode.radius + 2*pix
                         for (i=0;i<layers.children.length;i++) {
                             for (j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
@@ -1445,21 +1612,25 @@ ApplicationWindow {
                                            "group": group,
                                            "type": type,
                                            "labelColor": [colorR,colorG,colorB],
-                                           "input": input,
-                                           "output": output,
+                                           "inputnum": inputnum,
+                                           "outputnum": outputnum,
                                            "x": 20*pix,
                                            "y": 20*pix});
             }
             RowLayout {
                 anchors.fill: parent.fill
-                ColorBox {
+                Rectangle {
+                    id: colorRectangle
                     Layout.leftMargin: 0.2*margin
                     Layout.bottomMargin: 0.03*margin
                     Layout.preferredWidth: 0.4*margin
                     Layout.preferredHeight: 0.4*margin
-                    height: 20*margin
+                    height: 20*pix
+                    width: 20*pix
+                    radius: colorRectangle.height
                     Layout.alignment: Qt.AlignBottom
-                    colorRGB: [colorR,colorG,colorB]
+                    color: rgbtohtml([colorR,colorG,colorB])
+                    border.width: 2*pix
                 }
                 Label {
                     topPadding: 0.28*margin
@@ -1494,7 +1665,7 @@ ApplicationWindow {
                 Layout.topMargin: 0.2*margin
                 spacing: 0.2*margin
                 Label {
-                    text: mainPane.children.length - 1
+                    text: layers.children.length
                 }
                 Label {
                     text: getconnectionsnum()
@@ -1507,12 +1678,25 @@ ApplicationWindow {
     }
 
     Component {
-        id: convpropertiesComponent
+        id: inputpropertiesComponent
+
         Column {
+            id: column
+            property var unit
+            property var name
             property string type
             property var labelColor
+            property var datastore: { "name": name, "size": "160,160",
+                "normalisation": {"text": "[0,1]", "ind": 0}}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
+
             Row {
                 leftPadding: 20*pix
+                bottomPadding: 20*pix
                 ColorBox {
                     topPadding: 0.37*margin
                     leftPadding: 0.1*margin
@@ -1531,6 +1715,186 @@ ApplicationWindow {
             }
             RowLayout {
                 ColumnLayout {
+                    id: labelColumnLayout
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Size","Normalisation"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        text: datastore.name
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.size
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /(([1-9]\d{0,3})|([1-9]\d{0,3},[1-9]\d{0,3})|([1-9]\d{0,3},[1-9]\d{0,3},[1-9]\d{0,3}))/ }
+                        onEditingFinished: {
+                            unit.datastore.size = displayText
+                        }
+                    }
+                    ComboBox {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        currentIndex: datastore.normalisation.ind
+                        model: ListModel {
+                           id: optionsModel
+                           ListElement { text: "[0,1]" } //@disable-check M16
+                           ListElement { text: "[-1,1]" } //@disable-check M16
+                           ListElement { text: "zero center" } //@disable-check M16
+                        }
+                        onActivated: {
+                            unit.datastore.normalisation.text = currentText
+                            unit.datastore.normalisation.ind = currentIndex
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: outputpropertiesComponent
+        Column {
+            property var unit
+            property var name
+            property string type
+            property var labelColor
+            property var datastore: { "name": name, "loss": {"text": "Dice coefficient", "ind": 12}}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
+            Row {
+                leftPadding: 20*pix
+                bottomPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    id: labelColumnLayout
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Loss"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        text: datastore.name
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
+                    }
+                    ComboBox {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        currentIndex: datastore.loss.ind
+                        model: ListModel {
+                           id: optionsModel
+                           ListElement { text: "MAE" } //@disable-check M16
+                           ListElement { text: "MSE" } //@disable-check M16
+                           ListElement { text: "MSLE" } //@disable-check M16
+                           ListElement { text: "Huber" } //@disable-check M16
+                           ListElement { text: "Crossentropy" } //@disable-check M16
+                           ListElement { text: "Logit crossentropy" } //@disable-check M16
+                           ListElement { text: "Binary crossentropy" } //@disable-check M16
+                           ListElement { text: "Logit binary crossentropy" } //@disable-check M16
+                           ListElement { text: "Kullback-Leibler divergence" } //@disable-check M16
+                           ListElement { text: "Poisson" } //@disable-check M16
+                           ListElement { text: "Hinge" } //@disable-check M16
+                           ListElement { text: "Squared hinge" } //@disable-check M16
+                           ListElement { text: "Dice coefficient" } //@disable-check M16
+                           ListElement { text: "Tversky" } //@disable-check M16
+                        }
+                        onActivated: {
+                            unit.datastore.loss.text = currentText
+                            unit.datastore.loss.ind = currentIndex
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: convpropertiesComponent
+        Column {
+            property var unit
+            property var name
+            property string type
+            property var labelColor
+            property var datastore: { "name": name, "filters": "32", "filtersize": "3",
+                "stride": "1", "dilationfactor": "1"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
+            Row {
+                leftPadding: 20*pix
+                bottomPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    id: labelColumnLayout
                     Layout.alignment: Qt.AlignTop
                     Layout.leftMargin: 0.4*margin
                     Layout.topMargin: 0.22*margin
@@ -1549,42 +1913,71 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 0.2*margin
                     TextField {
+                        text: datastore.name
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.filters
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         validator: RegExpValidator { regExp: /[1-9]\d{1,5}/ }
+                        onEditingFinished: {
+                            unit.datastore.filters = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.filtersize
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /(([1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}))/ }
+                        onEditingFinished: {
+                            unit.datastore.filtersize = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.stride
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /(([1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}))/ }
+                        onEditingFinished: {
+                            unit.datastore.stride = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.dilationfactor
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /(([1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}))/ }
+                        onEditingFinished: {
+                            unit.datastore.dilationfactor = displayText
+                        }
                     }
                 }
-        }
-
+            }
         }
     }
 
     Component {
         id: tconvpropertiesComponent
         Column {
+            property var unit
+            property var name
             property string type
             property var labelColor
+            property var datastore: { "name": name, "filters": "32", "filtersize": "3",
+                "stride": "1"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
             Row {
                 leftPadding: 20*pix
+                bottomPadding: 20*pix
                 ColorBox {
                     topPadding: 0.37*margin
                     leftPadding: 0.1*margin
@@ -1599,11 +1992,11 @@ ApplicationWindow {
                     font.pointSize: 10
                     color: "#777777"
                     wrapMode: Text.NoWrap
-                    //Layout.alignment: Qt.AlignBottom
                 }
             }
             RowLayout {
                 ColumnLayout {
+                    id: labelColumnLayout
                     Layout.alignment: Qt.AlignTop
                     Layout.leftMargin: 0.4*margin
                     Layout.topMargin: 0.22*margin
@@ -1622,37 +2015,61 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 0.2*margin
                     TextField {
+                        text: datastore.name
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.filters
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         validator: RegExpValidator { regExp: /[1-9]\d{1,5}/ }
+                        onEditingFinished: {
+                            unit.datastore.filters = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.filtersize
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /(([1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}))/ }
+                        onEditingFinished: {
+                            unit.datastore.filtersize = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.stride
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}/ }
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /(([1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}))/ }
+                        onEditingFinished: {
+                            unit.datastore.stride = displayText
+                        }
                     }
                 }
-        }
-
+            }
         }
     }
 
     Component {
         id: fconnpropertiesComponent
         Column {
+            property var unit
+            property var name
             property string type
             property var labelColor
+            property var datastore: { "name": name, "neurons": "32"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
             Row {
                 leftPadding: 20*pix
+                bottomPadding: 20*pix
                 ColorBox {
                     topPadding: 0.37*margin
                     leftPadding: 0.1*margin
@@ -1667,11 +2084,11 @@ ApplicationWindow {
                     font.pointSize: 10
                     color: "#777777"
                     wrapMode: Text.NoWrap
-                    //Layout.alignment: Qt.AlignBottom
                 }
             }
             RowLayout {
                 ColumnLayout {
+                    id: labelColumnLayout
                     Layout.alignment: Qt.AlignTop
                     Layout.leftMargin: 0.4*margin
                     Layout.topMargin: 0.22*margin
@@ -1689,27 +2106,43 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 0.2*margin
                     TextField {
+                        text: datastore.name
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.neurons
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         validator: RegExpValidator { regExp: /[1-9]\d{1,5}/ }
+                        onEditingFinished: {
+                            unit.datastore.neurons = displayText
+                        }
                     }
                 }
-        }
-
+            }
         }
     }
 
     Component {
-        id: catpropertiesComponent
+        id: batchnormpropertiesComponent
         Column {
+            property var unit
+            property var name
             property string type
             property var labelColor
+            property var datastore: { "name": name, "epsilon": "0.00001"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
             Row {
                 leftPadding: 20*pix
+                bottomPadding: 20*pix
                 ColorBox {
                     topPadding: 0.37*margin
                     leftPadding: 0.1*margin
@@ -1728,6 +2161,381 @@ ApplicationWindow {
             }
             RowLayout {
                 ColumnLayout {
+                    id: labelColumnLayout
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Epsilon"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        text: datastore.name
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.epsilon
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /0.\d{1,10}/ }
+                        onEditingFinished: {
+                            unit.datastore.epsilon = displayText
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: dropoutpropertiesComponent
+        Column {
+            property var unit
+            property var name
+            property string type
+            property var labelColor
+            property var datastore: { "name": name, "probability": "0.5"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
+            Row {
+                leftPadding: 20*pix
+                bottomPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    id: labelColumnLayout
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Probability"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        text: datastore.name
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.probability
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /0.\d{1,2}/ }
+                        onEditingFinished: {
+                            unit.datastore.probability = displayText
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: leakyrelupropertiesComponent
+        Column {
+            property var unit
+            property var name
+            property string type
+            property var labelColor
+            property var datastore: { "name": name, "scale": "0.01"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
+            Row {
+                leftPadding: 20*pix
+                bottomPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    id: labelColumnLayout
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Scale"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        text: datastore.name
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.scale
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /0.\d{1,2}/ }
+                        onEditingFinished: {
+                            unit.datastore.scale = displayText
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: elupropertiesComponent
+        Column {
+            property var unit
+            property var name
+            property string type
+            property var labelColor
+            property var datastore: { "name": name, "Alpha": "1"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
+            Row {
+                leftPadding: 20*pix
+                bottomPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    id: labelColumnLayout
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Alpha"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        text: datastore.name
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.alpha
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /0.\d{1,4}|[1-9]d{1,2}/ }
+                        onEditingFinished: {
+                            unit.datastore.alpha = displayText
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: poolpropertiesComponent
+        Column {
+            property var unit
+            property var name
+            property string type
+            property var labelColor
+            property var datastore: { "name": name, "poolsize": "2", "stride": "2"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
+            Row {
+                leftPadding: 20*pix
+                bottomPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    id: labelColumnLayout
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Pool size","Stride"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        text: datastore.name
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.poolsize
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /(([1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}))/ }
+                        onEditingFinished: {
+                            unit.datastore.poolsize = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.stride
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /(([1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}))/ }
+                        onEditingFinished: {
+                            unit.datastore.stride = displayText
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: catpropertiesComponent
+        Column {
+            property var unit
+            property var name
+            property string type
+            property var labelColor
+            property var datastore: { "name": name, "inputs": "2"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
+            Row {
+                leftPadding: 20*pix
+                bottomPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.37*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 10
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    id: labelColumnLayout
                     Layout.alignment: Qt.AlignTop
                     Layout.leftMargin: 0.4*margin
                     Layout.topMargin: 0.22*margin
@@ -1745,27 +2553,86 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 0.2*margin
                     TextField {
+                        text: datastore.name
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.inputs
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         validator: RegExpValidator { regExp: /[1-9]\d{0,1}/ }
+                        onEditingFinished: {
+                            var inputnum = parseFloat(unit.datastore.inputs)
+                            var newinputnum = parseFloat(displayText)
+                            if (inputnum===newinputnum) {return}
+                            if (inputnum<newinputnum) {
+                                for (var i=0;i<inputnum;i++) {
+                                    unit.children[2].children[0].children[i].inputnum = newinputnum
+                                    unit.children[2].children[0].children[i].children[1].inputnum = newinputnum
+                                    unit.children[2].children[0].children[i].children[0].x = unit.width*
+                                            unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
+                                    unit.children[2].children[0].children[i].children[1].x = unit.width*
+                                            unit.children[2].children[0].children[i].index/(newinputnum+1)-20*pix
+                                }
+                                for (i=0;i<(newinputnum-inputnum);i++) {
+                                    upNodeComponent.createObject(unit.children[2].children[1], {
+                                        "unit": unit,
+                                        "upNodes": unit.children[2].children[0],
+                                        "downNodes": unit.children[2].children[1],
+                                        "inputnum": newinputnum,
+                                        "index": inputnum+i+1})
+                                }
+                                unit.inputnum = newinputnum
+                            }
+                            else {
+                                for (i=inputnum-1;i>=0;i--) {
+                                    if (i<newinputnum) {
+                                        unit.children[2].children[0].children[i].inputnum = newinputnum
+                                        unit.children[2].children[0].children[i].children[1].inputnum = newinputnum
+                                        unit.children[2].children[0].children[i].children[0].x = unit.width*
+                                                unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
+                                        unit.children[2].children[0].children[i].children[1].x = unit.width*
+                                                unit.children[2].children[0].children[i].index/(newinputnum+1)-20*pix
+                                    }
+                                    else {
+                                        if (unit.children[2].children[0].children[i].children[0].connectedItem!==null) {
+                                            unit.children[2].children[0].children[i].children[0].connection.destroy()
+                                            unit.children[2].children[0].children[i].children[0].connectedItem = null
+                                            unit.children[2].children[0].children[i].children[0].connectedNode = null
+                                        }
+                                        unit.children[2].children[0].children[i].destroy()
+                                    }
+                                }
+                                unit.inputnum = newinputnum
+                            }
+                            unit.datastore.inputs = displayText
+                        }
                     }
                 }
-        }
-
+            }
         }
     }
 
     Component {
         id: decatpropertiesComponent
         Column {
+            property var unit
+            property var name
             property string type
             property var labelColor
+            property var datastore: { "name": name, "outputs": "2"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
             Row {
                 leftPadding: 20*pix
+                bottomPadding: 20*pix
                 ColorBox {
                     topPadding: 0.37*margin
                     leftPadding: 0.1*margin
@@ -1784,6 +2651,7 @@ ApplicationWindow {
             }
             RowLayout {
                 ColumnLayout {
+                    id: labelColumnLayout
                     Layout.alignment: Qt.AlignTop
                     Layout.leftMargin: 0.4*margin
                     Layout.topMargin: 0.22*margin
@@ -1801,27 +2669,86 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 0.2*margin
                     TextField {
+                        text: datastore.name
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.outputs
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         validator: RegExpValidator { regExp: /[1-9]\d{0,1}/ }
+                        onEditingFinished: {
+                            var outputnum = parseFloat(unit.datastore.outputs)
+                            var newoutputnum = parseFloat(displayText)
+                            if (outputnum===newoutputnum) {return}
+                            if (outputnum<newoutputnum) {
+                                for (var i=0;i<outputnum;i++) {
+                                    unit.children[2].children[1].children[i].outputnum = newoutputnum
+                                    unit.children[2].children[1].children[i].children[1].outputnum = newoutputnum
+                                    unit.children[2].children[1].children[i].children[0].x = unit.width*
+                                            unit.children[2].children[1].children[i].index/(newoutputnum+1)-10*pix
+                                    unit.children[2].children[1].children[i].children[1].x = unit.width*
+                                            unit.children[2].children[1].children[i].index/(newoutputnum+1)-20*pix
+                                }
+                                for (i=0;i<(newoutputnum-outputnum);i++) {
+                                    downNodeComponent.createObject(unit.children[2].children[1], {
+                                        "unit": unit,
+                                        "upNodes": unit.children[2].children[0],
+                                        "downNodes": unit.children[2].children[1],
+                                        "outputnum": newoutputnum,
+                                        "index": outputnum+i+1})
+                                }
+                            }
+                            else {
+                                for (i=outputnum-1;i>=0;i--) {
+                                    if (i<newoutputnum) {
+                                        unit.children[2].children[1].children[i].outputnum = newoutputnum
+                                        unit.children[2].children[1].children[i].children[1].outputnum = newoutputnum
+                                        unit.children[2].children[1].children[i].children[0].x = unit.width*
+                                                unit.children[2].children[1].children[i].index/(newoutputnum+1)-10*pix
+                                        unit.children[2].children[1].children[i].children[1].x = unit.width*
+                                                unit.children[2].children[1].children[i].index/(newoutputnum+1)-20*pix
+                                    }
+                                    else {
+                                        if (unit.children[2].children[1].children[i].children[1].connectedItem!==null) {
+                                            unit.children[2].children[1].children[i].children[1].connection.destroy()
+                                            unit.children[2].children[1].children[i].children[1].connectedItem = null
+                                            unit.children[2].children[1].children[i].children[1].connectedNode = null
+                                        }
+                                        unit.children[2].children[1].children[i].destroy()
+                                    }
+                                }
+
+                            }
+                            unit.outputnum = newoutputnum
+                            unit.datastore.outputs = displayText
+                        }
                     }
                 }
-        }
-
+            }
         }
     }
 
     Component {
         id: scalingpropertiesComponent
         Column {
+            property var unit
+            property var name
             property string type
             property var labelColor
+            property var datastore: { "name": name, "multiplier": "2"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
             Row {
                 leftPadding: 20*pix
+                bottomPadding: 20*pix
                 ColorBox {
                     topPadding: 0.37*margin
                     leftPadding: 0.1*margin
@@ -1840,6 +2767,7 @@ ApplicationWindow {
             }
             RowLayout {
                 ColumnLayout {
+                    id: labelColumnLayout
                     Layout.alignment: Qt.AlignTop
                     Layout.leftMargin: 0.4*margin
                     Layout.topMargin: 0.22*margin
@@ -1857,27 +2785,43 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 0.2*margin
                     TextField {
+                        text: datastore.name
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.multiplier
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /([1-9]\d{0,1}) | (0,\d{1-2})/ }
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /([1-9]\d{0,1})|(0,\d{1-2})/ }
+                        onEditingFinished: {
+                            unit.datastore.multiplier = displayText
+                        }
                     }
                 }
-        }
-
+            }
         }
     }
 
     Component {
         id: resizingpropertiesComponent
         Column {
+            property var unit
+            property var name
             property string type
             property var labelColor
+            property var datastore: { "name": name, "newsize": "100,100", "mode": {"text": "Column major", "ind": 1}}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
             Row {
                 leftPadding: 20*pix
+                bottomPadding: 20*pix
                 ColorBox {
                     topPadding: 0.37*margin
                     leftPadding: 0.1*margin
@@ -1896,12 +2840,13 @@ ApplicationWindow {
             }
             RowLayout {
                 ColumnLayout {
+                    id: labelColumnLayout
                     Layout.alignment: Qt.AlignTop
                     Layout.leftMargin: 0.4*margin
                     Layout.topMargin: 0.22*margin
                     spacing: 0.24*margin
                     Repeater {
-                        model: ["Name","New size"]
+                        model: ["Name","New size","Mode"]
                         Label {
                             text: modelData+": "
                             topPadding: 4*pix
@@ -1913,28 +2858,57 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 0.2*margin
                     TextField {
+                        text: datastore.name
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
                     }
                     TextField {
+                        text: datastore.newsize
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{1,3},[1-9]\d{1,3},[1-9]\d{1,3}/ }
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /(([1-9]\d{0,3})|([1-9]\d{0,3},[1-9]\d{0,3})|([1-9]\d{0,3},[1-9]\d{0,3},[1-9]\d{0,3}))/ }
+                        onEditingFinished: {
+                            unit.datastore.newsize = displayText
+                        }
+                    }
+                    ComboBox {
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        currentIndex: datastore.mode.ind
+                        model: ListModel {
+                           id: netModel
+                           ListElement { text: "Column major" } //@disable-check M16
+                           ListElement { text: "Row major" } //@disable-check M16
+                        }
+                        onActivated: {
+                            unit.datastore.mode.text = currentText
+                            unit.datastore.mode.ind = currentIndex
+                        }
                     }
                 }
             }
-
         }
     }
-
 
     Component {
         id: emptypropertiesComponent
         Column {
+            property var unit
+            property var name
             property string type
             property var labelColor
+            property var datastore: { "name": name}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
             Row {
                 leftPadding: 20*pix
+                bottomPadding: 20*pix
                 ColorBox {
                     topPadding: 0.37*margin
                     leftPadding: 0.1*margin
@@ -1949,11 +2923,11 @@ ApplicationWindow {
                     font.pointSize: 10
                     color: "#777777"
                     wrapMode: Text.NoWrap
-                    //Layout.alignment: Qt.AlignBottom
                 }
             }
             RowLayout {
                 ColumnLayout {
+                    id: labelColumnLayout
                     Layout.alignment: Qt.AlignTop
                     Layout.leftMargin: 0.4*margin
                     Layout.topMargin: 0.22*margin
@@ -1971,8 +2945,12 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 0.2*margin
                     TextField {
+                        text: datastore.name
                         defaultHeight: 0.75*buttonHeight
-                        defaultWidth: 600*pix
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                        }
                     }
                 }
             }

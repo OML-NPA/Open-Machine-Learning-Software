@@ -7,11 +7,11 @@ import QtQuick.Templates 2.14 as T
 
 T.ComboBox {
     id: control
-    implicitWidth: 0.7*defaultWidth
-    implicitHeight: defaultHeight
-
     property double defaultWidth: 0.1*Screen.width
     property double defaultHeight: 0.03*Screen.height
+    implicitWidth: defaultWidth
+    implicitHeight: defaultHeight
+
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
 
     //implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,

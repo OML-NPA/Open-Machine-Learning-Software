@@ -33,16 +33,6 @@ ApplicationWindow {
 
     property string currentfolder: Qt.resolvedUrl(".")
 
-
-    function updatefolder(path) {
-        console.log(currentfolder)
-        currentfolder = path
-        folderModel.folder = currentfolder
-        folderView.model = folderModel
-        //Julia.browsefolder(folderDialog.folder)
-        console.log(folderModel.folder)
-    }
-
     onClosing: { analysisLoader.sourceComponent = undefined }
 
     FolderListModel {
@@ -205,11 +195,16 @@ ApplicationWindow {
                                         height: buttonHeight-2
                                         RowLayout {
                                             anchors.fill: parent.fill
-                                            ColorBox {
-                                                leftPadding: 0.2*margin
-                                                bottomPadding: 2*pix
+                                            Rectangle {
+                                                id: colorRectangle
+                                                Layout.leftMargin: 0.2*margin
+                                                Layout.bottomMargin: 2*pix
                                                 Layout.alignment: Qt.AlignBottom
-                                                colorRGB: [colorR,colorG,colorB]
+                                                height: 30*pix
+                                                width: 30*pix
+                                                border.width: 2*pix
+                                                radius: colorRectangle.width
+                                                color: rgbtohtml([colorR,colorG,colorB])
                                             }
                                             Label {
                                                 topPadding: 0.15*margin
@@ -263,6 +258,18 @@ ApplicationWindow {
 
 
         }
+    }
+//---FUNCTIONS----------------------------------------------------------
+
+    function updatefolder(path) {
+        currentfolder = path
+        folderModel.folder = currentfolder
+        folderView.model = folderModel
+        //Julia.browsefolder(folderDialog.folder)
+    }
+
+    function rgbtohtml(colorRGB) {
+        return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
     }
 
 }
