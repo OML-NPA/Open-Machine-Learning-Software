@@ -4,6 +4,7 @@ This is a community based project similar to GIMP and Mozilla and, therefore, th
 
 ### Setting up
 Binary downloads: Windows (not implemented), Mac (not implemented), Linux (not implemented)
+
 Software can also be run in Julia environment by cloning the repository and executing main.jl
 
 ### Features
