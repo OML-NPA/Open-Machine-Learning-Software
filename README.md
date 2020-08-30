@@ -2,9 +2,10 @@
 This software is designed to both allow people not familiar with coding or machine learning as well as for professionals in these fields to easily design and apply neural networks and data processing functions for extracting data from images, videos or data in any other format.
 This is a community based project similar to GIMP and Mozilla and, therefore, the software is made by users and for users.
 
-### Download
-Windows (not implemented), Mac (not implemented), Linux (not implemented)
+### Setting up
+Binary downloads: Windows (not implemented), Mac (not implemented), Linux (not implemented)
 
+Software can also be run in Julia environment by cloning the repository and executing main.jl
 
 ### Features
   - Design a neural network or use a community created one
@@ -30,6 +31,8 @@ Project can be supported in three ways:
    - Direct donation
    - Display a customizable add banner with community selected adds
    - Commiting changes to the project source
+
+A user can decide himself what part of his monetary contribution should go towards software and how much towards used packages' development.
 
 Being a supporter allows a user to request features and affect the feature queue based on the amount of support.
 
