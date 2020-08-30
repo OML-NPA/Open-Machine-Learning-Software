@@ -17,15 +17,12 @@ ApplicationWindow {
     maximumWidth: gridLayout.width
     maximumHeight: gridLayout.height
 
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: systempalette.window
+    color: defaultpalette.window
 
     property double margin: 0.02*Screen.width
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
     property double tabmargin: 0.5*margin
-    property color menucolor: "#fafafa"
-    property color defaultcolor: systempalette.window
     property double pix: Screen.width/3840
 
     property bool terminate: false
@@ -45,51 +42,39 @@ ApplicationWindow {
         RowLayout {
             id: rowlayout
             //spacing: margin
-            Frame {
-                Layout.row: 1
+            Pane {
                 spacing: 0
-                padding: 1
+                width: 1.3*buttonWidth
+                padding: -1
                 topPadding: tabmargin/2
-                leftPadding: 2
                 bottomPadding: tabmargin/2
-                background: Rectangle {
-                    anchors.fill: parent.fill
-                    border.color: systempalette.dark
-                    border.width: 2
-                    color: menucolor
-                }
-
-                ColumnLayout {
+                backgroundColor: defaultpalette.window2
+                Column {
                     spacing: 0
-                    MenuButton {
-                        id: generalMenuButton
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(generalView)}
-                        text: "General"
-                    }
-                    MenuButton {
-                        id: hardwareMenuButton
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(hardwareView)}
-                        text: "Hardware resources"
-                    }
-                    MenuButton {
-                        id: aboutMenuButton
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(aboutView)}
-                        text: "About"
+                    Repeater {
+                        id: menubuttonRepeater
+                        Component.onCompleted: {menubuttonRepeater.itemAt(0).buttonfocus = true}
+                        model: [{"name": "General", "stackview": generalView},
+                            {"name": "Hardware resources", "stackview": hardwareView},
+                            {"name": "About", "stackview": aboutView}]
+                        delegate : MenuButton {
+                            id: general
+                            width: 1.3*buttonWidth
+                            height: buttonHeight
+                            onClicked: {
+                                stack.push(modelData.stackview);
+                                for (var i=0;i<(menubuttonRepeater.count);i++) {
+                                    menubuttonRepeater.itemAt(i).buttonfocus = false
+                                }
+                                buttonfocus = true
+                            }
+                            text: modelData.name
+                        }
                     }
                     Rectangle {
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: 8*buttonHeight
-                        color: menucolor
+                        width: 1.3*buttonWidth
+                        height: 8*buttonHeight
+                        color: defaultpalette.window2
                     }
 
                 }
@@ -241,7 +226,7 @@ ApplicationWindow {
                                                 implicitWidth: 10*pix
                                                 implicitHeight: parent.height
                                                 radius: width / 2
-                                                color: vertical.pressed ? systempalette.dark : systempalette.mid
+                                                color: defaultpalette.border
                                             }
                                     }
                                 }

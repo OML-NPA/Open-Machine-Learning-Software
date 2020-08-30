@@ -20,12 +20,11 @@ ApplicationWindow {
     maximumHeight: gridLayout.height
 
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: systempalette.window
+    color: defaultpalette.window
 
     property double margin: 0.02*Screen.width
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
-    property color defaultcolor: systempalette.window
 
     property double iteration
     property double maxitearions
@@ -61,8 +60,8 @@ ApplicationWindow {
                             Layout.preferredHeight: 10*margin
                             Layout.preferredWidth: 15*margin
                             Layout.leftMargin: -2.75*margin
-                            backgroundColor : systempalette.window
-                            plotAreaColor : systempalette.light
+                            backgroundColor : defaultpalette.window
+                            plotAreaColor : defaultpalette.listview
                             antialiasing: true
                             legend.visible: false
                             margins { right: 0.3*margin; bottom: 0; left: 0; top: 0 }
@@ -123,8 +122,8 @@ ApplicationWindow {
                             Layout.preferredHeight: 6*margin
                             Layout.preferredWidth: 15*margin
                             Layout.leftMargin: -1*margin
-                            backgroundColor : systempalette.window
-                            plotAreaColor : systempalette.light
+                            backgroundColor : defaultpalette.window
+                            plotAreaColor : defaultpalette.listview
                             antialiasing: true
                             legend.visible: false
                             margins { right: 0.3*margin; bottom: 0; left: 0; top: 0 }
@@ -169,9 +168,9 @@ ApplicationWindow {
                     }
                 }
             }
-            Frame {
+            Pane {
                 height: plots.height
-                backgroundColor: systempalette.window
+                backgroundColor: defaultpalette.window2
                 ColumnLayout {
                     ColumnLayout {
                         Layout.margins: 0.5*margin

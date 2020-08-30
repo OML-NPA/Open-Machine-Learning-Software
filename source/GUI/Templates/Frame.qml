@@ -7,10 +7,10 @@ import QtQuick.Window 2.2
 
 T.Frame {
     id: control
-    property color backgroundColor: control.palette.window
+    property color backgroundColor: "transparent"
     property double pix: Screen.width/3840
     property double borderWidth: pix*2
-    property color borderColor: control.palette.dark
+    property color borderColor: defaultpalette.border
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,

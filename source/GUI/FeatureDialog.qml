@@ -18,7 +18,7 @@ ApplicationWindow {
     maximumHeight: gridLayout.height
 
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: systempalette.window
+    color: defaultpalette.window
 
     property double margin: 0.02*Screen.width
     property double fontsize: Math.round(11*Screen.height/2160)

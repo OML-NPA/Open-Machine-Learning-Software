@@ -10,6 +10,7 @@ T.Button {
 
     property double margin: 0.02*Screen.width
     property double tabmargin: 0.5*margin
+    property bool buttonfocus: false
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             implicitContentWidth + leftPadding + rightPadding)
@@ -49,9 +50,9 @@ T.Button {
     background: Rectangle {
         anchors.fill: parent.fill
         visible: !control.flat || control.down || control.checked || control.highlighted
-        color: control.pressed ? control.palette.dark :
-               control.hovered ? systempalette.midlight:
-               control.activeFocus ? systempalette.window: "#fafafa"
+        color: control.pressed ? defaultpalette.buttonpressed :
+               control.hovered && !control.buttonfocus ? defaultpalette.buttonhovered:
+               control.buttonfocus ? defaultpalette.window: defaultpalette.window2
         border.color: control.palette.dark
         border.width: 0
     }

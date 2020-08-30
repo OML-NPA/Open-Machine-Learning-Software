@@ -17,15 +17,12 @@ ApplicationWindow {
     maximumWidth: gridLayout.width
     maximumHeight: gridLayout.height
 
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: systempalette.window
+    color: defaultpalette.window
 
     property double margin: 0.02*Screen.width
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
     property double tabmargin: 0.5*margin
-    property color menucolor: "#fafafa"
-    property color defaultcolor: systempalette.window
     property double pix: Screen.width/3840
 
     property bool terminate: false
@@ -45,68 +42,44 @@ ApplicationWindow {
         RowLayout {
             id: rowlayout
             //spacing: margin
-            Frame {
-                Layout.row: 1
+            Pane {
+                id: menuPane
                 spacing: 0
-                padding: 1
+                padding: -1
+                width: 1.3*buttonWidth
                 topPadding: tabmargin/2
-                leftPadding: 2
                 bottomPadding: tabmargin/2
-                background: Rectangle {
-                    anchors.fill: parent.fill
-                    border.color: systempalette.dark
-                    border.width: 2
-                    color: menucolor
-                }
+                backgroundColor: defaultpalette.window2
 
-                ColumnLayout {
+                Column {
+                    id: menubuttonColumn
                     spacing: 0
-                    MenuButton {
-                        id: general
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(generalView)}
-                        text: "General"
-
-                    }
-                    MenuButton {
-                        id: mask
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(maskView)}
-                        text: "Mask"
-                    }
-                    MenuButton {
-                        id: cellvolume
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(cellvolumeView)}
-                        text: "Cell volume"
-                    }
-                    MenuButton {
-                        id: vacuolarvolume
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(vacuolarvolumeView)}
-                        text: "Vacuolar volume"
-                    }
-                    MenuButton {
-                        id: motherdaugtherassignment
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: buttonHeight
-                        onClicked: {stack.push(motherdaugtherassignmentView)}
-                        text: "Mother/daugther assignment"
+                    Repeater {
+                        id: menubuttonRepeater
+                        Component.onCompleted: {menubuttonRepeater.itemAt(0).buttonfocus = true}
+                        model: [{"name": "General", "stackview": generalView},
+                            {"name": "Mask", "stackview": maskView},
+                            {"name": "Cell volume", "stackview": cellvolumeView},
+                            {"name": "Vacuole volume", "stackview": vacuolevolumeView},
+                            {"name": "Mother/daugther assignment", "stackview": motherdaugtherassignmentView}]
+                        delegate : MenuButton {
+                            id: general
+                            width: 1.3*buttonWidth
+                            height: buttonHeight
+                            onClicked: {
+                                stack.push(modelData.stackview);
+                                for (var i=0;i<(menubuttonRepeater.count);i++) {
+                                    menubuttonRepeater.itemAt(i).buttonfocus = false
+                                }
+                                buttonfocus = true
+                            }
+                            text: modelData.name
+                        }
                     }
                     Rectangle {
-                        Layout.row: 1
-                        Layout.preferredWidth: 1.3*buttonWidth
-                        Layout.preferredHeight: 6*buttonHeight
-                        color: menucolor
+                        width: 1.3*buttonWidth
+                        height: 6*buttonHeight
+                        color: menuPane.backgroundColor
                     }
 
                 }
@@ -313,7 +286,7 @@ ApplicationWindow {
                             Rectangle {
                                 height: 0.2*margin
                                 width: 0.2*margin
-                                color: defaultcolor
+                                color: defaultpalette.window
                             }
 
                             Label {
@@ -371,20 +344,20 @@ ApplicationWindow {
                         }
                     }
                 Component {
-                        id: vacuolarvolumeView
+                        id: vacuolevolumeView
                         Column {
                             spacing: 0.2*margin
                             Label {
                                 text: "Outputs:"
                             }
                             CheckBox {
-                                text: "Vacuolar volume distribution"
+                                text: "Vacuole volume distribution"
                             }
                             CheckBox {
-                                text: "Individual vacuolar cell volume "
+                                text: "Individual vacuole cell volume "
                             }
                             CheckBox {
-                                text: "Mean vacuolar volume per cell volume"
+                                text: "Mean vacuole volume per cell volume"
                             }
                             CheckBox {
                                 text: "Vacuole to cell ratio"
@@ -392,7 +365,7 @@ ApplicationWindow {
                             Rectangle {
                                 height: 0.2*margin
                                 width: 0.2*margin
-                                color: defaultcolor
+                                color: defaultpalette.window
                             }
 
                             Label {
@@ -468,7 +441,7 @@ ApplicationWindow {
                             Rectangle {
                                 height: 0.2*margin
                                 width: 0.2*margin
-                                color: defaultcolor
+                                color: defaultpalette.window
                             }
 
                             Label {

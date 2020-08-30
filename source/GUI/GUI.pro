@@ -49,6 +49,7 @@ DISTFILES += \
     Main.qml \
     Options.qml \
     Plus.png \
+    SelectNeuralNetwork.qml \
     Templates/Button.qml \
     Templates/CheckBox.qml \
     Templates/ColorBox.qml \
@@ -57,6 +58,7 @@ DISTFILES += \
     Templates/Label.qml \
     Templates/LayerButton.qml \
     Templates/MenuButton.qml \
+    Templates/Palette.qml \
     Templates/Pane.qml \
     Templates/ProgressBar.qml \
     Templates/ScrollBar.qml \

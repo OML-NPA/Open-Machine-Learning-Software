@@ -20,13 +20,12 @@ ApplicationWindow {
     maximumHeight: gridLayout.height
 
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: systempalette.window
+    color: defaultpalette.window
 
     property double margin: 0.02*Screen.width
     property double pix: Screen.width/3840
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
-    property color defaultcolor: systempalette.window
 
     property bool optionsOpen: false
     property bool localtrainingOpen: false
@@ -78,17 +77,31 @@ ApplicationWindow {
                         Layout.preferredHeight: buttonHeight
                         onClicked: {folderDialog.open()}
                     }
-                   ComboBox {
+                   Button {
                         Layout.preferredWidth: buttonWidth + 0.5*margin
                         Layout.preferredHeight: buttonHeight
                         Layout.leftMargin: 0.5*margin
-                        currentIndex: -1
-                        displayText: currentIndex==-1 ? "Select neural network" : currentText
-                        model: ListModel {
-                           id: netModel
-                           ListElement { text: "defaultNetE5D4Yeast" } //@disable-check M16
-                           ListElement { text: "net2E3D2Yeast" } //@disable-check M16
+                        backgroundRadius: 0
+                        onClicked: {
+                            if (selectneuralnetworkLoader.sourceComponent === null) {
+                                selectneuralnetworkLoader.source = "SelectNeuralNetwork.qml"
+                            }
                         }
+
+                        Label {
+                            id: nnselectLabel
+                            anchors.verticalCenter: parent.verticalCenter
+                            leftPadding: 15*pix
+
+                            text: "Select neural network"
+                        }
+                        Image {
+                                anchors.right: parent.right
+                                height: parent.height
+                                opacity: 0.3
+                                source: "qrc:/qt-project.org/imports/QtQuick/Controls.2/images/double-arrow.png"
+                                fillMode: Image.PreserveAspectFit
+                            }
                     }
                 }
                 RowLayout {
@@ -102,7 +115,7 @@ ApplicationWindow {
                             leftPadding: 0.2*margin
                             background: Rectangle {
                                 anchors.fill: parent.fill
-                                color: defaultcolor
+                                color: defaultpalette.window
                                 border.color: systempalette.dark
                                 border.width: 2
                             }
@@ -157,7 +170,7 @@ ApplicationWindow {
                             leftPadding: 0.2*margin
                             background: Rectangle {
                                 anchors.fill: parent.fill
-                                color: defaultcolor
+                                color: defaultpalette.window
                                 border.color: systempalette.dark
                                 border.width: 2
                             }

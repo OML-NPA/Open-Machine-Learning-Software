@@ -40,9 +40,7 @@ T.Button {
     background: Rectangle {
         anchors.fill: parent.fill
         visible: !control.flat || control.down || control.checked || control.highlighted
-        color: Color.blend(control.checked || control.highlighted ? control.palette.dark :
-                           control.hovered ? systempalette.midlight: systempalette.light,
-                                                                    control.palette.mid, control.down ? 0.5 : 0.0)
+        color: control.checked || control.highlighted ? defaultpalette.buttonpressed : defaultpalette.listview
         border.color: control.palette.dark
         border.width: (Screen.width/3840)*(control.visualFocus ? 4 : 0)
     }

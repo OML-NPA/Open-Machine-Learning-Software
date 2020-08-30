@@ -19,16 +19,36 @@ ApplicationWindow {
     maximumWidth: gridLayout.width
     maximumHeight: gridLayout.height
 
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: systempalette.window
+    color: defaultpalette.window
 
     property double margin: 0.02*Screen.width
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
-    property color defaultcolor: systempalette.window
+    property color defaultcolor: palette.window
+
+    property var defaultcolors: {"light": rgbtohtml([254,254,254]),"light2": rgbtohtml([253,253,253]),
+        "midlight": rgbtohtml([245,245,245]),"midlight2": rgbtohtml([235,235,235]),
+        "mid": rgbtohtml([220,220,220]),"middark": rgbtohtml([210,210,210]),
+        "middark2": rgbtohtml([180,180,180]),"dark2": rgbtohtml([160,160,160]),
+        "dark": rgbtohtml([130,130,130])}
+
+    property var defaultpalette: {"window": defaultcolors.midlight,
+                                  "window2": defaultcolors.midlight2,
+                                  "button": defaultcolors.light2,
+                                  "buttonhovered": defaultcolors.mid,
+                                  "buttonpressed": defaultcolors.middark,
+                                  "buttonborder": defaultcolors.dark2,
+                                  "controlbase": defaultcolors.light,
+                                  "controlborder": defaultcolors.middark2,
+                                  "border": defaultcolors.dark2,
+                                  "listview": "white"
+                                  }
 
     property string currentfolder: Qt.resolvedUrl(".")
 
+    function rgbtohtml(colorRGB) {
+        return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
+    }
 
     onClosing: {
         if (optionsLoader.sourceComponent !== null) {

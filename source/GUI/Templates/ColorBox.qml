@@ -27,6 +27,6 @@ T.Pane {
         y: boxY
         color: typeof(colorRGB)=="undefined" ? "white" :
               Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255,1.0)
-        border.width: 1
+        border.width: 1*pix
     }
 }

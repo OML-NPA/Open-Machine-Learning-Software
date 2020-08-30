@@ -18,7 +18,7 @@ ApplicationWindow {
     maximumHeight: gridLayout.height
 
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: systempalette.window
+    color: defaultpalette.window
 
     property double margin: 0.02*Screen.width
     property double pix: Screen.width/3840
@@ -134,15 +134,15 @@ ApplicationWindow {
                         leftPadding: 0.2*margin
                         background: Rectangle {
                             anchors.fill: parent.fill
-                            color: defaultcolor
-                            border.color: systempalette.dark
+                            color: "transparent"
+                            border.color: defaultpalette.border
                             border.width: 2
                         }
                     }
                     Frame {
                         height: 0.2*Screen.height
                         width: buttonWidth + 0.5*margin
-                        backgroundColor: systempalette.light
+                        backgroundColor: defaultpalette.listview
                         ScrollView {
                             clip: true
                             anchors.fill: parent

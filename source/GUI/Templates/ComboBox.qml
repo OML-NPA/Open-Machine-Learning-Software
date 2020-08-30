@@ -12,14 +12,6 @@ T.ComboBox {
     implicitWidth: defaultWidth
     implicitHeight: defaultHeight
 
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-
-    //implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-    //                        implicitContentWidth + leftPadding + rightPadding)
-    //implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
-    //                         implicitContentHeight + topPadding + bottomPadding,
-    //                         implicitIndicatorHeight + topPadding + bottomPadding)
-
     leftPadding: padding + (!control.mirrored || !indicator || !indicator.visible ? 0 : indicator.width + spacing)
     rightPadding: padding + (control.mirrored || !indicator || !indicator.visible ? 0 : indicator.width + spacing)
 
@@ -55,9 +47,9 @@ T.ComboBox {
 
         background: Rectangle {
             visible: control.enabled && control.editable && !control.flat
-            border.width: parent && parent.activeFocus ? 2 : 1
-            border.color: parent && parent.activeFocus ? control.palette.highlight : control.palette.dark//control.palette.button
-            color: control.palette.base
+            border.width: 2*pix
+            border.color: parent && parent.activeFocus ? control.palette.highlight : control.palette.dark
+            color: defaultpalette.button
         }
     }
 
@@ -74,9 +66,9 @@ T.ComboBox {
         implicitWidth: 140
         implicitHeight: 40
 
-        color: control.down ? control.palette.mid : "#fafafa"//control.palette.button
-        border.color: control.palette.dark
-        border.width: !control.editable && control.visualFocus ? 2 : 2
+        color: control.down ? defaultpalette.buttonpressed : defaultpalette.button
+        border.color: defaultpalette.controlborder
+        border.width: 2*pix
         visible: !control.flat || control.down
     }
 
@@ -99,14 +91,14 @@ T.ComboBox {
                 width: parent.width
                 height: parent.height
                 color: "transparent"
-                border.color: control.palette.mid
+                border.color: defaultpalette.border
             }
 
             T.ScrollIndicator.vertical: ScrollIndicator { }
         }
 
         background: Rectangle {
-            color: "#fafafa"//control.palette.window
+            color: defaultpalette.button
         }
     }
 }

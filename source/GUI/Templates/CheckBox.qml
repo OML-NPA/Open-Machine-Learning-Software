@@ -27,9 +27,9 @@ T.CheckBox {
         x: control.text ? (control.mirrored ? control.width - width - control.rightPadding : control.leftPadding) : control.leftPadding + (control.availableWidth - width) / 2
         y: control.topPadding + (control.availableHeight - height) / 2
 
-        color: control.down ? control.palette.light : control.palette.base
-        border.width: control.visualFocus ? 2 : 1
-        border.color: control.visualFocus ? control.palette.highlight : control.palette.mid
+        color: defaultpalette.controlbase
+        border.width: 2*pix
+        border.color: defaultpalette.controlborder
 
         ColorImage {
             x: (parent.width - width) / 2

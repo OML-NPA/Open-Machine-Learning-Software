@@ -20,14 +20,12 @@ ApplicationWindow {
     //maximumWidth: gridLayout.width
     //maximumHeight: gridLayout.height
 
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: systempalette.window
+    color: defaultpalette.window
 
     property double margin: 0.02*Screen.width
     property double pix: Screen.width/3840
     property double buttonWidth: 380*pix
     property double buttonHeight: 65*pix
-    property color defaultcolor: systempalette.window
 
     property double defaultWidth: buttonWidth*5/2
     property double defaultHeight: buttonHeight*20
@@ -43,9 +41,10 @@ ApplicationWindow {
 
     onClosing: { customizationLoader.sourceComponent = undefined }
 
-    header: ToolBar {
+    header: Pane {
         id: header
         height: 50*pix
+        padding: 0
         Row {
             Button {
                 text: "Save"
@@ -67,7 +66,7 @@ ApplicationWindow {
             height: 2*pix
             border.width: 0
             y: header.height - 1
-            color: systempalette.dark
+            color: defaultpalette.border
         }
     }
     GridLayout {
@@ -75,9 +74,29 @@ ApplicationWindow {
         focus: true
         Keys.onPressed: {
             if (event.key===Qt.Key_Backspace || event.key===Qt.Key_Delete) {
-                propertiesStackView.push(generalpropertiesComponent)
+                var upNodes = currentFocus.children[2].children[0]
+                var downNodes = currentFocus.children[2].children[1]
+                for (var i=0;i<upNodes.children.length;i++) {
+                    if (upNodes.children[i].children[0].connectedNode!==null) {
+                        upNodes.children[i].children[0].connectedItem.connectedNode = null
+                        upNodes.children[i].children[0].connectedItem.connection.destroy()
+                        connections.num = connections.num - 1
+                    }
+                }
+                for (i=0;i<downNodes.children.length;i++) {
+                    for (var j=1;j<downNodes.children[i].children.length;j++) {
+                        if (downNodes.children[i].children[j].connectedNode!==null) {
+                            downNodes.children[i].children[j].connectedNode.connectedNode = null
+                            downNodes.children[i].children[j].connectedNode.connectedItem = null
+                            downNodes.children[i].children[j].connection.destroy()
+                            connections.num = connections.num - 1
+                        }
+                    }
+                }
                 currentFocus.destroy()
                 currentFocus = null
+
+                propertiesStackView.push(generalpropertiesComponent)
             }
         }
         Row {
@@ -98,9 +117,9 @@ ApplicationWindow {
                         leftPadding: 0.2*margin
                         background: Rectangle {
                             anchors.fill: parent.fill
-                            color: defaultcolor
-                            border.color: systempalette.dark
-                            border.width: 2
+                            color: "transparent"
+                            border.color: defaultpalette.border
+                            border.width: 2*pix
                         }
                     }
                     Frame {
@@ -109,7 +128,7 @@ ApplicationWindow {
                         height: 0.6*(window.height - header.height - 2*layersLabel.height)
                         width: leftFrame.width
                         padding: 0
-                        backgroundColor: "#FDFDFD"
+                        backgroundColor: defaultpalette.listview
                         ScrollableItem {
                             y: 2*pix
                             id: layersFlickable
@@ -133,7 +152,7 @@ ApplicationWindow {
                                     background: Rectangle {
                                         anchors.fill: parent.fill
                                         x: 2*pix
-                                        color: systempalette.window
+                                        color: defaultpalette.window
                                         width: leftFrame.width-4*pix
                                         height: 0.75*buttonHeight
                                     }
@@ -148,7 +167,7 @@ ApplicationWindow {
                                                           ListElement{
                                                               type: "Input" // @disable-check M16
                                                               group: "inout" // @disable-check M16
-                                                              name: "inputnum"// @disable-check M16
+                                                              name: "input"// @disable-check M16
                                                               colorR: 0 // @disable-check M16
                                                               colorG: 0 // @disable-check M16
                                                               colorB: 250 // @disable-check M16
@@ -179,7 +198,7 @@ ApplicationWindow {
                                     background: Rectangle {
                                         anchors.fill: parent.fill
                                         x: 2*pix
-                                        color: systempalette.window
+                                        color: defaultpalette.window
                                         width: leftFrame.width-4*pix
                                         height: 0.75*buttonHeight
                                     }
@@ -210,9 +229,9 @@ ApplicationWindow {
                                                               inputnum: 1 // @disable-check M16
                                                               outputnum: 1} // @disable-check M16
                                                           ListElement{
-                                                              type: "Fully connected" // @disable-check M16
+                                                              type: "Dense" // @disable-check M16
                                                               group: "mult" // @disable-check M16
-                                                              name: "fullycon" // @disable-check M16
+                                                              name: "dense" // @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
                                                               colorB: 0 // @disable-check M16
@@ -234,7 +253,7 @@ ApplicationWindow {
                                     background: Rectangle {
                                         anchors.fill: parent.fill
                                         x: 2*pix
-                                        color: systempalette.window
+                                        color: defaultpalette.window
                                         width: leftFrame.width-4*pix
                                         height: 0.75*buttonHeight
                                     }
@@ -280,7 +299,7 @@ ApplicationWindow {
                                     background: Rectangle {
                                         anchors.fill: parent.fill
                                         x: 2*pix
-                                        color: systempalette.window
+                                        color: defaultpalette.window
                                         width: leftFrame.width-4*pix
                                         height: 0.75*buttonHeight
                                     }
@@ -353,7 +372,7 @@ ApplicationWindow {
                                     background: Rectangle {
                                         anchors.fill: parent.fill
                                         x: 2*pix
-                                        color: systempalette.window
+                                        color: defaultpalette.window
                                         width: leftFrame.width-4*pix
                                         height: 0.75*buttonHeight
                                     }
@@ -400,7 +419,7 @@ ApplicationWindow {
                                     background: Rectangle {
                                         anchors.fill: parent.fill
                                         x: 2*pix
-                                        color: systempalette.window
+                                        color: defaultpalette.window
                                         width: leftFrame.width-4*pix
                                         height: 0.75*buttonHeight
                                     }
@@ -464,7 +483,7 @@ ApplicationWindow {
                                     background: Rectangle {
                                         anchors.fill: parent.fill
                                         x: 2*pix
-                                        color: systempalette.window
+                                        color: defaultpalette.window
                                         width: leftFrame.width-4*pix
                                         height: 0.75*buttonHeight
                                     }
@@ -504,8 +523,8 @@ ApplicationWindow {
                         leftPadding: 0.2*margin
                         background: Rectangle {
                             anchors.fill: parent.fill
-                            color: defaultcolor
-                            border.color: systempalette.dark
+                            color: defaultpalette.window
+                            border.color: defaultpalette.border
                             border.width: 2
                         }
                     }
@@ -514,7 +533,7 @@ ApplicationWindow {
                         height: 0.4*(window.height - header.height - 2*layergroupsLabel.height)+4*pix
                         width: leftFrame.width
                         padding: 0
-                        backgroundColor: "#FDFDFD"
+                        backgroundColor: defaultpalette.listview
 
                         ScrollableItem {
                             clip: true
@@ -538,7 +557,7 @@ ApplicationWindow {
                                     background: Rectangle {
                                         anchors.fill: parent.fill
                                         x: 2*pix
-                                        color: systempalette.window
+                                        color: defaultpalette.window
                                         width: leftFrame.width-4*pix
                                         height: 0.75*buttonHeight
                                     }
@@ -604,22 +623,95 @@ ApplicationWindow {
                    contentWidth: flickableMainPane.width
                    contentHeight: flickableMainPane.height
                    showBackground: false
+                   backgroundColor: defaultpalette.listview
                    clip: false
                    Pane {
                         id: mainPane
                         width: flickableMainPane.width
                         height: flickableMainPane.height
                         padding: 0
-                        backgroundColor: "#FDFDFD"
+                        backgroundColor: defaultpalette.listview
                         Component.onCompleted: {
                             flickableMainPane.ScrollBar.vertical.visible = false
                             flickableMainPane.ScrollBar.horizontal.visible = false
                         }
+                        property var selectioninds: []
                         MouseArea {
+                            id: mainMouseArea
                             anchors.fill: parent
+                            property int initialXPos
+                            property int initialYPos
                             onClicked: {
                                 propertiesStackView.push(generalpropertiesComponent)
                                 currentFocus = null
+                            }
+                            onPressed: {
+                                deselectunits()
+                                if (mouse.button == Qt.LeftButton) {
+                                    // initialize local variables to determine the selection orientation
+                                    initialXPos = mouse.x
+                                    initialYPos = mouse.y
+
+                                    flickableMainPane.interactive = false // in case the event started over a Flickable element
+                                    selectionRect.x = mouse.x
+                                    selectionRect.y = mouse.y
+                                    selectionRect.width = 0
+                                    selectionRect.height = 0
+                                    selectionRect.visible = true
+                                }
+                            }
+
+                            onPositionChanged: {
+                                if (selectionRect.visible == true) {
+                                    if ((mouse.x != initialXPos || mouse.y != initialYPos)) {
+                                        if (mouse.x >= initialXPos) {
+                                            if (mouse.y >= initialYPos)
+                                               selectionRect.rotation = 0
+                                            else
+                                               selectionRect.rotation = -90
+
+                                        }
+                                        else {
+                                            if (mouse.y >= initialYPos)
+                                                selectionRect.rotation = 90
+                                            else
+                                                selectionRect.rotation = -180
+                                        }
+                                    }
+
+                                    if (selectionRect.rotation == 0 || selectionRect.rotation == -180) {
+                                        selectionRect.width = Math.abs(mouse.x - selectionRect.x)
+                                        selectionRect.height = Math.abs(mouse.y - selectionRect.y)
+                                    }
+                                    else {
+                                        selectionRect.width = Math.abs(mouse.y - selectionRect.y)
+                                        selectionRect.height = Math.abs(mouse.x - selectionRect.x)
+                                    }
+                                }
+                            }
+
+                            onReleased: {
+                                selectionRect.visible = false
+                                // restore the Flickable duties
+                                flickableMainPane.interactive = true
+                                var finishX = mouse.x
+                                var finishY = mouse.y
+                                var maxX = Math.max(initialXPos,finishX)
+                                var minX = Math.min(initialXPos,finishX)
+                                var maxY = Math.max(initialYPos,finishY)
+                                var minY = Math.min(initialYPos,finishY)
+                                for (var i=0;i<layers.children.length;i++) {
+                                    if (layers.children[i].x >minX && layers.children[i].x <maxX &&
+                                        layers.children[i].y >minY && layers.children[i].y <maxY &&
+                                        (layers.children[i].x + layers.children[i].width)>minX &&
+                                        (layers.children[i].x + layers.children[i].width)<maxX &&
+                                        (layers.children[i].y + layers.children[i].height) >minY &&
+                                        (layers.children[i].y + layers.children[i].height) <maxY)                                                          {
+                                        mainPane.selectioninds.push(i)
+                                        layers.children[i].border.color = defaultcolors.dark
+                                        layers.children[i].border.width = 4*pix
+                                    }
+                                }
                             }
                         }
 
@@ -628,6 +720,21 @@ ApplicationWindow {
                         }
                         Item {
                             id: connections
+                            property int num: 0
+                        }
+                        Rectangle {
+                            id: selectionRect
+                            visible: false
+                            x: 0
+                            y: 0
+                            z: 99
+                            width: 0
+                            height: 0
+                            rotation: 0
+                            transformOrigin: Item.TopLeft
+                            border.width: 2*pix
+                            border.color: Qt.rgba(0.2,0.5,0.8,0.8)
+                            color: Qt.rgba(0.2,0.5,0.8,0.05)
                         }
                     }
                 }
@@ -648,8 +755,8 @@ ApplicationWindow {
                         leftPadding: 0.2*margin
                         background: Rectangle {
                             anchors.fill: parent.fill
-                            color: defaultcolor
-                            border.color: systempalette.dark
+                            color: defaultpalette.window
+                            border.color: defaultpalette.border
                             border.width: 2
                         }
                     }
@@ -659,7 +766,7 @@ ApplicationWindow {
                         height: 0.6*(window.height - header.height - 2*layersLabel.height)
                         width: rightFrame.width
                         padding: 0
-                        backgroundColor: systempalette.window
+                        backgroundColor: defaultpalette.window
                         ScrollableItem {
                             id: propertiesFlickable
                             y: 2*pix
@@ -717,8 +824,8 @@ ApplicationWindow {
                         leftPadding: 0.2*margin
                         background: Rectangle {
                             anchors.fill: parent.fill
-                            color: defaultcolor
-                            border.color: systempalette.dark
+                            color: defaultpalette.window
+                            border.color: defaultpalette.border
                             border.width: 2
                         }
                     }
@@ -728,17 +835,14 @@ ApplicationWindow {
                         height: 0.4*(window.height - header.height - 2*layersLabel.height) + 4*pix
                         width: rightFrame.width
                         padding: 0
-                        backgroundColor: "#FDFDFD"
-                        ScrollableItem {
-                            id: overviewFlickable
+                        backgroundColor: defaultpalette.listview
+                        Image {
+                            id: overviewImage
+                            x: 2*pix
                             y: 2*pix
-                            height: 0.4*(window.height - header.height - 2*layersLabel.height)-2*pix
-                            width: rightFrame.width-2*pix
-                            showBackground: false
-                            contentHeight: 0.4*(window.height - header.height - 2*layersLabel.height)-2*pix
-                            Item {
-
-                            }
+                            height: overviewFrame.height - 4*pix
+                            width: overviewFrame.width - 4*pix
+                            fillMode: Image.PreserveAspectFit
                         }
                     }
                 }
@@ -826,28 +930,9 @@ ApplicationWindow {
     }
 
     function adjustcolor(colorRGB) {
-
-        //if (colorRGB[0]===colorRGB[1] && colorRGB[0]===colorRGB[2]) {
-            colorRGB[0] = 240 + colorRGB[0]/255*15
-            colorRGB[1] = 240 + colorRGB[1]/255*15
-            colorRGB[2] = 240 + colorRGB[2]/255*15
-        /*}
-        else {
-            var max = 255/Math.max(colorRGB[0],colorRGB[1],colorRGB[2])
-
-            for (var i=0;i<=2;i++) {
-                if (colorRGB[i]===0) {
-                    colorRGB[i] = 255
-                }
-                else if (colorRGB[i]<245) {
-                    colorRGB[i] = 200 + colorRGB[i]/255*55
-                }
-                else {
-                    colorRGB[i] = colorRGB[i] * max
-                }
-            }
-            console.log(colorRGB)
-        }*/
+        colorRGB[0] = 240 + colorRGB[0]/255*15
+        colorRGB[1] = 240 + colorRGB[1]/255*15
+        colorRGB[2] = 240 + colorRGB[2]/255*15
         return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
     }
 
@@ -874,7 +959,7 @@ ApplicationWindow {
     }
 
     function getconnectionsnum() {
-        return(connections.children.length)
+        return(connections.num)
     }
 
     function getirregularitiesnum() {
@@ -914,6 +999,35 @@ ApplicationWindow {
         }
     }
 
+    function updateOverview() {
+        function Timer() {
+            return Qt.createQmlObject("import QtQuick 2.0; Timer {}", window);
+        }
+        function delay(delayTime, cb) {
+            var timer = new Timer();
+            timer.interval = delayTime;
+            timer.repeat = false;
+            timer.triggered.connect(cb);
+            timer.start();
+        }
+        function upd() {
+            mainPane.grabToImage(function(result) {
+                overviewImage.source = result.url;
+            })
+        }
+        delay(10, upd)
+    }
+
+
+
+    function deselectunits() {
+        for (var i=0;i<layers.children.length;i++) {
+            mainPane.selectioninds = []
+            layers.children[i].border.color = defaultpalette.controlborder
+            layers.children[i].border.width = 3*pix
+        }
+    }
+
 //--COMPONENTS--------------------------------------------------------------------
 
     Component {
@@ -923,7 +1037,7 @@ ApplicationWindow {
             height: 1.5*buttonHeight
             width: 0.9*buttonWidth
             radius: 8*pix
-            border.color: systempalette.mid
+            border.color: defaultpalette.controlborder
             border.width: 3*pix
             property string name
             property string type
@@ -932,6 +1046,7 @@ ApplicationWindow {
             property double inputnum
             property double outputnum
             property var datastore
+            property var oldpos: [x,y]
 
             Column {
                 anchors.fill: parent.fill
@@ -956,7 +1071,8 @@ ApplicationWindow {
                 drag.target: parent
                 hoverEnabled: true
                 onEntered: {
-                    unit.border.color = "#666666"
+                    unit.border.color = defaultcolors.dark
+                    unit.border.width = 4*pix
                     for (var i=0;i<upNodes.children.length;i++) {
                         upNodes.children[i].children[0].visible = true
                     }
@@ -965,7 +1081,10 @@ ApplicationWindow {
                     }
                 }
                 onExited: {
-                    unit.border.color = systempalette.mid
+                    if (mainPane.selectioninds.length<2){
+                        unit.border.color = defaultpalette.controlborder
+                        unit.border.width = 3*pix
+                    }
                     for (var i=0;i<upNodes.children.length;i++) {
                         if (upNodes.children[i].children[0].connectedNode===null) {
                             upNodes.children[i].children[0].visible = false
@@ -977,6 +1096,10 @@ ApplicationWindow {
                         }
                     }
                 }
+                onPressed: {
+                    unit.oldpos = [unit.x,unit.y]
+                }
+
                 onClicked: {
                     currentFocus = unit
                     switch(type) {
@@ -988,8 +1111,8 @@ ApplicationWindow {
                         return pushstack(convpropertiesComponent,labelColor,type,name,unit,datastore)
                     case "Transposed convolution":
                         return pushstack(tconvpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Fully connected":
-                        return pushstack(fconnpropertiesComponent,labelColor,type,name,unit,datastore)
+                    case "Dense":
+                        return pushstack(densepropertiesComponent,labelColor,type,name,unit,datastore)
                     case "Drop-out":
                         return pushstack(dropoutpropertiesComponent,labelColor,type,name,unit,datastore)
                     case "Batch normalisation":
@@ -1014,111 +1137,143 @@ ApplicationWindow {
                         pushstack(emptypropertiesComponent,labelColor,type,name,unit,datastore)
                     }
                 }
-
                 onPositionChanged: {
                     if (pressed) {
-                        for (var i=0;i<upNodes.children.length;i++) {
-                            if (upNodes.children[i].children[0].connectedNode!==null) {
-                                var startX = upNodes.children[i].children[0].connectedItem.connection.data[0].startX;
-                                var startY = upNodes.children[i].children[0].connectedItem.connection.data[0].startY;
-                                upNodes.children[i].children[0].connectedItem.connection.destroy()
-                                upNodes.children[i].children[0].connectedItem.connection = shapeComponent.createObject(connections, {
-                                      "beginX": startX,
-                                      "beginY": startY,
-                                      "finishX": unit.x + unit.width*upNodes.children[i].index/(inputnum+1),
-                                      "finishY": unit.y + 2*pix,
-                                      "origin": upNodes.children[i].children[0].connectedItem});
-                                var nodePoint = upNodes.children[i].children[0].
-                                mapToItem(upNodes.children[i].children[0].connectedItem.parent,0,0)
-                                upNodes.children[i].children[0].connectedItem.x = nodePoint.x - upNodes.children[i].children[0].radius/2
-                                upNodes.children[i].children[0].connectedItem.y = nodePoint.y - upNodes.children[i].children[0].radius/2
+                        var inds = -1
+                        var currentind = -1
+                        for (var i=0;i<layers.children.length;i++) {
+                            if (layers.children[i]===unit) {
+                                currentind = i
+                                break
                             }
                         }
-                        for (i=0;i<downNodes.children.length;i++) {
-                            for (var j=1;j<downNodes.children[i].children.length;j++) {
-                                if (pressed && downNodes.children[i].children[j].connectedNode!==null) {
-                                    var finishX = downNodes.children[i].children[j].connection.data[0].pathElements[0].x
-                                    var finishY = downNodes.children[i].children[j].connection.data[0].pathElements[0].y
-                                    downNodes.children[i].children[j].connection.destroy()
-                                    downNodes.children[i].children[j].connection = shapeComponent.createObject(connections, {
-                                          "beginX": unit.x + unit.width*downNodes.children[i].index/(outputnum+1),
-                                          "beginY": unit.y + unit.height - 2*pix,
-                                          "finishX": finishX,
-                                          "finishY": finishY,
-                                          "origin": downNodes.children[i].children[j]});
-                                    nodePoint = downNodes.children[i].children[j].connectedNode.
-                                        mapToItem(downNodes.children[i],0,0)
-                                    downNodes.children[i].children[j].x = nodePoint.x - downNodes.children[i].children[0].radius/2
-                                    downNodes.children[i].children[j].y = nodePoint.y - downNodes.children[i].children[0].radius/2 + 2*pix
+                        if (mainPane.selectioninds.length===0) {
+                            inds = [currentind]
+                        }
+                        else {
+                            inds = mainPane.selectioninds
+                        }
+                        for (var k=0;k<inds.length;k++) {
+                            if (inds[k]!==currentind) {
+                                layers.children[inds[k]].x = layers.children[inds[k]].x + unit.x - unit.oldpos[0]
+                                layers.children[inds[k]].y = layers.children[inds[k]].y + unit.y - unit.oldpos[1]
+                            }
+
+                            var upNodes = layers.children[inds[k]].children[2].children[0]
+                            var downNodes = layers.children[inds[k]].children[2].children[1]
+                            for (i=0;i<upNodes.children.length;i++) {
+                                if (upNodes.children[i].children[0].connectedNode!==null) {
+                                    var devX = 0
+                                    var devY = 0
+
+                                    if (inds[k]!==currentind) {
+                                        devX = layers.children[inds[k]].x - unit.x
+                                        devY = layers.children[inds[k]].y - unit.y
+
+                                    }
+                                    var startX = upNodes.children[i].children[0].connectedItem.connection.data[0].startX;
+                                    var startY = upNodes.children[i].children[0].connectedItem.connection.data[0].startY;
+                                    upNodes.children[i].children[0].connectedItem.connection.destroy()
+                                    upNodes.children[i].children[0].connectedItem.connection = shapeComponent.createObject(connections, {
+                                          "beginX": startX ,
+                                          "beginY": startY,
+                                          "finishX": unit.x + unit.width*upNodes.children[i].index/(layers.children[inds[k]].inputnum+1) + devX,
+                                          "finishY": unit.y + 2*pix + devY,
+                                          "origin": upNodes.children[i].children[0].connectedItem});
+                                    var nodePoint = upNodes.children[i].children[0].
+                                    mapToItem(upNodes.children[i].children[0].connectedItem.parent,0,0)
+                                    upNodes.children[i].children[0].connectedItem.x = nodePoint.x - upNodes.children[i].children[0].radius/2
+                                    upNodes.children[i].children[0].connectedItem.y = nodePoint.y - upNodes.children[i].children[0].radius/2
+                                }
+                            }
+                            for (i=0;i<downNodes.children.length;i++) {
+                                for (var j=1;j<downNodes.children[i].children.length;j++) {
+                                    if (pressed && downNodes.children[i].children[j].connectedNode!==null) {
+                                        devX = 0
+                                        devY = 0
+                                        if (inds[k]!==currentind) {
+                                            devX = layers.children[inds[k]].x - unit.x
+                                            devY = layers.children[inds[k]].y - unit.y
+                                        }
+                                        var finishX = downNodes.children[i].children[j].connection.data[0].pathElements[0].x
+                                        var finishY = downNodes.children[i].children[j].connection.data[0].pathElements[0].y
+                                        downNodes.children[i].children[j].connection.destroy()
+                                        downNodes.children[i].children[j].connection = shapeComponent.createObject(connections, {
+                                              "beginX": unit.x + unit.width*downNodes.children[i].index/(layers.children[inds[k]].outputnum+1) + devX,
+                                              "beginY": unit.y + unit.height - 2*pix + devY,
+                                              "finishX": finishX,
+                                              "finishY": finishY,
+                                              "origin": downNodes.children[i].children[j]});
+                                        nodePoint = downNodes.children[i].children[j].connectedNode.
+                                            mapToItem(downNodes.children[i],0,0)
+                                        downNodes.children[i].children[j].x = nodePoint.x - downNodes.children[i].children[0].radius/2
+                                        downNodes.children[i].children[j].y = nodePoint.y - downNodes.children[i].children[0].radius/2 + 2*pix
+                                    }
                                 }
                             }
                         }
+                        unit.oldpos = [unit.x,unit.y]
                     }
                 }
                 onReleased: {
                     var paneHeight = mainPane.height
                     var paneWidth = mainPane.width
-                    var minheight = -Math.min(0,gettop(unit))
-                    var minwidth = -Math.min(0,getleft(unit))
+                    var minheight = Math.min(0,gettop(unit))
+                    var minwidth = Math.min(0,getleft(unit))
                     var maxheight = Math.max(paneHeight,getbottom(unit))
                     var maxwidth = Math.max(paneWidth,getright(unit))
-                    var minheightchildren = -gettopchild(layers)
-                    var minwidthchildren = -getleftchild(layers)
+                    var minheightchildren = gettopchild(layers)
+                    var minwidthchildren = getleftchild(layers)
                     var maxheightchildren = getbottomchild(layers)
                     var maxwidthchildren = getrightchild(layers)
                     var padding = 20*pix
-                    if (layers.children.length===1) {
-                        if (layers.children[0].x + layers.children[0].width>paneWidth) {
-                            layers.children[0].x = paneWidth - layers.children[0].width - padding
-                        }
-                        if (layers.children[0].y + layers.children[0].height>paneHeight) {
-                            layers.children[0].y = paneHeight - layers.children[0].height - padding
-                        }
-                        return
-                    }
-                    if((minwidthchildren+maxwidthchildren+2*padding)<mainFrame.width-4*pix &&
-                            paneWidth>(mainFrame.width-4*pix)) {
-                        mainPane.width = mainFrame.width-4*pix
-                        flickableMainPane.contentWidth = mainPane.width
-                        paneWidth = mainPane.width
-                    }
-                    if((minheightchildren+maxheightchildren+2*padding)<mainFrame.height-4*pix &&
-                            paneHeight>(mainFrame.height-4*pix)) {
-                        mainPane.height = mainFrame.height-4*pix
-                        flickableMainPane.contentHeight = mainPane.height
-                        paneHeight = mainPane.height
-
-                    }
+                    var limit = [mainFrame.width/4,mainFrame.height/4]
 
                     var adjX = 0
                     var adjY = 0
-                    if (minwidth!==0) {
-                        adjX = minwidth + padding
+                    if (minwidth<0) {
+                        adjX = -minwidth + padding
                     }
                     else {
-                        adjX = minwidthchildren + padding
+                        adjX = -minwidthchildren + padding
                     }
-                    if (minheight!==0) {
-                        adjY = minheight + padding
+                    if (minheight<0) {
+                        adjY = -minheight + padding
                     }
                     else {
-                        adjY = minheightchildren + padding
+                        adjY = -minheightchildren + padding
                     }
-                    if ((adjX===padding && minwidthchildren===0*pix) ||
-                            (adjX<0 && (-minwidthchildren+maxwidthchildren)/2<=paneWidth/2)) {
+                    if (adjX===padding && minwidthchildren===0*pix) {
                         adjX = 0
                     }
-                    if ((adjY===padding && minheightchildren===0*pix) ||
-                            (adjY<0 && (-minheightchildren+maxheightchildren)/2<=paneHeight/2)) {
+                    if (adjY===padding && minheightchildren===0*pix) {
                         adjY = 0
                     }
 
-                    if (adjX<0 && (-minwidthchildren+maxwidthchildren)/2>paneWidth/2) {
-                        adjX = -((-minwidthchildren+maxwidthchildren)/2-paneWidth/2)
+                    var devX = (minwidthchildren+maxwidthchildren)/2-paneWidth/2
+                    if (adjX<0) {
+                        if (Math.abs(devX)>limit[0] && minwidthchildren>devX && layers.children.length!==1) {
+                            adjX = -devX
+                        }
+                        else {
+                            adjX = 0
+                        }
                     }
-                    if (adjY<0 && (-minheightchildren+maxheightchildren)/2>paneHeight/2) {
-                        adjY = -((-minheightchildren+maxheightchildren)/2-paneHeight/2)
+                    var devY = (minheightchildren+maxheightchildren)/2-paneHeight/2
+
+                    if (adjY<0) {
+                        if (Math.abs(devY)>limit[1] && minheightchildren>devY && layers.children.length!==1) {
+                            adjY = -devY
+                        }
+                        else {
+                            adjY = 0
+                        }
                     }
+                    if (layers.children.length===1) {
+                        if (adjX<0 ) { adjX = 0}
+                        if (adjY<0 ) { adjY = 0}
+                    }
+
                     if (adjX!==0 || adjY!==0) {
                         for (var i = 0; i < layers.children.length; i++) {
                             layers.children[i].x = layers.children[i].x + adjX
@@ -1148,12 +1303,8 @@ ApplicationWindow {
 
                     paneHeight = mainPane.height
                     paneWidth = mainPane.width
-                    minheight = -Math.min(0,gettop(unit))
-                    minwidth = -Math.min(0,getleft(unit))
                     maxheight = Math.max(paneHeight,getbottom(unit))
                     maxwidth = Math.max(paneWidth,getright(unit))
-                    minheightchildren = -Math.min(gettopchild(layers))
-                    minwidthchildren = -Math.min(getleftchild(layers))
                     maxheightchildren = Math.max(getbottomchild(layers))
                     maxwidthchildren = Math.max(getrightchild(layers))
 
@@ -1171,8 +1322,25 @@ ApplicationWindow {
                         mainPane.height = maxheightchildren + padding
                         flickableMainPane.contentHeight = mainPane.height
                     }
+                    else if (maxheightchildren>(mainFrame.height - 4*pix)) {
+                        mainPane.height = maxheightchildren + padding
+                        flickableMainPane.contentHeight = mainPane.height
+                    }
+                    else {
+                        mainPane.height = mainFrame.height - 4*pix
+                        flickableMainPane.contentHeight = mainPane.height
+                    }
+
                     if (maxwidthchildren>paneWidth) {
                         mainPane.width = maxwidthchildren + padding
+                        flickableMainPane.contentWidth = mainPane.width
+                    }
+                    else if (maxwidthchildren>(mainFrame.width - 4*pix)) {
+                        mainPane.width = maxwidthchildren + padding
+                        flickableMainPane.contentWidth = mainPane.width
+                    }
+                    else {
+                        mainPane.width = mainFrame.width - 4*pix
                         flickableMainPane.contentWidth = mainPane.width
                     }
 
@@ -1188,6 +1356,7 @@ ApplicationWindow {
                     else {
                         flickableMainPane.ScrollBar.horizontal.visible = false
                     }
+                    updateOverview()
                 }
             }
 
@@ -1237,7 +1406,7 @@ ApplicationWindow {
                 width: 20*pix
                 height: 20*pix
                 radius: 20*pix
-                border.color: systempalette.mid
+                border.color: defaultpalette.controlborder
                 border.width: 3*pix
                 visible: false
                 x: unit.width*index/(outputnum+1) - downNode.radius/2
@@ -1270,8 +1439,8 @@ ApplicationWindow {
             property double index
             width: 2*downNode.radius
             height: 2*downNode.radius
-            opacity: 0.2
-            color: "red"
+            //opacity: 0.2
+            color: "transparent"
             x: unit.width*index/(outputnum+1) - downNode.radius
             y: unit.height - downNode.radius - 2*pix
             MouseArea {
@@ -1282,15 +1451,18 @@ ApplicationWindow {
                 drag.smoothed: false
                 property var mouseAdjust: [0,0]
                 onEntered: {
+                    downNode.border.color = defaultcolors.dark
+                    downNode.border.width = 4*pix
                     for (var i=0;i<upNodes.children.length;i++) {
                         upNodes.children[i].children[0].visible = true
                     }
                     for (i=0;i<downNodes.children.length;i++) {
                         downNodes.children[i].children[0].visible = true
                     }
-                    downNode.border.color = "#666666"
                 }
                 onExited: {
+                    downNode.border.color = defaultpalette.controlborder
+                    downNode.border.width = 4*pix
                     for (var i=0;i<upNodes.children.length;i++) {
                         if (upNodes.children[i].children[0].connectedNode===null) {
                             upNodes.children[i].children[0].visible = false
@@ -1301,9 +1473,10 @@ ApplicationWindow {
                             downNodes.children[i].children[0].visible = false
                         }
                     }
-                    downNode.border.color = systempalette.mid
                 }
                 onPressed: {
+                    deselectunits()
+                    mainPane.selectioninds = []
                     mouseAdjust[0] = 0//mouse.x - downNodeRectangle.width/2;
                     mouseAdjust[1] = 0//mouse.y - downNodeRectangle.height/2;
                     for (var i=0;i<layers.children.length;i++) {
@@ -1328,6 +1501,7 @@ ApplicationWindow {
                     }
                 }
                 onReleased: {
+                    updateOverview()
                     for (var i=0;i<layers.children.length;i++) {
                         for (var j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
                             if (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null) {
@@ -1369,6 +1543,7 @@ ApplicationWindow {
                                                 "downNode": downNode,
                                                 "outputnum": outputnum,
                                                 "index": index});
+                                connections.num = connections.num + 1
                                 return
                             }
                         }
@@ -1379,6 +1554,7 @@ ApplicationWindow {
                         for (i=downNodeItem.children.length-1;i>=2;i--) {
                             if (downNodeItem.children[i-1].connectedNode===null) {
                                 downNodeItem.children[i].destroy()
+                                connections.num = connections.num - 1
                             }
                         }
                     }
@@ -1408,7 +1584,7 @@ ApplicationWindow {
                 width: 20*pix
                 height: 20*pix
                 radius: 20*pix
-                border.color: systempalette.mid
+                border.color: defaultpalette.controlborder
                 border.width: 3*pix
                 visible: false
                 property var connectedNode: null
@@ -1431,15 +1607,18 @@ ApplicationWindow {
                     hoverEnabled: true
                     property var mouseAdjust: [0,0]
                     onEntered: {
+                        upNode.border.color = defaultcolors.dark
+                        upNode.border.width = 4*pix
                         for (var i=0;i<upNodes.children.length;i++) {
                             upNodes.children[i].children[0].visible = true
                         }
                         for (i=0;i<downNodes.children.length;i++) {
                             downNodes.children[i].children[0].visible = true
                         }
-                        upNode.border.color = "#666666"
+
                     }
                     onExited: {
+                        upNode.border.width = 3*pix
                         for (var i=0;i<upNodes.children.length;i++) {
                             if (upNodes.children[i].children[0].connectedNode===null) {
                                 upNodes.children[i].children[0].visible = false
@@ -1450,9 +1629,10 @@ ApplicationWindow {
                                 downNodes.children[i].children[0].visible = false
                             }
                         }
-                        upNode.border.color = systempalette.mid
                     }
                     onPressed: {
+                        deselectunits()
+                        mainPane.selectioninds = []
                         if (upNode.connectedNode==null) {
                             return
                         }
@@ -1513,7 +1693,7 @@ ApplicationWindow {
                                     var downNodePoint = upNode.connectedItem.mapToItem(layers,0,0)
                                     var adjX = downNodePoint.x - upNodePoint.x
                                     var adjY = downNodePoint.y - upNodePoint.y
-                                    upNodeRectangle.x = unit.width*index/(outputnum+1)-upNode.radius
+                                    upNodeRectangle.x = unit.width*index/(inputnum+1)-upNode.radius
                                     upNodeRectangle.y = -upNode.radius + 2*pix
                                     upNode.connectedItem.x = upNode.connectedItem.x - adjX
                                     upNode.connectedItem.y = upNode.connectedItem.y - adjY
@@ -1575,7 +1755,7 @@ ApplicationWindow {
             vendorExtensionsEnabled: false
             ShapePath {
                 id: pathShapePath
-                strokeColor: "#666666"
+                strokeColor: defaultcolors.dark
                 strokeWidth: 4*pix
                 fillColor: "transparent"
                 capStyle: ShapePath.RoundCap
@@ -1614,8 +1794,8 @@ ApplicationWindow {
                                            "labelColor": [colorR,colorG,colorB],
                                            "inputnum": inputnum,
                                            "outputnum": outputnum,
-                                           "x": 20*pix,
-                                           "y": 20*pix});
+                                           "x": flickableMainPane.contentX + 20*pix,
+                                           "y": flickableMainPane.contentY + 20*pix});
             }
             RowLayout {
                 anchors.fill: parent.fill
@@ -1738,6 +1918,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -1826,6 +2007,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     ComboBox {
@@ -1918,6 +2100,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2020,6 +2203,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2055,7 +2239,7 @@ ApplicationWindow {
     }
 
     Component {
-        id: fconnpropertiesComponent
+        id: densepropertiesComponent
         Column {
             property var unit
             property var name
@@ -2111,6 +2295,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2184,6 +2369,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2257,6 +2443,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2330,6 +2517,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2403,6 +2591,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2476,6 +2665,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2508,7 +2698,7 @@ ApplicationWindow {
             property var name
             property string type
             property var labelColor
-            property var datastore: { "name": name, "inputs": "2"}
+            property var datastore: { "name": name, "inputs": "2", "dimension": "1"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
                     unit.datastore = datastore
@@ -2541,7 +2731,7 @@ ApplicationWindow {
                     Layout.topMargin: 0.22*margin
                     spacing: 0.24*margin
                     Repeater {
-                        model: ["Name","Inputs"]
+                        model: ["Name","Inputs","Dimension"]
                         Label {
                             text: modelData+": "
                             topPadding: 4*pix
@@ -2558,6 +2748,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2572,27 +2763,24 @@ ApplicationWindow {
                             if (inputnum<newinputnum) {
                                 for (var i=0;i<inputnum;i++) {
                                     unit.children[2].children[0].children[i].inputnum = newinputnum
-                                    unit.children[2].children[0].children[i].children[1].inputnum = newinputnum
                                     unit.children[2].children[0].children[i].children[0].x = unit.width*
                                             unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
                                     unit.children[2].children[0].children[i].children[1].x = unit.width*
                                             unit.children[2].children[0].children[i].index/(newinputnum+1)-20*pix
                                 }
                                 for (i=0;i<(newinputnum-inputnum);i++) {
-                                    upNodeComponent.createObject(unit.children[2].children[1], {
+                                    upNodeComponent.createObject(unit.children[2].children[0], {
                                         "unit": unit,
                                         "upNodes": unit.children[2].children[0],
                                         "downNodes": unit.children[2].children[1],
                                         "inputnum": newinputnum,
                                         "index": inputnum+i+1})
                                 }
-                                unit.inputnum = newinputnum
                             }
                             else {
                                 for (i=inputnum-1;i>=0;i--) {
                                     if (i<newinputnum) {
                                         unit.children[2].children[0].children[i].inputnum = newinputnum
-                                        unit.children[2].children[0].children[i].children[1].inputnum = newinputnum
                                         unit.children[2].children[0].children[i].children[0].x = unit.width*
                                                 unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
                                         unit.children[2].children[0].children[i].children[1].x = unit.width*
@@ -2607,9 +2795,18 @@ ApplicationWindow {
                                         unit.children[2].children[0].children[i].destroy()
                                     }
                                 }
-                                unit.inputnum = newinputnum
                             }
+                            unit.inputnum = newinputnum
                             unit.datastore.inputs = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.dimension
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /[1-3]/ }
+                        onEditingFinished: {
+                            unit.datastore.dimension = displayText
                         }
                     }
                 }
@@ -2674,6 +2871,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2790,6 +2988,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2863,6 +3062,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                     TextField {
@@ -2950,6 +3150,7 @@ ApplicationWindow {
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         onEditingFinished: {
                             unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
                         }
                     }
                 }
