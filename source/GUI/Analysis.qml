@@ -7,7 +7,7 @@ import Qt.labs.platform 1.1
 import QtQml.Models 2.15
 import Qt.labs.folderlistmodel 2.15
 import "Templates"
-//import org.julialang 1.0
+import org.julialang 1.0
 
 
 ApplicationWindow {
@@ -42,7 +42,10 @@ ApplicationWindow {
     FolderDialog {
             id: folderDialog
             currentFolder: currentfolder
-            onAccepted: { updatefolder(folderDialog.folder) }
+            onAccepted: {
+                updatefolder(folderDialog.folder)
+                Julia.returnfolder()
+            }
     }
 
     Loader { id: analysisoptionsLoader }
@@ -278,7 +281,7 @@ ApplicationWindow {
         currentfolder = path
         folderModel.folder = currentfolder
         folderView.model = folderModel
-        //Julia.browsefolder(folderDialog.folder)
+        Julia.browsefolder(folderDialog.folder)
     }
 
     function rgbtohtml(colorRGB) {

@@ -52,7 +52,6 @@ ApplicationWindow {
 
     onClosing: {
         if (optionsLoader.sourceComponent !== null) {
-            console.log()
             optionsLoader.item.terminate = true
         }
         if (trainingLoader.sourceComponent !== null) {

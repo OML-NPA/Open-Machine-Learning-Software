@@ -8,8 +8,7 @@ import QtQml.Models 2.15
 import QtQuick.Shapes 1.15
 import Qt.labs.folderlistmodel 2.15
 import "Templates"
-//import org.julialang 1.0
-
+import org.julialang 1.0
 
 ApplicationWindow {
     id: window
@@ -17,8 +16,6 @@ ApplicationWindow {
     title: qsTr("Image Analysis Software")
     minimumWidth: 2200*pix
     minimumHeight: 1500*pix
-    //maximumWidth: gridLayout.width
-    //maximumHeight: gridLayout.height
 
     color: defaultpalette.window
 
@@ -39,6 +36,9 @@ ApplicationWindow {
     property string currentfolder: Qt.resolvedUrl(".")
     property var currentFocus: null
 
+    property var architecture
+
+
     onClosing: { customizationLoader.sourceComponent = undefined }
 
     header: Pane {
@@ -52,6 +52,12 @@ ApplicationWindow {
                 backgroundRadius: 0
                 width: (header.width)/15
                 height: header.height + 1
+                onPressed: {
+                   getarchitecture()
+                }
+                onReleased: {
+                    gridLayout.forceActiveFocus()
+                }
             }
             Button {
                 text: "Arrange"
@@ -74,6 +80,7 @@ ApplicationWindow {
         focus: true
         Keys.onPressed: {
             if (event.key===Qt.Key_Backspace || event.key===Qt.Key_Delete) {
+
                 var upNodes = currentFocus.children[2].children[0]
                 var downNodes = currentFocus.children[2].children[1]
                 for (var i=0;i<upNodes.children.length;i++) {
@@ -95,7 +102,7 @@ ApplicationWindow {
                 }
                 currentFocus.destroy()
                 currentFocus = null
-
+                updateOverview()
                 propertiesStackView.push(generalpropertiesComponent)
             }
         }
@@ -716,6 +723,7 @@ ApplicationWindow {
                         }
 
                         Item {
+                            property int cnt: 0
                             id: layers
                         }
                         Item {
@@ -1018,13 +1026,104 @@ ApplicationWindow {
         delay(10, upd)
     }
 
-
-
     function deselectunits() {
         for (var i=0;i<layers.children.length;i++) {
             mainPane.selectioninds = []
             layers.children[i].border.color = defaultpalette.controlborder
             layers.children[i].border.width = 3*pix
+        }
+    }
+
+    function deselectunit(unit) {
+        unit.border.color = defaultpalette.controlborder
+        unit.border.width = 3*pix
+    }
+
+    function selectunit(unit) {
+        unit.border.color = defaultcolors.dark
+        unit.border.width = 4*pix
+    }
+
+    function getarchitecture() {
+        Julia.resetlayers()
+        for (var i=0;i<layers.children.length;i++) {
+            var datastore = layers.children[i].datastore
+            var keys = Object.keys(datastore)
+            var values = Object.values(datastore)
+            for (var j=0;j<keys.length;j++) {
+                if (typeof values[i] === typeof {}) {
+                    values[i] = values[i]["text"]
+                }
+            }
+            var upNodes = layers.children[i].children[2].children[0]
+            var connections_up = Array(upNodes.children.length).fill(0)
+            for (j=0;j<upNodes.children.length;j++) {
+                var node = upNodes.children[j].children[0].connectedNode
+                if (node!==null) {
+                    connections_up[j] = getlayerindex(nodetolayer(node))+1
+                }
+            }
+            var downNodes = layers.children[i].children[2].children[1]
+            var connections_down = Array(downNodes.children.length).fill(0)
+            for (j=0;j<downNodes.children.length;j++) {
+                node = downNodes.children[j].children[1].connectedNode
+                if (node!==null) {
+                    connections_down[j] = getlayerindex(nodetolayer(node))+1
+                }
+            }
+            Julia.returnmap(keys,values,"connections_up",connections_up,
+                            "connections_down",connections_down);
+            Julia.updatelayers()
+        }
+
+    }
+
+    function getlayerindex(layer) {
+        for (var i=0;i<layers.children.length;i++) {
+            if (layer===layers.children[i]) {
+                return(i)
+            }
+        }
+    }
+
+    function nodetolayer(node) {
+        return(node.parent.parent.parent.parent)
+    }
+
+    function getstack(labelColor,type,name,unit,datastore) {
+        switch(type) {
+        case "inputnum":
+            return pushstack(inputpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Output":
+            return pushstack(outputpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Convolution":
+            return pushstack(convpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Transposed convolution":
+            return pushstack(tconvpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Dense":
+            return pushstack(densepropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Drop-out":
+            return pushstack(dropoutpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Batch normalisation":
+            return pushstack(batchnormpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Leaky RelU":
+            return pushstack(leakyrelupropertiesComponent,labelColor,type,name,unit,datastore)
+        case "ElU":
+            return pushstack(elupropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Max pooling":
+            return pushstack(poolpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Average pooling":
+            return pushstack(poolpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Catenation":
+            return pushstack(catpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Decatenation":
+            return pushstack(decatpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Scaling":
+            return pushstack(scalingpropertiesComponent,labelColor,type,name,unit,datastore)
+        case "Resizing":
+            return pushstack(resizingpropertiesComponent,labelColor,type,name,unit,datastore)
+        default:
+            pushstack(emptypropertiesComponent,labelColor,type,name,unit,datastore)
         }
     }
 
@@ -1070,9 +1169,14 @@ ApplicationWindow {
                 anchors.fill: parent
                 drag.target: parent
                 hoverEnabled: true
+                Component.onCompleted: {
+                    deselectunits()
+                    currentFocus = unit
+                    selectunit(unit)
+                    getstack(labelColor,type,name,unit,datastore)
+                }
                 onEntered: {
-                    unit.border.color = defaultcolors.dark
-                    unit.border.width = 4*pix
+                    selectunit(unit)
                     for (var i=0;i<upNodes.children.length;i++) {
                         upNodes.children[i].children[0].visible = true
                     }
@@ -1081,9 +1185,10 @@ ApplicationWindow {
                     }
                 }
                 onExited: {
-                    if (mainPane.selectioninds.length<2){
-                        unit.border.color = defaultpalette.controlborder
-                        unit.border.width = 3*pix
+                    if (unit!==currentFocus) {
+                        if (mainPane.selectioninds.length<2){
+                            deselectunit(unit)
+                        }
                     }
                     for (var i=0;i<upNodes.children.length;i++) {
                         if (upNodes.children[i].children[0].connectedNode===null) {
@@ -1098,44 +1203,15 @@ ApplicationWindow {
                 }
                 onPressed: {
                     unit.oldpos = [unit.x,unit.y]
+                    currentFocus = unit
+                    deselectunits()
+                    selectunit(unit)
                 }
-
                 onClicked: {
                     currentFocus = unit
-                    switch(type) {
-                    case "inputnum":
-                        return pushstack(inputpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Output":
-                        return pushstack(outputpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Convolution":
-                        return pushstack(convpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Transposed convolution":
-                        return pushstack(tconvpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Dense":
-                        return pushstack(densepropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Drop-out":
-                        return pushstack(dropoutpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Batch normalisation":
-                        return pushstack(batchnormpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Leaky RelU":
-                        return pushstack(leakyrelupropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "ElU":
-                        return pushstack(elupropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Max pooling":
-                        return pushstack(poolpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Average pooling":
-                        return pushstack(poolpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Catenation":
-                        return pushstack(catpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Decatenation":
-                        return pushstack(decatpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Scaling":
-                        return pushstack(scalingpropertiesComponent,labelColor,type,name,unit,datastore)
-                    case "Resizing":
-                        return pushstack(resizingpropertiesComponent,labelColor,type,name,unit,datastore)
-                    default:
-                        pushstack(emptypropertiesComponent,labelColor,type,name,unit,datastore)
-                    }
+                    deselectunits()
+                    selectunit(unit)
+                    getstack(labelColor,type,name,unit,datastore)
                 }
                 onPositionChanged: {
                     if (pressed) {
@@ -1162,7 +1238,8 @@ ApplicationWindow {
                             var upNodes = layers.children[inds[k]].children[2].children[0]
                             var downNodes = layers.children[inds[k]].children[2].children[1]
                             for (i=0;i<upNodes.children.length;i++) {
-                                if (upNodes.children[i].children[0].connectedNode!==null) {
+                                var upNodeRectangle = upNodes.children[i].children[0]
+                                if (upNodeRectangle.connectedNode!==null) {
                                     var devX = 0
                                     var devY = 0
 
@@ -1171,43 +1248,43 @@ ApplicationWindow {
                                         devY = layers.children[inds[k]].y - unit.y
 
                                     }
-                                    var startX = upNodes.children[i].children[0].connectedItem.connection.data[0].startX;
-                                    var startY = upNodes.children[i].children[0].connectedItem.connection.data[0].startY;
-                                    upNodes.children[i].children[0].connectedItem.connection.destroy()
-                                    upNodes.children[i].children[0].connectedItem.connection = shapeComponent.createObject(connections, {
+                                    var startX = upNodeRectangle.connectedItem.connection.data[0].startX;
+                                    var startY = upNodeRectangle.connectedItem.connection.data[0].startY;
+                                    upNodeRectangle.connectedItem.connection.destroy()
+                                    upNodeRectangle.connectedItem.connection = shapeComponent.createObject(connections, {
                                           "beginX": startX ,
                                           "beginY": startY,
                                           "finishX": unit.x + unit.width*upNodes.children[i].index/(layers.children[inds[k]].inputnum+1) + devX,
                                           "finishY": unit.y + 2*pix + devY,
-                                          "origin": upNodes.children[i].children[0].connectedItem});
-                                    var nodePoint = upNodes.children[i].children[0].
-                                    mapToItem(upNodes.children[i].children[0].connectedItem.parent,0,0)
-                                    upNodes.children[i].children[0].connectedItem.x = nodePoint.x - upNodes.children[i].children[0].radius/2
-                                    upNodes.children[i].children[0].connectedItem.y = nodePoint.y - upNodes.children[i].children[0].radius/2
+                                          "origin": upNodeRectangle.connectedItem});
+                                    var nodePoint = upNodeRectangle.mapToItem(upNodeRectangle.connectedItem.parent,0,0)
+                                    upNodeRectangle.connectedItem.x = nodePoint.x - upNodeRectangle.radius/2
+                                    upNodeRectangle.connectedItem.y = nodePoint.y - upNodeRectangle.radius/2
                                 }
                             }
                             for (i=0;i<downNodes.children.length;i++) {
                                 for (var j=1;j<downNodes.children[i].children.length;j++) {
-                                    if (pressed && downNodes.children[i].children[j].connectedNode!==null) {
+                                    var downNodeRectangle = downNodes.children[i].children[j]
+                                    if (pressed && downNodeRectangle.connectedNode!==null) {
                                         devX = 0
                                         devY = 0
                                         if (inds[k]!==currentind) {
                                             devX = layers.children[inds[k]].x - unit.x
                                             devY = layers.children[inds[k]].y - unit.y
                                         }
-                                        var finishX = downNodes.children[i].children[j].connection.data[0].pathElements[0].x
-                                        var finishY = downNodes.children[i].children[j].connection.data[0].pathElements[0].y
-                                        downNodes.children[i].children[j].connection.destroy()
-                                        downNodes.children[i].children[j].connection = shapeComponent.createObject(connections, {
+                                        var finishX = downNodeRectangle.connection.data[0].pathElements[0].x
+                                        var finishY = downNodeRectangle.connection.data[0].pathElements[0].y
+                                        downNodeRectangle.connection.destroy()
+                                        downNodeRectangle.connection = shapeComponent.createObject(connections, {
                                               "beginX": unit.x + unit.width*downNodes.children[i].index/(layers.children[inds[k]].outputnum+1) + devX,
                                               "beginY": unit.y + unit.height - 2*pix + devY,
                                               "finishX": finishX,
                                               "finishY": finishY,
-                                              "origin": downNodes.children[i].children[j]});
-                                        nodePoint = downNodes.children[i].children[j].connectedNode.
+                                              "origin": downNodeRectangle});
+                                        nodePoint = downNodeRectangle.connectedNode.
                                             mapToItem(downNodes.children[i],0,0)
-                                        downNodes.children[i].children[j].x = nodePoint.x - downNodes.children[i].children[0].radius/2
-                                        downNodes.children[i].children[j].y = nodePoint.y - downNodes.children[i].children[0].radius/2 + 2*pix
+                                        downNodeRectangle.x = nodePoint.x - downNodeRectangle.radius/2
+                                        downNodeRectangle.y = nodePoint.y - downNodeRectangle.radius/2 + 2*pix
                                     }
                                 }
                             }
@@ -1462,7 +1539,7 @@ ApplicationWindow {
                 }
                 onExited: {
                     downNode.border.color = defaultpalette.controlborder
-                    downNode.border.width = 4*pix
+                    downNode.border.width = 3*pix
                     for (var i=0;i<upNodes.children.length;i++) {
                         if (upNodes.children[i].children[0].connectedNode===null) {
                             upNodes.children[i].children[0].visible = false
@@ -1511,6 +1588,7 @@ ApplicationWindow {
                     }
                     for (i=0;i<layers.children.length;i++) {
                         for (j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
+
                             if (comparelocations(downNodeRectangle,mouse.x,mouse.y,
                                     layers.children[i].children[2].children[0].children[j].children[0],layers) &&
                                     (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null ||
@@ -1618,6 +1696,7 @@ ApplicationWindow {
 
                     }
                     onExited: {
+                        upNode.border.color = defaultpalette.controlborder
                         upNode.border.width = 3*pix
                         for (var i=0;i<upNodes.children.length;i++) {
                             if (upNodes.children[i].children[0].connectedNode===null) {
@@ -2541,7 +2620,7 @@ ApplicationWindow {
             property var name
             property string type
             property var labelColor
-            property var datastore: { "name": name, "Alpha": "1"}
+            property var datastore: { "name": name, "alpha": "1"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
                     unit.datastore = datastore
