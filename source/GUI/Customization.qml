@@ -8,7 +8,7 @@ import QtQml.Models 2.15
 import QtQuick.Shapes 1.15
 import Qt.labs.folderlistmodel 2.15
 import "Templates"
-import org.julialang 1.0
+//import org.julialang 1.0
 
 ApplicationWindow {
     id: window
@@ -33,7 +33,6 @@ ApplicationWindow {
     property bool optionsOpen: false
     property bool localtrainingOpen: false
 
-    property string currentfolder: Qt.resolvedUrl(".")
     property var currentFocus: null
 
     property var architecture
@@ -52,11 +51,12 @@ ApplicationWindow {
                 backgroundRadius: 0
                 width: (header.width)/15
                 height: header.height + 1
-                onPressed: {
+                onClicked: {
                    getarchitecture()
+                   gridLayout.forceActiveFocus()
                 }
                 onReleased: {
-                    gridLayout.forceActiveFocus()
+
                 }
             }
             Button {
@@ -65,6 +65,99 @@ ApplicationWindow {
                 backgroundRadius: 0
                 width: (header.width)/15
                 height: header.height + 1
+                onClicked: {
+                    function getpositions() {
+                        var x = []
+                        var y = []
+                        for (var i=0;i<layers.children.length;i++) {
+                            x[i] = layers.children[i].x - width/2
+                            y[i] = layers.children[i].y - height/2
+                        }
+                        return({"x": x,"y": y})
+                    }
+                    var height = layers.children[0].height
+                    var width = layers.children[0].width
+                    var marginy = 40*pix + height
+                    var marginx = 40*pix + 1.5*width
+                    // Arrange into y groups
+                    var skipinds = []
+                    var positions_orig = getpositions()
+                    for(var k=0;k<layers.children.length-1;k++) {
+                        var positions = getpositions()
+                        for (var i=0;i<skipinds.length;i++) {
+                            positions.y[skipinds[i]] = Infinity
+                        }
+                        var minind = indexofmin(positions.y)
+                        var minval = Math.min(...positions.y)
+                        var dist = dif(positions.y,minval)
+                        for (i=0;i<dist.length;i++) {
+                            if ( i===minind || skipinds.includes(i)) {
+                                continue
+                            }
+                            if (dist[i]>0) {
+                                if (dist[i]<marginy) {
+                                    if (Math.abs(positions_orig.y[minind]-positions_orig.y[i])>height) {
+                                        layers.children[i].y = layers.children[i].y + (marginy - dist[i])
+                                    }
+                                    else {
+                                        layers.children[i].y = layers.children[minind].y
+                                    }
+                                }
+                            }
+                        }
+                        skipinds.push(minind)
+                    }
+                    // Arrange x margins for y groups
+                    skipinds = []
+                    positions_orig = getpositions()
+                    for(k=0;k<layers.children.length-1;k++) {
+                        positions = getpositions()
+                        for (i=0;i<skipinds.length;i++) {
+                            positions.x[skipinds[i]] = Infinity
+                        }
+                        minind = indexofmin(positions.x)
+                        minval = Math.min(...positions.x)
+                        dist = dif(positions.x,minval)
+
+                        for (i=0;i<dist.length;i++) {
+                            if ( i===minind || skipinds.includes(i)) {
+                                continue
+                            }
+                            if (dist[i]>=0 && positions.y[minind]===positions.y[i]) {
+                                layers.children[i].x = minval + marginx
+                            }
+                        }
+                        skipinds.push(minind)
+                    }
+                    var unique_y = getpositions().y.filter((x,i,a)=>a.indexOf(x)===i)
+                    positions = getpositions()
+                    var ind = indexOfMin(positions.y)
+                    var min_x = positions.x[ind]
+                    var buffer = 0
+                    unique_y = unique_y.sort((a,b)=>a-b)
+                    for (i=0;i<(unique_y.length-1);i++) {
+                        var value = unique_y[i+1]-unique_y[i]
+                        positions = getpositions()
+                        var inds = findindex(positions.y,unique_y[i+1])
+                        var array = []
+                        for (var j=0;j<inds.length;j++) {
+                            array.push(layers.children[inds[j]].x)
+                        }
+                        var dev = mean(array) - min_x
+                        console.log(dev," ",mean(array)," ", min_x)
+                        console.log(positions.x)
+                        for (j=0;j<inds.length;j++) {
+                            layers.children[inds[j]].x = layers.children[inds[j]].x - dev + width/2
+                        }
+                        if (value!==marginy){
+                            buffer = buffer + (marginy - value)
+                            for (j=0;j<inds.length;j++) {
+                                layers.children[inds[j]].y = layers.children[inds[j]].y + buffer
+                            }
+                        }
+                    }
+                    gridLayout.forceActiveFocus()
+                }
             }
         }
         Rectangle {
@@ -861,6 +954,65 @@ ApplicationWindow {
 
 //--FUNCTIONS--------------------------------------------------------------------
 
+    function dif(ar,x) {
+        function dif_subfunc(value,x) {
+            return value - x;
+        }
+        return ar.map(value => dif_subfunc(value,x));
+    }
+
+    function abs(ar) {
+        return array.map(Math.abs);
+    }
+
+    function mean(array) {
+        var total = 0
+        for(var i = 0;i<array.length;i++) {
+            total += array[i]
+        }
+        return(total/array.length)
+    }
+
+    function findindex(array,value) {
+        var array2 = []
+        for (var i=0;i<array.length;i++){
+            if (array[i]===value){
+                array2.push(i)
+            }
+        }
+        return(array2)
+    }
+
+    function indexOfMax(array) {
+        if (array.length === 0) {
+            return -1;
+        }
+        var max = array[0];
+        var maxIndex = 0;
+        for (var i=1;i<array.length;i++) {
+            if (array[i] > max) {
+                maxIndex = i;
+                max = array[i];
+            }
+        }
+        return maxIndex;
+    }
+
+    function indexOfMin(array) {
+        if (array.length === 0) {
+            return -1;
+        }
+        var min = array[0];
+        var minIndex = 0;
+        for (var i=1;i<array.length;i++) {
+            if (array[i] < min) {
+                minIndex = i;
+                min = array[i];
+            }
+        }
+        return minIndex;
+    }
+
     function getleft(item) {
         return(item.x)
     }
@@ -1090,6 +1242,23 @@ ApplicationWindow {
         return(node.parent.parent.parent.parent)
     }
 
+    function indexofmin(a) {
+        var lowest = 0;
+        for (var i = 1; i < a.length; i++) {
+            if (a[i] < a[lowest]) lowest = i;
+        }
+        return lowest;
+    }
+
+    function indexofmax(a) {
+        var highest = 0;
+        for (var i = 1; i < a.length; i++) {
+            if (a[i] > a[highest]) highest = i;
+        }
+        return highest;
+    }
+
+
     function getstack(labelColor,type,name,unit,datastore) {
         switch(type) {
         case "inputnum":
@@ -1204,8 +1373,10 @@ ApplicationWindow {
                 onPressed: {
                     unit.oldpos = [unit.x,unit.y]
                     currentFocus = unit
-                    deselectunits()
-                    selectunit(unit)
+                    if (mainPane.selectioninds<2) {
+                        deselectunits()
+                        selectunit(unit)
+                    }
                 }
                 onClicked: {
                     currentFocus = unit
