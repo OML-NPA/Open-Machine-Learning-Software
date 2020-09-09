@@ -309,10 +309,10 @@ ApplicationWindow {
                                         anchors.top: linearLabel.bottom
                                         spacing: 0
                                         boundsBehavior: Flickable.StopAtBounds
-                                        model: ListModel {id: multlayerModel
+                                        model: ListModel {id: linearlayerModel
                                                           ListElement{
                                                               type: "Convolution" // @disable-check M16
-                                                              group: "mult" // @disable-check M16
+                                                              group: "linear" // @disable-check M16
                                                               name: "conv"// @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
@@ -321,7 +321,7 @@ ApplicationWindow {
                                                               outputnum: 1} // @disable-check M16
                                                           ListElement{
                                                               type: "Transposed convolution" // @disable-check M16
-                                                              group: "mult" // @disable-check M16
+                                                              group: "linear" // @disable-check M16
                                                               name: "tconv" // @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16
@@ -330,7 +330,7 @@ ApplicationWindow {
                                                               outputnum: 1} // @disable-check M16
                                                           ListElement{
                                                               type: "Dense" // @disable-check M16
-                                                              group: "mult" // @disable-check M16
+                                                              group: "linear" // @disable-check M16
                                                               name: "dense" // @disable-check M16
                                                               colorR: 250 // @disable-check M16
                                                               colorG: 250 // @disable-check M16

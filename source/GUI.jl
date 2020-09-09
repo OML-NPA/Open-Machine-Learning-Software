@@ -1,9 +1,7 @@
 
 using QML
 using Observables
-using BSON
-import Base.string
-import Base.UInt32
+using JSON
 
 cd("C:\\Users\\a_ill\\Documents\\GitHub\\Deep-Data-Analysis\\source")
 
@@ -13,54 +11,98 @@ load("GUI//Main.qml")
 dict = Dict{String,Any}()
 layers = []
 
-function string(var::QML.QVariantDereferenced)
-  return String[var][1]
-end
-
-function Int32(var::QML.QVariantDereferenced)
-  return Int32[var][1]
-end
-
 function returnfolder(folder)
-  folder = QString(folder)
-  folder = folder[8:length(folder)]
-  return (folder)
+    folder = QString(folder)
+    folder = folder[8:length(folder)]
+    return (folder)
 end
 
+# ADD PARSING OF "x,x" TYPE VALUES
 function returnmap(keys, values, ext...)
-  global dict
-  dict = Dict{String,Any}()
-  keys = string.(keys)
-  values = string.(values)
-  sizehint!(dict, length(keys))
-  for i = 1:length(keys)
-    var_str = values[i]
-    var_num = tryparse(Float32, var_str)
-    if var_num == nothing
-      dict[keys[i]] = var_str
-    else
-      dict[keys[i]] = var_num
+    global dict
+    dict = Dict{String,Any}()
+    keys = QML.value.(keys)
+    values = QML.value.(values)
+    sizehint!(dict, length(keys))
+    for i = 1:length(keys)
+        var_str = values[i]
+        var_num = tryparse(Float32, var_str)
+        if var_num == nothing
+          dict[keys[i]] = var_str
+          if occursin(",", var_str) && !occursin("[", var_str)
+             dict[keys[i]] = str2tuple(Int64,var_str)
+          end
+        else
+          dict[keys[i]] = var_num
+        end
     end
-  end
-  if length(ext)!=0
-    for i = 1:2:length(ext)
-      dict[ext[i]] = Int32.(ext[i+1])
+    if length(ext) != 0
+        for i = 1:2:length(ext)
+            if ext[i+1] isa Float64 || ext[i+1] isa Float32 ||
+                    ext[i+1] isa String
+                dict[ext[i]] = ext[i+1]
+            else
+                dict[ext[i]] = QML.value.(ext[i+1])
+            end
+        end
     end
-  end
 
+end
+
+function fixtypes(dict)
+    for key in [
+        "filters",
+        "dilationfactor",
+        "stride",
+        "epsilon",
+        "probability",
+        "inputs",
+        "outputs",
+        "dimension"]
+        if haskey(dict, key)
+            dict[key] = Int64(dict[key])
+        end
+    end
+    for key in ["filtersize", "poolsize","newsize"]
+        if haskey(dict, key)
+            dict[key] = Int64(dict[key])
+            if length(filtersize) == 1
+                dict[key] = (dict[key], dict[key])
+            else
+                dict[key] = (dict[key]...,)
+            end
+        end
+    end
+end
+
+function str2tuple(type,str)
+    ar = parse.(type, split(str, ","))
+    return (ar...,)
 end
 
 function resetlayers()
-  global layers
-  layers = []
+    global layers
+    layers = []
 end
 
 function updatelayers()
-  global layers
-  global dict
-  push!(layers, copy(dict))
+    global layers
+    global dict
+    push!(layers, copy(dict))
 end
 
 @qmlfunction(returnfolder, returnmap, resetlayers, updatelayers)
 
 exec()
+
+
+function test()
+  open("layers.json","w") do f
+      JSON.print(f, layers)
+  end
+  layers = []
+  open("layers.json", "r") do f
+      global layers
+      layers = JSON.parse(f)  # parse and transform data
+  end
+end
