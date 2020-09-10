@@ -3,6 +3,7 @@ using Flux, Statistics
 using Printf, BSON
 using QML
 outdims = Flux.outdims
+
 # Layers
 struct Parallel
     layers::Tuple
@@ -21,81 +22,64 @@ struct Catenation
 end
 (m::Catenation)(x) = cat(x...,dims=m.dims)
 
+struct Decatenation
+    outputs
+    dims
+end
+function Decatenation_func(x,outputs::Int64,dims::Int64)
+    x_out = ntuple(x->[], outputs)
+    step = size(x,dims)/outputs
+    if dims==1
+        for i = 1:outputs
+            x_out[i] = x[(1+(i-1)*step):(i)*step,:,:]
+        end
+    elseif dims==2
+        for i = 1:outputs
+            x_out[i] = x[:,(1+(i-1)*step):(i)*step,:]
+        end
+    elseif dims==3
+        for i = 1:outputs
+            x_out[i] = x[:,:,(1+(i-1)*step):(i)*step]
+        end
+    end
+    return x_out
+end
+(m::Decatenation)(x) = Decatenation_func(x,outputs,dims)
+
 struct Activation
     f
 end
 (m::Activation)(x) = m.f.(x)
 
-# Model
-model = []
+# Model constructor
 
-model = Chain(
-    Parallel((Conv((2,2),1=>2),Conv((2,2),1=>2))),
-    Catenation(2),
-    Activation(relu))
-#clearconsole()
-model(ones(Float32, 8,8,1,1))
-
-layers_names = []
-model_layers = []
-for i = 1:length(layers)
-    push!(layers_names,layers[i]["type"])
-end
-ind = findall(x -> x=="Input",layers_names)
-input_params = layers[ind][1]
-in_size = input_params["size"]
-if length(in_size)==2
-    in_size = (in_size...,1)
-end
-inds = input_params["connections_down"]
-for i = 1:length(layers)
-    layer = layers[inds][1]
-    if layer.group=="linear"
-        out, layer_f = getlinear(type,layer,in_size)
-        push!(model_layers,layer_f)
-    elseif layer.group=="norm"
-        push!(model_layers,getnorm(type,layer,in_size))
-        out = in_size
-    elseif layer.group=="activation"
-        push!(model_layers,getactivation(type,layer,in_size))
-        out = in_size
-    elseif layer.group=="pooling"
-        out, layer_f = getpooling(type,layer,in_size)
-        push!(model_layers,layer_f)
-    elseif layer.group=="resizing"
-        out, layer_f = getresizing(type,layer,in_size)
-        push!(model_layers,layer_f)
-    end
-    inds = layer["connections_down"]
-    in_size = out
-end
-
-function getlinear(type::String,d,in)
+function getlinear(type::AbstractString,d,in_size::Tuple)
     if type=="Convolution"
-        layer = Conv(d["filtersize"], in[3]=>d["filters"],pad=SamePad(),
-            stride=d["stride"], dilation=d["dilationfactor"]))
-        out = (outdims(layer,in)...,in[3])
-        return (out,layer)
-
-    elseif type=="Transposed convolution"
-        layer = ConvTranspose(d["filtersize"], in[3]=>d["filters"],pad=SamePad(),
+        layer = Conv(d["filtersize"], in_size[3]=>d["filters"],pad=SamePad(),
             stride=d["stride"], dilation=d["dilationfactor"])
-        out = (outdims(layer,in)...,in[3])
-        return (out,layer)
+        out = (outdims(layer,in_size)...,d["filters"])
+        return (layer,out)
+    elseif type=="Transposed convolution"
+        layer = ConvTranspose(d["filtersize"], in_size[3]=>d["filters"],pad=SamePad(),
+            stride=d["stride"], dilation=d["dilationfactor"])
+        out = (outdims(layer,in)...,in_size[3])
+        return (layer,out)
     elseif type=="Dense"
-        return ((d["filters"],in[2:3]),Dense(in,d["filters"]))
+        layer = Dense(in_size,d["filters"])
+        out = (d["filters"],in[2:3])
+        return (layer,out)
     end
 end
 
-function getnorm(type::String,d,in)
+function getnorm(type::AbstractString,d,in_size::Tuple)
     if type=="Drop-out"
         return Dropout(d["probability"])
     elseif type=="Batch normalisation"
-        return BatchNorm(in, ϵ=d["epsilon"])
+        return BatchNorm(in_size[end], ϵ=d["epsilon"])
     end
 end
 
-function getactivation(type::String,d,in)
+function getactivation(type::AbstractString,d,in_size::Tuple)
     if type=="RelU"
         return Activation(x->relu(x))
     elseif type=="Laeky RelU"
@@ -107,7 +91,7 @@ function getactivation(type::String,d,in)
     end
 end
 
-function getpooling(type::String,d,in)
+function getpooling(type::AbstractString,d,in_size::Tuple)
     if type=="Max pooling"
         return MaxPool(d["poolsize"], stride = d["stride"])
     elseif type=="Average pooling"
@@ -115,30 +99,110 @@ function getpooling(type::String,d,in)
     end
 end
 
-function getresizing(type::String,d,in)
+function getresizing(type::AbstractString,d,in_size::Tuple)
     if type=="Catenation"
-        return (sum(in...), Catenation(d["dimension"])
+        if d["dimension"]==1
+            out = (sum(in_size[:][1]),in_size[1][2:3])
+        elseif d["dimension"]==2
+            out = (in_size[1][1],sum(in_size[:][2]),in_size[1][3])
+        elseif d["dimension"]==3
+            out = (in_size[1][1:2],sum(in_size[:][3]))
+        end
+        return (Catenation(d["dimension"]), sum(in_size...))
     elseif type=="Decatenation"
         out = ntuple(x->(0,0,0), d["outputs"])
         if dimension==1
             for i = 1:d["outputs"]
-                out[i] = (in[1]/d["outputs"], in[2:3]...)
+                out[i] = (in_size[1]/d["outputs"], in_size[2:3]...)
             end
         elseif dimension==2
             for i = 1:d["outputs"]
-                out[i] = (in[1], in[2]/d["outputs"], in[3])
+                out[i] = (in_size[1], in_size[2]/d["outputs"], in_size[3])
             end
         elseif dimension==3
             for i = 1:d["outputs"]
-                out[i] = (in[1], in[2], in[3]/d["outputs"])
+                out[i] = (in_size[1], in_size[2], in_size[3]/d["outputs"])
             end
         end
-        return (out, Decatenation(d["outputs"],d["dimension"])
+        return (Decatenation(d["outputs"],d["dimension"]), out)
     elseif type=="Scaling"
-        out = (in[1]*multiplier,in[2]*multiplier,in[3])
-        return (out, Scaling(d["multiplier"]))
+        out = (in_size[1]*multiplier,in_size[2]*multiplier,in_size[3])
+        return (Scaling(d["multiplier"]), out)
     elseif type=="Resizing"
-        out = (d["newsize"][1:2]...,in[3])
-        return (out, Resizing(d["newsize"],d["mode"]))
+        out = (d["newsize"][1:2]...,in_size[3])
+        return (Resizing(d["newsize"],d["mode"]), out)
     end
 end
+
+function getlayer(layer,in_size)
+    if layer["group"]=="linear"
+        layer_f, out  = getlinear(layer["type"],layer,in_size)
+    elseif layer["group"]=="norm"
+        layer_f = getnorm(layer["type"],layer,in_size)
+        out = in_size
+    elseif layer["group"]=="activation"
+        layer_f = getactivation(layer["type"],layer,in_size)
+        out = in_size
+    elseif layer["group"]=="pooling"
+        layer_f, out  = getpooling(layer["type"],layer,in_size)
+    elseif layer["group"]=="resizing"
+        layer_f, out = getresizing(layer["type"],layer,in_size)
+    end
+    return (layer_f, in_size)
+end
+
+function getbranch(layers,in_size,inds_cat,ind_output,inds)
+    branch = []
+    while inds!=ind_output && !(inds[1] in inds_cat)
+        if length(inds)==1
+            layer_params = layers[inds][1]
+            layer, in_size = getlayer(layer_params,in_size)
+            @info layer
+            push!(branch,layer)
+            inds = layer_params["connections_down"]
+        else
+            branch_par = []
+            inds_par = []
+            in_size_par = []
+            for i = 1:length(inds)
+                branch_par[i], inds_par[i], in_size_par[i] =
+                    getbranch(layers,in_size,inds_cat,ind_output,[inds[i]])
+                push!(branch,Parallel(branch_par...))
+                if all(inds_par.==inds_par[1]) && all(in_size_par.==in_size_par[1])
+                        layers[inds_par[1][1]]["type"]=="Catenation"
+                    inds = inds_par[1]
+                    in_size = in_size_par[1]
+                end
+            end
+        end
+    end
+    if inds[1] in inds_cat
+        branch = Chain(branch)
+    end
+    return (branch, inds, in_size)
+end
+
+function makemodel(layers)
+    layers_names = []
+    model_layers = []
+    for i = 1:length(layers)
+        push!(layers_names,layers[i]["type"])
+    end
+    ind = findall(x -> x=="Input",layers_names)
+    input_params = layers[ind][1]
+    in_size = input_params["size"]
+    inds = input_params["connections_down"]
+    inds_cat = findall(x -> x=="Catenation",layers_names)
+    ind_output = findall(x -> x=="Output",layers_names)
+    cnt = 0
+    while inds!=ind_output || length(cnt)>length(layers)
+        branch, inds, in_size =
+            getbranch(layers,in_size,inds_cat,ind_output,inds)
+        push!(model_layers,branch...)
+        cnt = cnt + 1
+        @info cnt
+    end
+    return Chain(model_layers...)
+end
+
+model = makemodel(layers)

@@ -46,7 +46,7 @@ function returnmap(keys, values, ext...)
             end
         end
     end
-
+    dict = fixtypes(dict)
 end
 
 function fixtypes(dict)
@@ -54,8 +54,6 @@ function fixtypes(dict)
         "filters",
         "dilationfactor",
         "stride",
-        "epsilon",
-        "probability",
         "inputs",
         "outputs",
         "dimension"]
@@ -63,16 +61,23 @@ function fixtypes(dict)
             dict[key] = Int64(dict[key])
         end
     end
+    if haskey(dict, "size")
+        if length(dict["size"])==2
+            dict["size"] = (dict["size"]...,1)
+            @info dict["size"]
+        end
+    end
     for key in ["filtersize", "poolsize","newsize"]
         if haskey(dict, key)
             dict[key] = Int64(dict[key])
-            if length(filtersize) == 1
+            if length(dict[key]) == 1
                 dict[key] = (dict[key], dict[key])
             else
                 dict[key] = (dict[key]...,)
             end
         end
     end
+    return dict
 end
 
 function str2tuple(type,str)
