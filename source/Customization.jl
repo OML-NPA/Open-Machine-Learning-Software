@@ -6,9 +6,9 @@ outdims = Flux.outdims
 
 # Layers
 struct Parallel
-    layers::Tuple
+    layers::Array
 end
-function Parallel(x,layers::Tuple)
+function Parallel(x,layers::Array)
     result = []
     for i = 1:length(layers)
         push!(result,layers[i](x))
@@ -21,6 +21,10 @@ struct Catenation
     dims
 end
 (m::Catenation)(x) = cat(x...,dims=m.dims)
+
+struct Addition
+end
+(m::Addition)(x) = sum(x)
 
 struct Decatenation
     outputs
@@ -75,9 +79,11 @@ function getnorm(type::AbstractString,d,in_size::Tuple)
     if type=="Drop-out"
         return Dropout(d["probability"])
     elseif type=="Batch normalisation"
-        return BatchNorm(in_size[end], ϵ=d["epsilon"])
+        return BatchNorm(in_size[end], ϵ=Float32(d["epsilon"]))
     end
 end
+
+
 
 function getactivation(type::AbstractString,d,in_size::Tuple)
     if type=="RelU"
@@ -99,16 +105,23 @@ function getpooling(type::AbstractString,d,in_size::Tuple)
     end
 end
 
-function getresizing(type::AbstractString,d,in_size::Tuple)
+function getresizing(type::AbstractString,d,in_size)
     if type=="Catenation"
-        if d["dimension"]==1
-            out = (sum(in_size[:][1]),in_size[1][2:3])
-        elseif d["dimension"]==2
-            out = (in_size[1][1],sum(in_size[:][2]),in_size[1][3])
-        elseif d["dimension"]==3
-            out = (in_size[1][1:2],sum(in_size[:][3]))
+        new_size = Array{Int64}(undef,length(in_size))
+        dim = d["dimension"]
+        for i = 1:length(in_size)
+            new_size[i] = in_size[i][dim]
         end
-        return (Catenation(d["dimension"]), sum(in_size...))
+        new_size = sum(new_size)
+        if dim==1
+            out = (new_size,in_size[1][2],in_size[1][3])
+        elseif dim==2
+            out = (in_size[1][1],new_size,in_size[1][3])
+        elseif dim==3
+            out = (in_size[1][1],in_size[1][2],new_size)
+        end
+
+        return (Catenation(dim), out)
     elseif type=="Decatenation"
         out = ntuple(x->(0,0,0), d["outputs"])
         if dimension==1
@@ -148,38 +161,63 @@ function getlayer(layer,in_size)
     elseif layer["group"]=="resizing"
         layer_f, out = getresizing(layer["type"],layer,in_size)
     end
-    return (layer_f, in_size)
+    return (layer_f, out)
 end
 
-function getbranch(layers,in_size,inds_cat,ind_output,inds)
+function getbranch(layers,in_size,inds_cat,inds_cat_in,ind_output,inds)
     branch = []
-    while inds!=ind_output && !(inds[1] in inds_cat)
+    inds_out = []
+    skip = false
+    while inds!=ind_output && !skip
         if length(inds)==1
             layer_params = layers[inds][1]
             layer, in_size = getlayer(layer_params,in_size)
-            @info layer
             push!(branch,layer)
-            inds = layer_params["connections_down"]
+            push!(inds_out,inds[1])
+            inds = layer_params["connections_down"][1]
+            for i = 1:length(inds)
+                if inds[i] in inds_cat
+                    skip = true
+                    break
+                end
+            end
         else
             branch_par = []
+            inds_out_par = []
             inds_par = []
             in_size_par = []
             for i = 1:length(inds)
-                branch_par[i], inds_par[i], in_size_par[i] =
-                    getbranch(layers,in_size,inds_cat,ind_output,[inds[i]])
-                push!(branch,Parallel(branch_par...))
-                if all(inds_par.==inds_par[1]) && all(in_size_par.==in_size_par[1])
-                        layers[inds_par[1][1]]["type"]=="Catenation"
-                    inds = inds_par[1]
-                    in_size = in_size_par[1]
-                end
+                #global in_size, inds
+                branch_temp, inds_out_temp, inds_temp, in_size_temp =
+                    getbranch(layers,in_size,inds_cat,inds_cat_in,ind_output,[inds[i]])
+                push!(branch_par,branch_temp)
+                push!(inds_par,inds_temp)
+                push!(inds_out_par,inds_out_temp)
+                push!(in_size_par,in_size_temp)
+            end
+            push!(branch,Parallel(branch_par))
+            if allcmp(inds_par) && allcmp(in_size_par) &&
+                    layers[inds_par[1][1]]["type"]=="Catenation"
+                inds = inds_par[1]
+                in_size = in_size_par
             end
         end
     end
-    if inds[1] in inds_cat
-        branch = Chain(branch)
+    if length(branch)>1
+        branch = Chain(branch...)
+    else
+        branch = branch[1]
     end
-    return (branch, inds, in_size)
+    return (branch,inds_out,inds,in_size)
+end
+
+function allcmp(inds)
+    for i = 1:length(inds)
+        if inds[1][1]!=inds[i][1]
+            return false
+        end
+    end
+    return true
 end
 
 function makemodel(layers)
@@ -190,19 +228,29 @@ function makemodel(layers)
     end
     ind = findall(x -> x=="Input",layers_names)
     input_params = layers[ind][1]
-    in_size = input_params["size"]
-    inds = input_params["connections_down"]
+    in_size = (input_params["size"]...,)
+    inds = input_params["connections_down"][1]
     inds_cat = findall(x -> x=="Catenation",layers_names)
-    ind_output = findall(x -> x=="Output",layers_names)
-    cnt = 0
-    while inds!=ind_output || length(cnt)>length(layers)
-        branch, inds, in_size =
-            getbranch(layers,in_size,inds_cat,ind_output,inds)
-        push!(model_layers,branch...)
-        cnt = cnt + 1
-        @info cnt
+    inds_cat_in = Array{Array{Int64}}(undef,length(inds_cat))
+    for i = 1:length(inds_cat)
+        inds_cat_in[i] = layers[inds_cat[i]]["connections_up"]
     end
-    return Chain(model_layers...)
+    ind_output = findall(x -> x=="Output",layers_names)
+    inds_out = []
+    while inds!=ind_output
+        branch, inds_out_branch, inds, in_size =
+            getbranch(layers,in_size,inds_cat,inds_cat_in,ind_output,inds)
+        push!(model_layers,branch...)
+        push!(inds_out,inds_out_branch)
+    end
+    if length(model_layers)>1
+        model_layers = Chain(model_layers...)
+    else
+        model_layers = model_layers[1]
+    end
+    return model_layers
 end
 
 model = makemodel(layers)
+
+result = model(ones(Float32,5,5,1,1))

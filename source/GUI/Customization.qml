@@ -236,7 +236,7 @@ ApplicationWindow {
                             width: leftFrame.width-2*pix
                             contentHeight: 1.25*buttonHeight*(inoutlayerView.count + linearlayerView.count +
                                 normlayerView.count + activationlayerView.count + poolinglayerView.count +
-                                resizinglayerView.count + otherlayerView.count) + 7*0.75*buttonHeight
+                                resizinglayerView.count) + 6*0.75*buttonHeight
                             ScrollBar.horizontal.visible: false
                             Item {
                                 id: layersRow
@@ -276,7 +276,7 @@ ApplicationWindow {
                                                           ListElement{
                                                               type: "Output" // @disable-check M16
                                                               group: "inout" // @disable-check M16
-                                                              name: "outputnum" // @disable-check M16
+                                                              name: "output" // @disable-check M16
                                                               colorR: 0 // @disable-check M16
                                                               colorG: 0 // @disable-check M16
                                                               colorB: 250 // @disable-check M16
@@ -531,6 +531,15 @@ ApplicationWindow {
                                     spacing: 0
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: resizinglayerModel
+                                                    ListElement{
+                                                        type: "Addition" // @disable-check M16
+                                                        group: "resizing" // @disable-check M16
+                                                        name: "addition" // @disable-check M16
+                                                        colorR: 180 // @disable-check M16
+                                                        colorG: 180 // @disable-check M16
+                                                        colorB: 180// @disable-check M16
+                                                        inputnum: 2 // @disable-check M16
+                                                        outputnum: 1} // @disable-check M16
                                                       ListElement{
                                                           type: "Catenation" // @disable-check M16
                                                           group: "resizing" // @disable-check M16
@@ -565,43 +574,6 @@ ApplicationWindow {
                                                           colorR: 180 // @disable-check M16
                                                           colorG: 180 // @disable-check M16
                                                           colorB: 180 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
-                                                    }
-                                    delegate: buttonComponent
-                                }
-                                Label {
-                                    id: otherLabel
-                                    anchors.top: resizinglayerView.bottom
-                                    width: leftFrame.width-4*pix
-                                    height: 0.75*buttonHeight
-                                    font.pointSize: 10
-                                    color: "#777777"
-                                    topPadding: 0.10*activationLabel.height
-                                    text: "Other layers"
-                                    leftPadding: 0.25*margin
-                                    background: Rectangle {
-                                        anchors.fill: parent.fill
-                                        x: 2*pix
-                                        color: defaultpalette.window
-                                        width: leftFrame.width-4*pix
-                                        height: 0.75*buttonHeight
-                                    }
-                                }
-                                ListView {
-                                    id: otherlayerView
-                                    anchors.top: otherLabel.bottom
-                                    height: childrenRect.height
-                                    spacing: 0
-                                    boundsBehavior: Flickable.StopAtBounds
-                                    model: ListModel {id: otherlayerModel
-                                                      ListElement{
-                                                          type: "Other" // @disable-check M16
-                                                          group: "other" // @disable-check M16
-                                                          name: "other" // @disable-check M16
-                                                          colorR: 250 // @disable-check M16
-                                                          colorG: 250 // @disable-check M16
-                                                          colorB: 250 // @disable-check M16
                                                           inputnum: 1 // @disable-check M16
                                                           outputnum: 1} // @disable-check M16
                                                     }
@@ -1210,11 +1182,13 @@ ApplicationWindow {
                 }
             }
             var downNodes = layers.children[i].children[2].children[1]
-            var connections_down = Array(downNodes.children.length).fill(0)
+            var connections_down = Array(downNodes.children.length).fill([])
             for (j=0;j<downNodes.children.length;j++) {
-                node = downNodes.children[j].children[1].connectedNode
-                if (node!==null) {
-                    connections_down[j] = getlayerindex(nodetolayer(node))+1
+                for (var v=1; v<downNodes.children[j].children.length;v++) {
+                    node = downNodes.children[j].children[v].connectedNode
+                    if (node!==null) {
+                        connections_down[j].push(getlayerindex(nodetolayer(node))+1)
+                    }
                 }
             }
             var x = layers.children[i].x
@@ -1287,6 +1261,8 @@ ApplicationWindow {
             return pushstack(poolpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Average pooling":
             return pushstack(poolpropertiesComponent,labelColor,group,type,name,unit,datastore)
+        case "Addition":
+            return pushstack(catpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Catenation":
             return pushstack(catpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Decatenation":

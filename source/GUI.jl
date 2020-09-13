@@ -43,6 +43,14 @@ function returnmap(keys, values, ext...)
                 dict[ext[i]] = ext[i+1]
             else
                 dict[ext[i]] = QML.value.(ext[i+1])
+                if isa(dict[ext[i]],Array) && !isempty(dict[ext[i]]) &&
+                        !isa(dict[ext[i]][1], Real)
+                    ar = []
+                    for j = 1:length(dict[ext[i]])
+                        push!(ar,QML.value.(dict[ext[i]][j]))
+                    end
+                    dict[ext[i]] = ar
+                end
             end
         end
     end
@@ -64,13 +72,12 @@ function fixtypes(dict)
     if haskey(dict, "size")
         if length(dict["size"])==2
             dict["size"] = (dict["size"]...,1)
-            @info dict["size"]
         end
     end
     for key in ["filtersize", "poolsize","newsize"]
         if haskey(dict, key)
-            dict[key] = Int64(dict[key])
-            if length(dict[key]) == 1
+            if length(dict[key])==1 && !(dict[key] isa Array)
+                dict[key] = Int64(dict[key])
                 dict[key] = (dict[key], dict[key])
             else
                 dict[key] = (dict[key]...,)
@@ -78,6 +85,12 @@ function fixtypes(dict)
         end
     end
     return dict
+end
+
+function temp()
+    for i = 1:length(layers)
+        layers[i] = fixtypes(layers[i])
+    end
 end
 
 function str2tuple(type,str)
