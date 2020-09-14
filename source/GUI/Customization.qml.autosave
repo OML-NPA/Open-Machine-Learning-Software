@@ -255,8 +255,15 @@ ApplicationWindow {
                     var connections_down = conns["down"]
                     for (i=0;i<connections_up.length;i++) {
                         if (connections_up[i]!==-1) {
-                            unit_new.children[2+i].children[1].connectedNode =
-                                    unit.children[2+i].children[1].connectedNode
+                            
+                        }
+                    }
+                    for (i=0;i<connections_down.length;i++) {
+                        for (j=0;j<connections_down[i].length;j++) {
+                            if (connections_up[i][j]!==-1) {
+                                
+                                node = getDownNode(unit)
+                            }
                         }
                     }
                 }
@@ -1553,9 +1560,19 @@ ApplicationWindow {
         }
         updateOverview()
     }
+    
+    function getUpNode(unit,ind) {
+        return unit.children[2].children[0].children[ind].children[0]
+    }
+    function getDownNode(unit,ind) {
+        return unit.children[2].children[1].children[ind].children[0]
+    }
+    function getDownNodeRec(unit,ind1,ind2) {
+        return unit.children[2].children[1].children[ind1].children[ind2]
+    }
 
 //--COMPONENTS--------------------------------------------------------------------
-
+    
     Component {
         id: layerComponent
         Rectangle {
