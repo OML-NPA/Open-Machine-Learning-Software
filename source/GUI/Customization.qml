@@ -206,6 +206,7 @@ ApplicationWindow {
                     }
                     unit.destroy()
                 }
+                mainPane.selectioninds = []
                 updateOverview()
                 propertiesStackView.push(generalpropertiesComponent)
             }
@@ -226,7 +227,6 @@ ApplicationWindow {
                                 "datastore": unit.datastore}
                     copycache.objectsdata.push(data)
                 }
-                console.log(mainPane.selectioninds)
             }
             else if ((event.key===Qt.Key_V) && (event.modifiers && Qt.ControlModifier)) {
                 var startInd = layers.children.length
@@ -242,7 +242,7 @@ ApplicationWindow {
                                                                "outputnum": data.outputnum,
                                                                "x": data.x+20*pix,
                                                                "y": data.y+20*pix,
-                                                               "datastore": data.datastore});
+                                                               "datastore": copy(data.datastore)});
                 }
                 propertiesStackView.push(generalpropertiesComponent)
                 var finishInd = layers.children.length-1
@@ -250,13 +250,29 @@ ApplicationWindow {
                 for (k=0;k<inds.length;k++) {
                     unit = layers.children[selectioninds[k]]
                     var unit_new = layers.children[inds[k]]
-                    var conns = getconnections(unit,0)
-                    var connections_up = conns["up"]
-                    var connections_down = conns["down"]
-                    for (i=0;i<connections_up.length;i++) {
-                        if (connections_up[i]!==-1) {
-                            unit_new.children[2+i].children[1].connectedNode =
-                                    unit.children[2+i].children[1].connectedNode
+                    upNodes = unit.children[2].children[0]
+                    var new_upNodes = unit_new.children[2].children[0]
+                    for (i=0;i<upNodes.children.length;i++) {
+                        var connectedNode = upNodes.children[i].children[0].connectedNode
+                        var new_connectedNode = new_upNodes.children[i].children[0].connectedNode
+                        var item = upNodes.children[i].children[0].connectedItem
+                        if (connectedNode!==null && new_connectedNode===null) {
+                            var connected_unit = nodetolayer(connectedNode)
+                            var layerind = layerindex(connected_unit)
+                            var nodeind = nodeindex(connected_unit.children[2].children[1],connectedNode)
+                            var itemind = itemindex(item)
+                            if (inds.includes(layerind+startInd)) {
+                                var new_connected_unit = layers.children[startInd+layerind]
+                                new_connectedNode = getDownNode(new_connected_unit,nodeind)
+                                var new_connectedItem = getDownNodeRec(new_connected_unit,nodeind,itemind)
+                                var new_upNode = new_upNodes.children[i].children[0]
+                                new_upNode.connectedNode = new_connectedNode
+                                new_upNode.connectedItem = new_connectedItem
+                                new_connectedItem.x = new_upNode.x - 10*pix
+                                new_connectedItem.y = new_upNode.y - 10*pix
+                                makeConnection(new_connected_unit,new_upNode,
+                                    new_connectedNode,new_connectedItem)
+                            }
                         }
                     }
                 }
@@ -1001,6 +1017,10 @@ ApplicationWindow {
 
 //--FUNCTIONS--------------------------------------------------------------------
 
+    function copy(obj) {
+        return Object.assign({}, obj)
+    }
+
     function range(start,end,step) {
         var numiter = Math.floor((end-start)/step)+1
         var array = []
@@ -1270,10 +1290,12 @@ ApplicationWindow {
     function getconnections(unit,indmod) {
         var upNodes = unit.children[2].children[0]
         var connections_up = Array(upNodes.children.length).fill(-1+indmod)
+        var connections_up_item = Array(upNodes.children.length).fill(-1+indmod)
         for (var j=0;j<upNodes.children.length;j++) {
             var node = upNodes.children[j].children[0].connectedNode
+            var item = upNodes.children[j].children[0].connectedItem
             if (node!==null) {
-                connections_up[j] = getlayerindex(nodetolayer(node))+indmod
+                connections_up[j] = layerindex(nodetolayer(node))+indmod
             }
         }
         var downNodes = unit.children[2].children[1]
@@ -1283,14 +1305,14 @@ ApplicationWindow {
             for (var v=0; v<downNodes.children[j].children.length-1;v++) {
                 node = downNodes.children[j].children[1+v].connectedNode
                 if (node!==null) {
-                    connections_down[j][v] = getlayerindex(nodetolayer(node))+indmod
+                    connections_down[j][v] = layerindex(nodetolayer(node))+indmod
                 }
             }
         }
         return {"up": connections_up,"down": connections_down}
     }
 
-    function getlayerindex(layer) {
+    function layerindex(layer) {
         for (var i=0;i<layers.children.length;i++) {
             if (layer===layers.children[i]) {
                 return(i)
@@ -1300,6 +1322,23 @@ ApplicationWindow {
 
     function nodetolayer(node) {
         return(node.parent.parent.parent.parent)
+    }
+
+    function itemindex(item) {
+        var nodeItem = item.parent
+        for (var i=1;i<nodeItem.children.length;i++) {
+            if (item===nodeItem.children[i]) {
+                return i
+            }
+        }
+    }
+
+    function nodeindex(nodes,node) {
+        for (var i=0;i<nodes.children.length;i++) {
+            if (nodes.children[i].children[0]===node) {
+                return i
+            }
+        }
     }
 
     function indexofmin(a) {
@@ -1408,6 +1447,37 @@ ApplicationWindow {
                 }
             }
         }
+    }
+
+    function makeConnection(unit,upNode,downNode,downNodeRectangle) {
+        downNodeRectangle.connectedNode = upNode
+        upNode.connectedNode = downNode
+        upNode.connectedItem = downNodeRectangle
+        upNode.visible = true
+        var upNodePoint = upNode.mapToItem(layers,0,0)
+        var downNodePoint = downNode.mapToItem(layers,0,0)
+        downNodeRectangle.x = downNodeRectangle.x - 10*pix +
+            (upNodePoint.x - downNodeRectangle.mapToItem(layers,0,0).x)
+        downNodeRectangle.y = downNodeRectangle.y - 10*pix +
+                (upNodePoint.y - downNodeRectangle.mapToItem(layers,0,0).y)
+        if (downNodeRectangle.connection!==null) {
+            downNodeRectangle.connection.destroy()
+        }
+        downNodeRectangle.connection = shapeComponent.createObject(connections, {
+             "beginX": unit.x + unit.width*downNode.parent.index/(unit.outputnum+1),
+             "beginY": unit.y + unit.height - 2*pix,
+             "finishX": upNodePoint.x + downNode.radius/2,
+             "finishY": upNodePoint.y + downNode.radius/2,
+             "origin": downNodeRectangle});
+        downNodeRectangleComponent.createObject(downNode.parent, {
+                        "unit": unit,
+                        "upNodes": getUpNodes(unit),
+                        "downNodes": getDownNodes(unit),
+                        "downNodeItem": downNode.parent,
+                        "downNode": downNode,
+                        "outputnum": unit.outputnum,
+                        "index": downNode.parent.index});
+        connections.num = connections.num + 1
     }
 
     function updateMainPane(unit) {
@@ -1554,6 +1624,22 @@ ApplicationWindow {
         updateOverview()
     }
 
+    function getUpNode(unit,ind) {
+        return unit.children[2].children[0].children[ind].children[0]
+    }
+    function getUpNodes(unit) {
+        return unit.children[2].children[0]
+    }
+    function getDownNodes(unit) {
+        return unit.children[2].children[1]
+    }
+    function getDownNode(unit,ind) {
+        return unit.children[2].children[1].children[ind].children[0]
+    }
+    function getDownNodeRec(unit,ind1,ind2) {
+        return unit.children[2].children[1].children[ind1].children[ind2]
+    }
+
 //--COMPONENTS--------------------------------------------------------------------
 
     Component {
@@ -1612,7 +1698,7 @@ ApplicationWindow {
                     }
                 }
                 onExited: {
-                    if (!mainPane.selectioninds.includes(getlayerindex(unit))){
+                    if (!mainPane.selectioninds.includes(layerindex(unit))){
                         deselectunit(unit)
                     }
                     for (var i=0;i<upNodes.children.length;i++) {
@@ -1638,7 +1724,7 @@ ApplicationWindow {
                     currentFocus = unit
                     deselectunits()
                     selectunit(unit)
-                    mainPane.selectioninds = [getlayerindex(unit)]
+                    mainPane.selectioninds = [layerindex(unit)]
                     getstack(labelColor,group,type,name,unit,datastore)
                 }
                 onPositionChanged: {
@@ -1670,11 +1756,9 @@ ApplicationWindow {
                                 if (upNodeRectangle.connectedNode!==null) {
                                     var devX = 0
                                     var devY = 0
-
                                     if (inds[k]!==currentind) {
                                         devX = layers.children[inds[k]].x - unit.x
                                         devY = layers.children[inds[k]].y - unit.y
-
                                     }
                                     var startX = upNodeRectangle.connectedItem.connection.data[0].startX;
                                     var startY = upNodeRectangle.connectedItem.connection.data[0].startY;
@@ -1711,8 +1795,8 @@ ApplicationWindow {
                                               "origin": downNodeRectangle});
                                         nodePoint = downNodeRectangle.connectedNode.
                                             mapToItem(downNodes.children[i],0,0)
-                                        downNodeRectangle.x = nodePoint.x - downNodeRectangle.radius/2
-                                        downNodeRectangle.y = nodePoint.y - downNodeRectangle.radius/2 + 2*pix
+                                        downNodeRectangle.x = nodePoint.x - 10*pix
+                                        downNodeRectangle.y = nodePoint.y - 10*pix
                                     }
                                 }
                             }
@@ -1876,40 +1960,14 @@ ApplicationWindow {
                     }
                     for (i=0;i<layers.children.length;i++) {
                         for (j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
-
+                            var finishNode = layers.children[i].children[2].children[0].children[j].children[0]
                             if (comparelocations(downNodeRectangle,mouse.x,mouse.y,
-                                    layers.children[i].children[2].children[0].children[j].children[0],layers) &&
-                                    (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null ||
-                                    (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===downNode &&
-                                    layers.children[i].children[2].children[0].children[j].children[0].connectedItem===downNodeRectangle)) &&
+                                    finishNode,layers) && (finishNode.connectedNode===null ||
+                                    (finishNode.connectedNode===downNode &&
+                                    finishNode.connectedItem===downNodeRectangle)) &&
                                     layers.children[i].children[2].children[0].children[0]!==
                                     upNodes.children[0]) {
-                                downNodeRectangle.connectedNode = layers.children[i].children[2].children[0].children[j].children[0]
-                                layers.children[i].children[2].children[0].children[j].children[0].connectedNode = downNode
-                                layers.children[i].children[2].children[0].children[j].children[0].connectedItem = downNodeRectangle
-                                layers.children[i].children[2].children[0].children[j].children[0].visible = true
-                                var upNodePoint = layers.children[i].children[2].children[0].children[j].children[1].mapToItem(layers,0,0)
-                                var downNodePoint = downNodeRectangle.mapToItem(layers,0,0)
-                                var adjX = downNodePoint.x - upNodePoint.x
-                                var adjY = downNodePoint.y - upNodePoint.y
-                                downNodeRectangle.x = downNodeRectangle.x - adjX
-                                downNodeRectangle.y = downNodeRectangle.y - adjY
-                                downNodeRectangle.connection.destroy()
-                                downNodeRectangle.connection = shapeComponent.createObject(connections, {
-                                     "beginX": unit.x + unit.width*index/(outputnum+1),
-                                     "beginY": unit.y + unit.height - 2*pix,
-                                     "finishX": unit.x + downNodeRectangle.x + downNode.radius,
-                                     "finishY": unit.y + downNodeRectangle.y + downNode.radius,
-                                     "origin": downNodeRectangle});
-                                downNodeRectangleComponent.createObject(downNodeItem, {
-                                                "unit": unit,
-                                                "upNodes": upNodes,
-                                                "downNodes": downNodes,
-                                                "downNodeItem": downNodeItem,
-                                                "downNode": downNode,
-                                                "outputnum": outputnum,
-                                                "index": index});
-                                connections.num = connections.num + 1
+                                makeConnection(unit,finishNode,downNode,downNodeRectangle)
                                 return
                             }
                         }
