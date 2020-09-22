@@ -7,7 +7,7 @@ import Qt.labs.platform 1.1
 import QtQml.Models 2.15
 import Qt.labs.folderlistmodel 2.15
 import "Templates"
-import org.julialang 1.0
+//import org.julialang 1.0
 
 
 ApplicationWindow {

@@ -30,6 +30,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
+    Analysis.qml \
     AnalysisOptions.qml \
     Controls/Button.qml \
     Controls/CheckBox.qml \
@@ -69,4 +70,5 @@ DISTFILES += \
     Templates/TreeButton.qml \
     Training.qml \
     TrainingPlot.qml \
+    board.qml \
     qtquickcontrols2.conf

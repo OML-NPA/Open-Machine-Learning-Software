@@ -36,15 +36,26 @@ ApplicationWindow {
     property string colorB: "0"
     property int indTree: 0
 
+    property string dialogtarget
+
     onClosing: { trainingLoader.sourceComponent = null }
 
     FolderDialog {
             id: folderDialog
             currentFolder: currentfolder
             onAccepted: {
-                Julia.browsefolder(folderDialog.folder)
-                Qt.quit()
+                //Julia.returnfolder(folderDialog.folder)
+                if (dialogtarget=="NN template") {
+                    neuralnetworkTextField.text = folder
+                }
+                else if (dialogtarget=="Images") {
+                    imagesTextField.text = folder
+                }
+                else if (dialogtarget=="Labels") {
+                    labelsTextField.text = folder
+                }
             }
+
     }
 
     Loader { id: featuredialogLoader}
@@ -67,6 +78,7 @@ ApplicationWindow {
                         Layout.preferredWidth: 0.55*buttonWidth
                     }
                     TextField {
+                        id: neuralnetworkTextField
                         Layout.preferredWidth: 1.4*buttonWidth
                         Layout.preferredHeight: buttonHeight
                     }
@@ -74,6 +86,13 @@ ApplicationWindow {
                         Layout.preferredWidth: buttonWidth/2
                         Layout.preferredHeight: buttonHeight
                         text: "Browse"
+                        onClicked: {
+                            dialogtarget = "NN template"
+                            folderDialog.open()
+                            var folder = folderDialog.folder
+                            neuralnetworkTextField.text = folder
+                            console.log(folder)
+                        }
                     }
                 }
                 RowLayout {
@@ -84,6 +103,7 @@ ApplicationWindow {
                         Layout.preferredWidth: 0.55*buttonWidth
                     }
                     TextField {
+                        id: imagesTextField
                         Layout.preferredWidth: 1.4*buttonWidth
                         Layout.preferredHeight: buttonHeight
                     }
@@ -91,6 +111,12 @@ ApplicationWindow {
                         Layout.preferredWidth: buttonWidth/2
                         Layout.preferredHeight: buttonHeight
                         text: "Browse"
+                        onClicked: {
+                            dialogtarget = "Images"
+                            folderDialog.open()
+                            var folder = folderDialog.folder
+                            imagesTextField.text = folder
+                        }
                     }
                 }
                 RowLayout {
@@ -108,6 +134,12 @@ ApplicationWindow {
                         Layout.preferredWidth: buttonWidth/2
                         Layout.preferredHeight: buttonHeight
                         text: "Browse"
+                        onClicked: {
+                            dialogtarget = "Labels"
+                            folderDialog.open()
+                            var folder = folderDialog.folder
+                            labelsTextField.text = folder
+                        }
                     }
                 }
                 RowLayout {
