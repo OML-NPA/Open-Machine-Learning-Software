@@ -65,11 +65,12 @@ ApplicationWindow {
                             id: name
                             text: featureModel.get(indTree).name
                             Layout.alignment : Qt.AlignLeft
-                            Layout.preferredWidth: 0.7*buttonWidth
+                            Layout.preferredWidth: 300*pix
                             Layout.preferredHeight: buttonHeight
                         }
                         ComboBox {
                             id: typeComboBox
+                            Layout.preferredWidth: 300*pix
                             editable: false
                             model: ListModel {
                             id: modelEnv
@@ -83,7 +84,11 @@ ApplicationWindow {
                             }
                         }
                         ComboBox {
-
+                            id: parentComboBox
+                            Layout.preferredWidth: 300*pix
+                            editable: false
+                            model: typeComboBox.currentText !== "Cell" ? filledListModel :
+                                   emptyListModel
                             ListModel {
                                 id: emptyListModel
                                 ListElement {
@@ -99,19 +104,29 @@ ApplicationWindow {
                                     text: "Cell2"
                                 }
                             }
-
-                            id: parentComboBox
-                            editable: false
-                            model: typeComboBox.currentText !== "Cell" ? filledListModel :
-                                   emptyListModel
                             onAccepted: {
                                 if (find(editText) === -1)
                                     model.append({text: editText})
                             }
+
                         }
                     }
 
                 }
+            Row {
+                Label {
+                    topPadding: 6*pix
+                    text: "Border is important:"
+                }
+                CheckBox {
+                    onClicked: {
+                        if (checkState==Qt.Checked) {
+                            console.log(JSON.stringify(featureView.model.get(indTree)))
+                        }
+                    }
+                }
+            }
+
             Label {
                 Layout.topMargin: 0.5*margin
                 text: "Color (RGB):"

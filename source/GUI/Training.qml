@@ -24,8 +24,6 @@ ApplicationWindow {
     property double pix: Screen.width/3840
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
-    property double tabmargin: 0.5*margin
-    property color menucolor: "#fafafa"
     property color defaultcolor: systempalette.window
 
     property bool terminate: false
@@ -91,7 +89,6 @@ ApplicationWindow {
                             folderDialog.open()
                             var folder = folderDialog.folder
                             neuralnetworkTextField.text = folder
-                            console.log(folder)
                         }
                     }
                 }
@@ -234,7 +231,8 @@ ApplicationWindow {
                                             text: "Add more"
                                         }
                                         onClicked: {featureModel.append({ "name": "feature",
-                                                    "colorR": 255, "colorG": 255, "colorB": 255})
+                                                    "colorR": 255, "colorG": 255, "colorB": 255,
+                                                    "border": false, "parent": -1})
                                         }
                                     }
                                 }
@@ -279,6 +277,7 @@ ApplicationWindow {
                         Layout.preferredHeight: buttonHeight
                         onClicked: {
                             if (trainingplotLoader.sourceComponent === null) {
+
                                 trainingplotLoader.source = "TrainingPlot.qml"}
                             }
                     }

@@ -29,5 +29,6 @@
         <file>Templates/ButtonNN.qml</file>
         <file>SelectNeuralNetwork.qml</file>
         <file>Templates/SpinBox.qml</file>
+        <file>TrainingOptions.qml</file>
     </qresource>
 </RCC>
