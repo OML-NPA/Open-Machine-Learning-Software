@@ -35,115 +35,96 @@ ApplicationWindow {
         id: gridLayout
         ColumnLayout {
             Layout.margins: margin
-            spacing: 0.7*margin
-            ColumnLayout {
-                //spacing: 0.25*margin
-                RowLayout {
-                    spacing: 0.3*margin
-                    ColumnLayout {
-                        Layout.alignment : Qt.AlignHCenter
-                        spacing: 0.55*margin
-                        Label {
-                            Layout.alignment : Qt.AlignLeft
-                            text: "Name:"
-                            bottomPadding: 0.05*margin
-                        }
-                        Label {
-                            Layout.alignment : Qt.AlignLeft
-                            Layout.row: 1
-                            text: "Type:"
-                        }
-                        Label {
-                            Layout.alignment : Qt.AlignLeft
-                            Layout.row: 1
-                            text: "Parent:"
-                            bottomPadding: 0.05*margin
-                        }
+            spacing: 0.4*margin
+            RowLayout {
+                spacing: 0.3*margin
+                ColumnLayout {
+                    Layout.alignment : Qt.AlignHCenter
+                    spacing: 0.55*margin
+                    Label {
+                        Layout.alignment : Qt.AlignLeft
+                        text: "Name:"
+                        bottomPadding: 0.05*margin
                     }
-                    ColumnLayout {
-                        TextField {
-                            id: name
-                            text: featureModel.get(indTree).name
-                            Layout.alignment : Qt.AlignLeft
-                            Layout.preferredWidth: 300*pix
-                            Layout.preferredHeight: buttonHeight
-                        }
-                        ComboBox {
-                            id: typeComboBox
-                            Layout.preferredWidth: 300*pix
-                            editable: false
-                            model: ListModel {
-                            id: modelEnv
-                                ListElement { text: "Cell" }
-                                ListElement { text: "Organelle" }
-                                ListElement { text: "Other" }
-                            }
-                            onAccepted: {
-                                if (find(editText) === -1)
-                                    model.append({text: editText})
-                            }
-                        }
-                        ComboBox {
-                            id: parentComboBox
-                            Layout.preferredWidth: 300*pix
-                            editable: false
-                            model: typeComboBox.currentText !== "Cell" ? filledListModel :
-                                   emptyListModel
-                            ListModel {
-                                id: emptyListModel
-                                ListElement {
-                                    text: ""
-                                }
-                            }
-                            ListModel {
-                                id: filledListModel
-                                ListElement {
-                                    text: "Cell1"
-                                }
-                                ListElement {
-                                    text: "Cell2"
-                                }
-                            }
-                            onAccepted: {
-                                if (find(editText) === -1)
-                                    model.append({text: editText})
-                            }
-
-                        }
+                    Label {
+                        Layout.alignment : Qt.AlignLeft
+                        Layout.row: 1
+                        text: "Parent:"
+                        bottomPadding: 0.05*margin
                     }
-
                 }
+                ColumnLayout {
+                    TextField {
+                        id: nameTextField
+                        text: featureModel.get(indTree).name
+                        Layout.alignment : Qt.AlignLeft
+                        Layout.preferredWidth: 300*pix
+                        Layout.preferredHeight: buttonHeight
+                    }
+                    ComboBox {
+                        id: parentComboBox
+                        Layout.preferredWidth: 300*pix
+                        editable: false
+                        model: nameModel
+                        ListModel {
+                            id: nameModel
+                        }
+                        Component.onCompleted: {
+                            nameModel.append({"name": ""})
+                            for (var i=0;i<featureModel.count;i++) {
+                              if (i===indTree) continue
+                              nameModel.append({"name": featureModel.get(i).name})
+                            }
+                            var name = featureModel.get(indTree).parent
+                            if (name!=="") {
+                                for (i=0;i<nameModel.count;i++) {
+                                    if (nameModel.get(i).name===name) {
+                                        currentIndex = i
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+            }
             Row {
                 Label {
-                    topPadding: 6*pix
+                    topPadding: 7*pix
                     text: "Border is important:"
                 }
                 CheckBox {
                     onClicked: {
                         if (checkState==Qt.Checked) {
-                            console.log(JSON.stringify(featureView.model.get(indTree)))
+                            featureModel.get(indTree).border = true
                         }
+                        if (checkState==Qt.Unchecked) {
+                            featureModel.get(indTree).border = false
+                        }
+                    }
+                    Component.onCompleted: {
+                        checkState = featureModel.get(indTree).border ?
+                            Qt.Checked : Qt.Unchecked
                     }
                 }
             }
-
-            Label {
-                Layout.topMargin: 0.5*margin
+            /*Label {
                 text: "Color (RGB):"
             }
-            RowLayout {
-                Layout.topMargin: 0.2*margin
-                Layout.bottomMargin: 0.5*margin
+            Row {
+                topPadding: 0.1*margin
+                bottomPadding: 0.4*margin
                 spacing: 0.3*margin
                 Label {
-                    Layout.row: 1
+                    topPadding: 12*pix
                     text: "Red:"
                 }
                 TextField {
                     id: red
                     text: featureModel.get(indTree).colorR
-                    Layout.preferredWidth: 0.25*buttonWidth
-                    Layout.preferredHeight: buttonHeight
+                    width: 0.25*buttonWidth
+                    height: buttonHeight
                     validator: IntValidator { bottom: 0; top: 999;}
                     onEditingFinished: {
                     if (parseFloat(red.text)>255) {
@@ -152,14 +133,14 @@ ApplicationWindow {
                     }
                 }
                 Label {
-                    Layout.row: 1
+                    topPadding: 12*pix
                     text: "Green:"
                 }
                 TextField {
                     id: green
                     text: featureModel.get(indTree).colorG
-                    Layout.preferredWidth: 0.25*buttonWidth
-                    Layout.preferredHeight: buttonHeight
+                    width: 0.25*buttonWidth
+                    height: buttonHeight
                     validator: IntValidator { bottom: 0; top: 999;}
                     onEditingFinished: {
                         if (parseFloat(green.text)>255) {
@@ -168,14 +149,14 @@ ApplicationWindow {
                     }
                 }
                 Label {
-                    Layout.row: 1
+                    topPadding: 12*pix
                     text: "Blue:"
                 }
                 TextField {
                     id: blue
                     text: featureModel.get(indTree).colorB
-                    Layout.preferredWidth: 0.25*buttonWidth
-                    Layout.preferredHeight: buttonHeight
+                    width: 0.25*buttonWidth
+                    height: buttonHeight
                     maximumLength: 3
                     validator: IntValidator { bottom: 0; top: 999;}
                     onEditingFinished: {
@@ -184,7 +165,7 @@ ApplicationWindow {
                         }
                     }
                 }
-            }
+            }*/
             RowLayout {
                 Layout.alignment : Qt.AlignHCenter
                 spacing: 1.5*margin
@@ -193,17 +174,29 @@ ApplicationWindow {
                     Layout.preferredWidth: buttonWidth/2
                     Layout.preferredHeight: buttonHeight
                     onClicked: {
-                        featureModel.get(indTree).colorR = parseFloat(red.text)
+                        var prev_name = featureModel.get(indTree).name
+                        var new_name = nameTextField.text
+                        if (prev_name!==new_name) {
+                            for (var i=0;i<featureModel.count;i++) {
+                                var element = featureModel.get(i)
+                                if (element.parent===prev_name) {
+                                    element.parent = new_name
+                                }
+                            }
+                        }
+                        featureModel.get(indTree).name = new_name
+                        featureModel.get(indTree).parent = parentComboBox.currentText
+                        /*featureModel.get(indTree).colorR = parseFloat(red.text)
                         featureModel.get(indTree).colorG = parseFloat(green.text)
                         featureModel.get(indTree).colorB = parseFloat(blue.text)
-                        featureModel.get(indTree).name = name.text
                         featureView.itemAtIndex(indTree).children[0].children[0].color =
                                 rgbtohtml([featureModel.get(indTree).colorR,
                                            featureModel.get(indTree).colorG,
-                                           featureModel.get(indTree).colorB])
+                                           featureModel.get(indTree).colorB])*/
+                        featuredialogLoader.sourceComponent = null
                     }
                 }
-                Button {
+                /*Button {
                     text: "Delete"
                     Layout.preferredWidth: buttonWidth/2
                     Layout.preferredHeight: buttonHeight
@@ -211,8 +204,7 @@ ApplicationWindow {
                         featureModel.remove(indTree)
                         featuredialogLoader.sourceComponent = null
                     }
-                }
-            }
+                }*/
             }
         }
     }

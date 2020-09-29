@@ -33,6 +33,7 @@ ApplicationWindow {
     property string colorG: "0"
     property string colorB: "0"
     property int indTree: 0
+    property var model
 
     property string dialogtarget
 
@@ -41,18 +42,30 @@ ApplicationWindow {
     FolderDialog {
             id: folderDialog
             currentFolder: currentfolder
+            options: FolderDialog.ShowDirsOnly
             onAccepted: {
-                //Julia.returnfolder(folderDialog.folder)
-                if (dialogtarget=="NN template") {
-                    neuralnetworkTextField.text = folder
+                var dir = folder.toString().replace("file:///","")
+                updateButton.visible = true
+                var count = featureModel.count
+                for (var i=0;i<count;i++) {
+                    featureModel.remove(0)
                 }
-                else if (dialogtarget=="Images") {
-                    imagesTextField.text = folder
+                if (dialogtarget=="Images") {
+                    imagesTextField.text = dir
                 }
                 else if (dialogtarget=="Labels") {
-                    labelsTextField.text = folder
+                    labelsTextField.text = dir
                 }
             }
+
+    }
+    FileDialog {
+            id: fileDialog
+            nameFilters: [ "*.bson"]
+            onAccepted: {
+                var dir = folder.toString().replace("file:///","")
+                neuralnetworkTextField.text = dir
+                model = Julia.load_model()
 
     }
 
@@ -86,9 +99,7 @@ ApplicationWindow {
                         text: "Browse"
                         onClicked: {
                             dialogtarget = "NN template"
-                            folderDialog.open()
-                            var folder = folderDialog.folder
-                            neuralnetworkTextField.text = folder
+                            fileDialog.open()
                         }
                     }
                 }
@@ -111,8 +122,6 @@ ApplicationWindow {
                         onClicked: {
                             dialogtarget = "Images"
                             folderDialog.open()
-                            var folder = folderDialog.folder
-                            imagesTextField.text = folder
                         }
                     }
                 }
@@ -124,6 +133,7 @@ ApplicationWindow {
                         Layout.preferredWidth: 0.55*buttonWidth
                     }
                     TextField {
+                        id: labelsTextField
                         Layout.preferredWidth: 1.4*buttonWidth
                         Layout.preferredHeight: buttonHeight
                     }
@@ -134,8 +144,6 @@ ApplicationWindow {
                         onClicked: {
                             dialogtarget = "Labels"
                             folderDialog.open()
-                            var folder = folderDialog.folder
-                            labelsTextField.text = folder
                         }
                     }
                 }
@@ -183,6 +191,35 @@ ApplicationWindow {
                                 boundsBehavior: Flickable.StopAtBounds
                                 contentHeight: featureView.height+buttonHeight-2
                                 Item {
+                                    TreeButton {
+                                        id: updateButton
+                                        anchors.top: featureView.bottom
+                                        width: buttonWidth + 0.5*margin-4
+                                        height: buttonHeight-2
+                                        hoverEnabled: true
+                                        Label {
+                                            topPadding: 0.15*margin
+                                            leftPadding: 1.95*margin
+                                            text: "Update"
+                                        }
+                                        onClicked: {
+                                            if (imagesTextField.text!=="" && labelsTextField.text!=="") {
+                                                Julia.get_urls_imgs_labels(imagesTextField.text,
+                                                    labelsTextField.text)
+                                                var colors = Julia.get_labels_colors()
+                                            }
+                                            for (var i=0;i<colors.length;i++) {
+                                                featureModel.append({
+                                                        "name": "feature "+i,
+                                                        "colorR": colors[i][0],
+                                                        "colorG": colors[i][1],
+                                                        "colorB": colors[i][2],
+                                                        "border": false,
+                                                        "parent": ""})
+                                            }
+                                            updateButton.visible = false
+                                        }
+                                    }
                                     ListView {
                                         id: featureView
                                         height: childrenRect.height
@@ -191,6 +228,7 @@ ApplicationWindow {
                                         model: ListModel {id: featureModel}
                                         delegate: TreeButton {
                                             id: control
+                                            hoverEnabled: true
                                             width: buttonWidth + 0.5*margin-4
                                             height: buttonHeight-2
                                             onClicked: {
@@ -219,20 +257,6 @@ ApplicationWindow {
                                                     Layout.alignment: Qt.AlignBottom
                                                 }
                                             }
-                                        }
-                                    }
-                                    TreeButton {
-                                        anchors.top: featureView.bottom
-                                        width: buttonWidth + 0.5*margin-4
-                                        height: buttonHeight-2
-                                        Label {
-                                            topPadding: 0.15*margin
-                                            leftPadding: 0.2*margin
-                                            text: "Add more"
-                                        }
-                                        onClicked: {featureModel.append({ "name": "feature",
-                                                    "colorR": 255, "colorG": 255, "colorB": 255,
-                                                    "border": false, "parent": -1})
                                         }
                                     }
                                 }

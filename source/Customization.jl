@@ -250,7 +250,3 @@ function makemodel(layers)
     end
     return model_layers
 end
-
-model = makemodel(layers)
-
-result = model(ones(Float32,5,5,1,1))

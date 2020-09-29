@@ -1,25 +1,14 @@
 
-using QML
-using Observables
-using JSON
+using QML, JSON, BSON
+include("Training.jl")
+include("Customization.jl")
 
-cd("C:\\Users\\a_ill\\Documents\\GitHub\\Deep-Data-Analysis\\source")
-
-load("GUI//Main.qml")
-
-# QML functions and vars
+# QML variables and functions
 dict = Dict{String,Any}()
 layers = []
+layers_QML = []
 
-function returnfolder(folder)
-    folder = QString(folder)
-    folder = folder[8:length(folder)]
-    return (folder)
-end
-
-# ADD PARSING OF "x,x" TYPE VALUES
-function returnmap(keys, values, ext...)
-    global dict
+function update_layers_main(layers,layers_QML,dict,keys,values,ext...)
     dict = Dict{String,Any}()
     keys = QML.value.(keys)
     values = QML.value.(values)
@@ -55,8 +44,14 @@ function returnmap(keys, values, ext...)
         end
     end
     dict = fixtypes(dict)
+    layer_QML = Dict{String,Any}(keys .=> values)
+    layer_QML["connections_up"] = dict["connections_up"]
+    layer_QML["connections_down"] = dict["connections_down"]
+    layer_QML["x"] = dict["x"]
+    layer_QML["y"] = dict["y"]
+    push!(layers, copy(dict))
+    push!(layers_QML, copy(layer_QML))
 end
-
 function fixtypes(dict)
     for key in [
         "filters",
@@ -86,41 +81,33 @@ function fixtypes(dict)
     end
     return dict
 end
-
-function temp()
-    for i = 1:length(layers)
-        layers[i] = fixtypes(layers[i])
-    end
-end
+update_layers(keys,values,ext...) = update_layers_main(layers,
+    layers_QML,dict,keys,values,ext...)
 
 function str2tuple(type,str)
     ar = parse.(type, split(str, ","))
     return (ar...,)
 end
 
-function resetlayers()
-    global layers
+function reset_layers_main(layers)
     layers = []
 end
+reset_layers() = reset_layers_main(layers)
 
-function updatelayers()
-    global layers
-    global dict
-    push!(layers, copy(dict))
+function save_model_main(name,layers,layers_QML)
+  layers = JSON.parse(JSON.json(layers))
+  BSON.@save(name+".bson",layers,layers_QML)
 end
+save_model() = save_model_main(layers)
 
-@qmlfunction(returnfolder, returnmap, resetlayers, updatelayers)
+function load_model_main(layers,layers_QML,model_name)
+  BSON.@load(model_name,"layers","layers_QML")
+end
+load_model(model_name) = load_model_main(layers,
+    layers_QML,model_name)
 
+@qmlfunction(reset_layers,update_layers,
+    get_labels_colors,get_urls_imgs_labels,
+    save_model)
+load("GUI//Main.qml")
 exec()
-
-
-function test()
-  open("layers.json","w") do f
-      JSON.print(f, layers)
-  end
-  layers = []
-  open("layers.json", "r") do f
-      global layers
-      layers = JSON.parse(f)  # parse and transform data
-  end
-end

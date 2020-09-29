@@ -1,19 +1,41 @@
-using ImageCore, LocalFilters, ImageFiltering, ImageTransformations
-using FileIO
+using Images, LocalFilters, ImageFiltering, ImageTransformations
 import Base.any
 import ImageSegmentation.label_components
 
+# Variable definitions
+url_imgs = Array{String}(undef,0)
+url_labels = Array{String}(undef,0)
+data_imgs = Array{Float32}(undef,0)
+data_labels = Array{BitArray}(undef,0)
+
+# Helper functions
 function areaopen(im::BitArray,area::Real)
     im_segm = label_components(im).+1
     im_segm[im] .= 0
-    labels = unique(im_segm)
-    labels = labels[labels.!=0]
-    for i=1:length(labels)
-        if sum(.==(im,labels[i]))<area
-            im[im_segm==labels(i)] = false
+    labels_color = unique(im_segm)
+    labels_color = labels_color[labels_color.!=0]
+    for i=1:length(labels_color)
+        if sum(.==(im,labels_color[i]))<area
+            im[im_segm==labels_color(i)] = false
         end
     end
     return im
+end
+
+function arsplit(ar,dim)
+    type = typeof(ar[1])
+    dim2 = dim==1 ? 2 : 1
+    ar_out = []
+    if dim==1
+        for i=1:size(ar,dim)
+            push!(ar_out,ar[i,:])
+        end
+    else
+        for i=1:size(ar,dim)
+            push!(ar_out,ar[:,i])
+        end
+    end
+    return ar_out
 end
 
 function perim(array::BitArray)
@@ -56,8 +78,7 @@ function replace_nan!(x)
 end
 
 function getdirs(dir)
-    return filter(x -> isdir(joinpath(dir, x)),
-        readdir(dir))
+    return filter(x -> isdir(joinpath(dir, x)),readdir(dir))
 end
 
 function getfiles(dir)
@@ -88,39 +109,42 @@ function intersect_inds(ar1,ar2)
     return (inds1, inds2)
 end
 
-pix_fr_lim = 0.1
-pix_num = 160
-labels = [(0,256,0),(256,256,0)]
-labels_incl = [[2],[]]
-border = [true,false]
-parent_imgs = "Batch/Images"
-parent_labels = "Batch/Labels"
-
-function process_images_labels(parent_imgs,parent_labels,labels,
-    labels_incls,border,pix_fr_lim,pix_num,num_angles)
-
+# QML functions
+function get_urls_imgs_labels_main(url_imgs,url_labels,
+        parent_imgs,parent_labels)
     dirs_imgs = getdirs(parent_imgs)
     dirs_labels = getdirs(parent_labels)
     dirs = intersect(dirs_imgs,dirs_labels)
     if length(dirs)==0
         dirs = [""]
     end
-    data_imgs = Array{Float32}(undef,0)
-    data_labels = Array{BitArray}(undef,0)
     for k = 1:length(dirs)
-        files_imgs,files_labels = get_files_imgs_labels(parent_imgs,
-            parent_labels,dirs[k])
+        files_imgs = getfiles(string(parent_imgs,"/",dirs[k]))
+        files_labels = getfiles(string(parent_labels,"/",dirs[k]))
+        filenames_imgs = remove_ext(files_imgs)
+        filenames_labels = remove_ext(files_labels)
+        inds1, inds2 = intersect_inds(filenames_labels, filenames_imgs)
+        files_imgs = files_imgs[inds1]
+        files_labels = files_labels[inds2]
         for l = 1:length(files_imgs)
-            url_imgs = string(parent_imgs,"/",files_imgs[l])
-            url_labels = string(parent_labels,"/",files_labels[l])
-            img,labels_bool = get_images_labels(url_imgs,url_labels,cnt)
-            angles = range(0,stop=2*pi,length=num_angles+1)
-            angles = angles[1:end-1]
-            lim = pix_num^2*size(labels_bool,3)*pix_fr_lim
-            imgs_out = Array{Float32}(undef,0)
-            labels_out = Array{BitArray}(undef,0)
-            augment(imgs_out,labels_out,img,labels,angles)
+            push!(url_imgs,string(parent_imgs,"/",files_imgs[l]))
+            push!(url_labels,string(parent_labels,"/",files_labels[l]))
         end
+    end
+end
+get_urls_imgs_labels(parent_imgs,parent_labels) =
+    get_urls_imgs_labels_main(url_imgs,url_labels,
+    parent_imgs,parent_labels)
+
+function process_images_labels_main(data_imgs,data_labels,files_imgs,
+        files_labels,parent_imgs,parent_labels,labels_color,
+    labels_incl,border,pix_fr_lim,pix_num,num_angles)
+    data_imgs = Array(undef,0)
+    data_labels = Array(undef,0)
+    for i = 1:length(url_imgs)
+        img,labels = get_images_labels(url_imgs[i],url_labels[i])
+        lim = pix_num^2*size(labels,3)*pix_fr_lim
+        imgs_out,labels_out = augment(img,labels,num_angles,lim)
         push!(data_imgs,imgs_out)
         push!(data_labels,labels_out)
     end
@@ -130,7 +154,7 @@ function process_images_labels(parent_imgs,parent_labels,labels,
     # Functions
     function rotate_images_labels(img,labels,angle)
         if angle!=0
-            img2 = imrotate(img,angle, axes(labels[:,:,i]))
+            img2 = imrotate(img,angle, axes(labelsr[:,:,i]))
             replace_nan!(img2)
             labels2 = BitArray(undef,size(img2)...,size(labels,3))
             for i = 1:size(labels_bool,3)
@@ -144,7 +168,7 @@ function process_images_labels(parent_imgs,parent_labels,labels,
         end
     end
 
-    function get_images_labels(url_imgs,url_labels,cnt)
+    function get_images_labels(url_imgs,url_labels)
         img = channelview(float.(Gray.(load(url_imgs))))
         labelimg = RGB.(load(url_labels))
         field = dilate(imfilter(img.<0.3, Kernel.gaussian(4)).>0.5,20)
@@ -164,12 +188,12 @@ function process_images_labels(parent_imgs,parent_labels,labels,
         end
         img = rescale(img,(0,1))
 
-        labels = map(x->RGB((n0f8.(./(x,256)))...),labels)
+        labels_color = map(x->RGB((n0f8.(./(x,255)))...),labels_color)
         labels_bool = fill!(BitArray(undef, size(labelimg)...,
-            length(labels)+sum(border)),0)
-        num = size(labels,1)
+            length(labels_color)+sum(border)),0)
+        num = size(labels_color,1)
         for i=1:num
-            labels_bool[:,:,i] = .==(labelimg,labels[i])
+            labels_bool[:,:,i] = .==(labelimg,labels_color[i])
         end
         for i=1:num
             for j=1:length(labels_incl[i])
@@ -185,27 +209,20 @@ function process_images_labels(parent_imgs,parent_labels,labels,
         return(img,labels_bool)
     end
 
-    function get_files_imgs_labels(parent_imgs,parent_labels,dir)
-        files_imgs = getfiles(string(parent_imgs,"/",dir))
-        files_labels = getfiles(string(parent_labels,"/",dir))
-        filenames_imgs = remove_ext(files_imgs)
-        filenames_labels = remove_ext(files_labels)
-        inds1, inds2 = intersect_inds(filenames_labels, filenames_imgs)
-        files_imgs = files_imgs[inds1]
-        files_labels = files_labels[inds2]
-        return (files_imgs,files_labels)
-    end
-
-    function augment(imgs_out,labels_out,img,labels,angles)
+    function augment(imgs_out,labels_out,img,labels,angles_num,lim)
+        angles = range(0,stop=2*pi,length=num_angles+1)
+        angles = angles[1:end-1]
+        imgs_out = Array(undef,0)
+        labels_out = Array(undef,0)
         for g = 1:length(angles)
-            img2,labels2 = rotate_images_labels(img,labels,angles[g])
+            img2,labels2 = rotate_images_labels(img,labels_color,angles[g])
             num1 = Int64(floor(size(labels2,1)/(pix_num*0.9)))
             num2 = Int64(floor(size(labels2,2)/(pix_num*0.9)))
             step1 = Int64(floor(size(labels2,1)/num1))
             step2 = Int64(floor(size(labels2,2)/num2))
             num_batch = 2*(num1-1)*(num2-1)
             imgs_temp = Array{Float32}(undef,pix_num,pix_num,1,num_batch)
-            labels_temp = BitArray(undef,pix_num,pix_num,size(labels,3),
+            labels_temp = BitArray(undef,pix_num,pix_num,size(labels_color,3),
                 num_batch)
             cnt = 1
             for h = 1:2
@@ -234,7 +251,50 @@ function process_images_labels(parent_imgs,parent_labels,labels,
             push!(imgs_out,imgs_temp[:,:,:,1:cnt-1])
             push!(labels_out,labels_temp[:,:,:,1:cnt-1])
         end
-        push!(imgs_out,cat(imgs_out...,dims=4))
-        push!(labels_out,cat(labels_out...,dims=4))
+        imgs_out = cat(imgs_out...,dims=4)
+        labels_out = cat(labels_out...,dims=4)
+        return (imgs_out,labels_out)
     end
 end
+process_images_labels(parent_imgs,parent_labels,labels_color,
+    labels_incl,border,pix_fr_lim,pix_num,num_angles) =
+    process_images_labels_main(data_imgs,data_labels,files_imgs,files_labels,
+    parent_imgs,parent_labels,labels_color,labels_incl,border,
+    pix_fr_lim,pix_num,num_angles)
+
+
+function get_labels_colors_main(url_labels::Array{String})
+    colors_out = []
+    for i=1:length(url_labels)
+        labelimg = RGB.(load(url_labels[i]))
+        unique_colors = unique(labelimg)
+        ind = findfirst(unique_colors.==RGB.(0,0,0))
+        deleteat!(unique_colors,ind)
+        colors = channelview(float.(unique_colors))*255
+        if i==1
+            colors_out = arsplit(colors,2)
+        else
+            colors_out = union(colors_out,arsplit(colors,2))
+        end
+    end
+    return colors_out
+end
+get_labels_colors() = get_labels_colors_main(url_labels)
+
+function get_labels_colors_main(url_labels::Array{String})
+    colors_out = []
+    for i=1:length(url_labels)
+        labelimg = RGB.(load(url_labels[i]))
+        unique_colors = unique(labelimg)
+        ind = findfirst(unique_colors.==RGB.(0,0,0))
+        deleteat!(unique_colors,ind)
+        colors = channelview(float.(unique_colors))*255
+        if i==1
+            colors_out = arsplit(colors,2)
+        else
+            colors_out = union(colors_out,arsplit(colors,2))
+        end
+    end
+    return colors_out
+end
+get_labels_colors() = get_labels_colors_main(url_labels)
