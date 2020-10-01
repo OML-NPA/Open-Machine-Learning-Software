@@ -6,9 +6,8 @@ include("Customization.jl")
 # QML variables and functions
 dict = Dict{String,Any}()
 layers = []
-layers_QML = []
 
-function update_layers_main(layers,layers_QML,dict,keys,values,ext...)
+function update_layers_main(layers,dict,keys,values,ext...)
     dict = Dict{String,Any}()
     keys = QML.value.(keys)
     values = QML.value.(values)
@@ -44,13 +43,7 @@ function update_layers_main(layers,layers_QML,dict,keys,values,ext...)
         end
     end
     dict = fixtypes(dict)
-    layer_QML = Dict{String,Any}(keys .=> values)
-    layer_QML["connections_up"] = dict["connections_up"]
-    layer_QML["connections_down"] = dict["connections_down"]
-    layer_QML["x"] = dict["x"]
-    layer_QML["y"] = dict["y"]
     push!(layers, copy(dict))
-    push!(layers_QML, copy(layer_QML))
 end
 function fixtypes(dict)
     for key in [
@@ -82,7 +75,7 @@ function fixtypes(dict)
     return dict
 end
 update_layers(keys,values,ext...) = update_layers_main(layers,
-    layers_QML,dict,keys,values,ext...)
+    dict,keys,values,ext...)
 
 function str2tuple(type,str)
     ar = parse.(type, split(str, ","))
@@ -94,20 +87,22 @@ function reset_layers_main(layers)
 end
 reset_layers() = reset_layers_main(layers)
 
-function save_model_main(name,layers,layers_QML)
+function save_model_main(name,layers)
   layers = JSON.parse(JSON.json(layers))
-  BSON.@save(name+".bson",layers,layers_QML)
+  BSON.@save(string(name,".bson"),layers)
 end
-save_model() = save_model_main(layers)
+save_model(name) = save_model_main(name,layers)
 
-function load_model_main(layers,layers_QML,model_name)
-  BSON.@load(model_name,"layers","layers_QML")
+function load_model_main(layers,url)
+  data = BSON.load(String(url))
+  push!(layers,data[:layers]...)
+  layers_QML = copy(layers)
+  return layers_QML
 end
-load_model(model_name) = load_model_main(layers,
-    layers_QML,model_name)
+load_model(url) = load_model_main(layers,url)
 
 @qmlfunction(reset_layers,update_layers,
     get_labels_colors,get_urls_imgs_labels,
-    save_model)
+    save_model,load_model)
 load("GUI//Main.qml")
 exec()

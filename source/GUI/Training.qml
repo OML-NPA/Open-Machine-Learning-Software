@@ -5,7 +5,7 @@ import QtQuick.Window 2.2
 import QtQuick.Layouts 1.2
 import Qt.labs.platform 1.1
 import "Templates"
-//import org.julialang 1.0
+import org.julialang 1.0
 
 
 ApplicationWindow {
@@ -33,7 +33,8 @@ ApplicationWindow {
     property string colorG: "0"
     property string colorB: "0"
     property int indTree: 0
-    property var model
+    property var model: null
+    property var model_name: "model"
 
     property string dialogtarget
 
@@ -63,9 +64,13 @@ ApplicationWindow {
             id: fileDialog
             nameFilters: [ "*.bson"]
             onAccepted: {
-                var dir = folder.toString().replace("file:///","")
-                neuralnetworkTextField.text = dir
-                model = Julia.load_model()
+                var url = file.toString().replace("file:///","")
+                model = Julia.load_model(url)
+                typeof(model)
+                if (model!==null) {
+                    neuralnetworkTextField.text = url
+                }
+            }
 
     }
 

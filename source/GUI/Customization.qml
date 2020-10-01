@@ -63,6 +63,7 @@ ApplicationWindow {
                 onClicked: {
                    getarchitecture()
                    gridLayout.forceActiveFocus()
+                    Julia.save_model(model_name)
                 }
             }
             Button {
