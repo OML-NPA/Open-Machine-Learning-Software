@@ -63,7 +63,7 @@ ApplicationWindow {
                 onClicked: {
                    getarchitecture()
                    gridLayout.forceActiveFocus()
-                    Julia.save_model(model_name)
+                   Julia.save_model(model_name)
                 }
             }
             Button {
@@ -181,6 +181,59 @@ ApplicationWindow {
     GridLayout {
         id: gridLayout
         focus: true
+
+        Component.onCompleted: {
+            for (var i=0;i<model.length;i++) {
+                var data = model[i]
+                var datastore = copy(data)
+                var names = ["connections_down","connections_up",
+                    "labelColor","x","y","type","group"]
+                for (var j=0;j<7;j++) {
+                    delete datastore[names[j]]
+                }
+                var object = layerComponent.createObject(layers,{"color" : adjustcolor(data.labelColor),
+                   "name": data.name,
+                   "group": data.group,
+                   "type": data.type,
+                   "labelColor": data.labelColor,
+                   "inputnum": data.connections_up.length,
+                   "outputnum": data.connections_down.length,
+                   "x": data.x,
+                   "y": data.y,
+                   "datastore": datastore});
+            }
+
+            for (i=0;i<model.length;i++) {
+                data = model[i]
+                var connections_down = data.connections_down
+                for (j=0;j<connections_down.length;j++) {
+                    var conns = connections_down[j]
+                    for (var l=0;l<conns.length;l++) {
+                        var conn = conns[l]-1
+                        var unit = layers.children[i]
+                        var unit_connected = layers.children[conn]
+                        var downNode = getDownNode(unit,j)
+                        var downNodeRectangle = getDownNodeRec(unit,j,l+1)
+                        var ind = -1
+                        var connections_up = model[conn].connections_up
+                        for (var a=0;a<connections_up.length;a++) {
+                            if ((connections_up[a]-1)===i) {
+                                ind = a
+                            }
+                        }
+                        //console.log(ind)
+                        var upNode = getUpNode(unit_connected,ind)
+
+                        makeConnection(unit,downNode,downNodeRectangle,upNode)
+                    }
+
+
+                }
+            }
+
+            //
+        }
+
         Keys.onPressed: {
             if (event.key===Qt.Key_Backspace || event.key===Qt.Key_Delete) {
                 var inds = mainPane.selectioninds
@@ -271,8 +324,9 @@ ApplicationWindow {
                                 new_upNode.connectedItem = new_connectedItem
                                 new_connectedItem.x = new_upNode.x - 10*pix
                                 new_connectedItem.y = new_upNode.y - 10*pix
-                                makeConnection(new_connected_unit,new_upNode,
-                                    new_connectedNode,new_connectedItem)
+                                makeConnection(new_connected_unit,new_connectedNode,
+                                    new_connectedItem,new_upNode,
+                                    )
                             }
                         }
                     }
@@ -1167,10 +1221,11 @@ ApplicationWindow {
     }
 
     function adjustcolor(colorRGB) {
-        colorRGB[0] = 240 + colorRGB[0]/255*15
-        colorRGB[1] = 240 + colorRGB[1]/255*15
-        colorRGB[2] = 240 + colorRGB[2]/255*15
-        return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
+        var tempRGB = copy(colorRGB)
+        tempRGB[0] = 240 + tempRGB[0]/255*15
+        tempRGB[1] = 240 + tempRGB[1]/255*15
+        tempRGB[2] = 240 + tempRGB[2]/255*15
+        return(Qt.rgba(tempRGB[0]/255,tempRGB[1]/255,tempRGB[2]/255))
     }
 
     function rgbtohtml(colorRGB) {
@@ -1274,7 +1329,7 @@ ApplicationWindow {
             var values = Object.values(datastore)
             for (var j=0;j<keys.length;j++) {
                 if (typeof values[j] === typeof {}) {
-                    values[j] = values[j]["text"]
+                    values[j] = Object.values(values[j])
                 }
             }
             var unit = layers.children[i]
@@ -1283,7 +1338,7 @@ ApplicationWindow {
             var y = layers.children[i].y
             Julia.update_layers(keys,values,"connections_up",connections["up"],
                             "connections_down",connections["down"],
-                            "x",x,"y",y);
+                            "x",x,"y",y,"labelColor",layers.children[i].labelColor);
         }
     }
 
@@ -1301,7 +1356,7 @@ ApplicationWindow {
         var downNodes = unit.children[2].children[1]
         var connections_down = Array(downNodes.children.length).fill([])
         for (j=0;j<downNodes.children.length;j++) {
-            connections_down[j] = Array(downNodes.children[j].children.length-1).fill(-1+indmod)
+            connections_down[j] = Array(downNodes.children[j].children.length-2).fill(-1+indmod)
             for (var v=0; v<downNodes.children[j].children.length-1;v++) {
                 node = downNodes.children[j].children[1+v].connectedNode
                 if (node!==null) {
@@ -1449,7 +1504,7 @@ ApplicationWindow {
         }
     }
 
-    function makeConnection(unit,upNode,downNode,downNodeRectangle) {
+    function makeConnection(unit,downNode,downNodeRectangle,upNode) {
         downNodeRectangle.connectedNode = upNode
         upNode.connectedNode = downNode
         upNode.connectedItem = downNodeRectangle
@@ -1478,6 +1533,7 @@ ApplicationWindow {
                         "outputnum": unit.outputnum,
                         "index": downNode.parent.index});
         connections.num = connections.num + 1
+        downNode.visible = true
     }
 
     function updateMainPane(unit) {
@@ -1659,7 +1715,6 @@ ApplicationWindow {
             property double outputnum
             property var datastore
             property var oldpos: [x,y]
-
             Column {
                 anchors.fill: parent.fill
                 topPadding: 8*pix
@@ -1967,7 +2022,7 @@ ApplicationWindow {
                                     finishNode.connectedItem===downNodeRectangle)) &&
                                     layers.children[i].children[2].children[0].children[0]!==
                                     upNodes.children[0]) {
-                                makeConnection(unit,finishNode,downNode,downNodeRectangle)
+                                makeConnection(unit,downNode,downNodeRectangle,finishNode)
                                 return
                             }
                         }
@@ -2168,7 +2223,6 @@ ApplicationWindow {
 
     Component {
         id: shapeComponent
-
         Shape {
             id: pathShape
             property double beginX: 0
@@ -2293,7 +2347,7 @@ ApplicationWindow {
             property string type
             property var group
             property var labelColor
-            property var datastore: { "name": name, "type": type, "group": group,"size": "160,160",
+            property var datastore: {"name": name, "type": type, "group": group,"size": "160,160",
                 "normalisation": {"text": "[0,1]", "ind": 0}}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {

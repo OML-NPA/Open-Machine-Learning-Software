@@ -33,7 +33,7 @@ ApplicationWindow {
     property string colorG: "0"
     property string colorB: "0"
     property int indTree: 0
-    property var model: null
+    property var model: []
     property var model_name: "model"
 
     property string dialogtarget
@@ -62,13 +62,32 @@ ApplicationWindow {
     }
     FileDialog {
             id: fileDialog
-            nameFilters: [ "*.bson"]
+            nameFilters: [ "*.json"]
             onAccepted: {
                 var url = file.toString().replace("file:///","")
-                model = Julia.load_model(url)
-                typeof(model)
-                if (model!==null) {
+                model.length = 0
+                state = Julia.load_model(url)
+                if (state!==null) {
                     neuralnetworkTextField.text = url
+                    var count = Julia.model_count()
+                    for (var i=0;i<count;i++) {
+                        var indJ = i+1
+                        var unit = {}
+                        var properties = Julia.model_properties(indJ)
+                        for (var j=0;j<properties.length;j++) {
+                            var prop = Julia.model_get_property(indJ,properties[j])
+                            if (typeof(prop)==='object' && prop.length===2) {
+                                if (typeof(prop[0])==='string' && typeof(prop[1])==='number') {
+                                   unit[properties[j]] = {"text": prop[0],"ind": prop[1]}
+                                }
+                            }
+                            else {
+                                unit[properties[j]] = prop
+                            }
+                        }
+
+                        model.push(unit)
+                    }
                 }
             }
 
@@ -212,17 +231,17 @@ ApplicationWindow {
                                                 Julia.get_urls_imgs_labels(imagesTextField.text,
                                                     labelsTextField.text)
                                                 var colors = Julia.get_labels_colors()
+                                                for (var i=0;i<colors.length;i++) {
+                                                    featureModel.append({
+                                                            "name": "feature "+i,
+                                                            "colorR": colors[i][0],
+                                                            "colorG": colors[i][1],
+                                                            "colorB": colors[i][2],
+                                                            "border": false,
+                                                            "parent": ""})
+                                                }
+                                                updateButton.visible = false
                                             }
-                                            for (var i=0;i<colors.length;i++) {
-                                                featureModel.append({
-                                                        "name": "feature "+i,
-                                                        "colorR": colors[i][0],
-                                                        "colorG": colors[i][1],
-                                                        "colorB": colors[i][2],
-                                                        "border": false,
-                                                        "parent": ""})
-                                            }
-                                            updateButton.visible = false
                                         }
                                     }
                                     ListView {

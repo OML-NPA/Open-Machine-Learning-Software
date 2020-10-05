@@ -7,21 +7,39 @@ include("Customization.jl")
 dict = Dict{String,Any}()
 layers = []
 
+model_count() = length(layers)
+model_properties(index) = [keys(layers[index])...]
+function model_get_property(index,property_name)
+    layer = layers[index]
+    property = layer[property_name]
+    names_comp = ["labelColor","connections_up","connections_down"]
+    if  isa(property,Tuple)
+        property = join(property,',')
+    end
+    return property
+end
+
 function update_layers_main(layers,dict,keys,values,ext...)
     dict = Dict{String,Any}()
     keys = QML.value.(keys)
     values = QML.value.(values)
     sizehint!(dict, length(keys))
     for i = 1:length(keys)
-        var_str = values[i]
-        var_num = tryparse(Float32, var_str)
-        if var_num == nothing
-          dict[keys[i]] = var_str
-          if occursin(",", var_str) && !occursin("[", var_str)
-             dict[keys[i]] = str2tuple(Int64,var_str)
-          end
+        var = values[i]
+        if var isa QML.QListAllocated
+            temp = QML.value.(var)
+            dict[keys[i]] = temp
         else
-          dict[keys[i]] = var_num
+            var = String(var)
+            var_num = tryparse(Float64, var)
+            if var_num == nothing
+              dict[keys[i]] = String(var)
+              if occursin(",", var) && !occursin("[", var)
+                 dict[keys[i]] = str2tuple(Int64,var)
+              end
+            else
+              dict[keys[i]] = var_num
+            end
         end
     end
     if length(ext) != 0
@@ -45,7 +63,7 @@ function update_layers_main(layers,dict,keys,values,ext...)
     dict = fixtypes(dict)
     push!(layers, copy(dict))
 end
-function fixtypes(dict)
+function fixtypes(dict::Dict)
     for key in [
         "filters",
         "dilationfactor",
@@ -77,32 +95,102 @@ end
 update_layers(keys,values,ext...) = update_layers_main(layers,
     dict,keys,values,ext...)
 
-function str2tuple(type,str)
-    ar = parse.(type, split(str, ","))
+function str2tuple(type::Type,str::String)
+    if occursin("[",str)
+        str2 = split(str,"")
+        str2 = join(str2[2:end-1])
+        ar = parse.(Int64, split(str2, ","))
+    else
+        ar = parse.(type, split(str, ","))
+    end
     return (ar...,)
 end
 
 function reset_layers_main(layers)
-    layers = []
+    layers = empty!(layers)
 end
 reset_layers() = reset_layers_main(layers)
 
 function save_model_main(name,layers)
-  layers = JSON.parse(JSON.json(layers))
-  BSON.@save(string(name,".bson"),layers)
+  #=function fix_jlqml_error(layers)
+      istuple = []
+      for i = 1:length(layers)
+        vals = collect(values(layers[1]))
+        push!(istuple,findall(isa.(vals,Tuple)))
+      end
+      layers = JSON.parse(JSON.json(layers))
+      for i = 1:length(layers)
+        k = collect(keys(layers[i]))
+        inds = istuple[i]
+        for j = 1:length(inds)
+            layers[i][k[inds[j]]] = (layers[i][k[inds[j]]]...,)
+        end
+      end
+  end=#
+  #fix_jlqml_error(layers)
+  istuple = []
+  for i = 1:length(layers)
+    vals = collect(values(layers[i]))
+    push!(istuple,findall(isa.(vals,Tuple)))
+  end
+  open(string(name,".json"),"w") do f
+    JSON.print(f,(layers,istuple))
+  end
+  #BSON.@save(string(name,".bson"),layers)
 end
 save_model(name) = save_model_main(name,layers)
 
 function load_model_main(layers,url)
-  data = BSON.load(String(url))
-  push!(layers,data[:layers]...)
-  layers_QML = copy(layers)
-  return layers_QML
+    layers = empty!(layers)
+    try
+      temp = []
+      open(string(name,".json"), "r") do f
+        temp = JSON.parse(f)  # parse and transform data
+      end
+      for i =1:length(temp[1])
+        push!(layers,copy(temp[1][i]))
+      end
+      istuple = temp[2]
+      for i = 1:length(layers)
+        k = collect(keys(layers[i]))
+        inds = istuple[i]
+        for j = 1:length(inds)
+            layers[i][k[inds[j]]] = (layers[i][k[inds[j]]]...,)
+        end
+      end
+      return true
+    catch
+      return false
+    end
+    if isempty(layers)
+      return false
+    else
+      return true
+    end
+  #=data = BSON.load(String(url))
+  if haskey(data,:layers)
+      push!(layers,data[:layers]...)
+      return true
+  else
+      return false
+  end=#
 end
 load_model(url) = load_model_main(layers,url)
 
-@qmlfunction(reset_layers,update_layers,
-    get_labels_colors,get_urls_imgs_labels,
-    save_model,load_model)
+@qmlfunction(
+    # Model saving
+    reset_layers,
+    update_layers,
+    save_model,
+    # Model loading
+    load_model,
+    model_count,
+    model_properties,
+    model_get_property,
+    # Data loading
+    get_urls_imgs_labels,
+    get_labels_colors
+)
+
 load("GUI//Main.qml")
 exec()
