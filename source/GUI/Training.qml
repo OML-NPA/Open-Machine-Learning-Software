@@ -67,6 +67,7 @@ ApplicationWindow {
                 var url = file.toString().replace("file:///","")
                 model.length = 0
                 state = Julia.load_model(url)
+                var skipStringing = ["x","y"]
                 if (state!==null) {
                     neuralnetworkTextField.text = url
                     var count = Julia.model_count()
@@ -75,17 +76,26 @@ ApplicationWindow {
                         var unit = {}
                         var properties = Julia.model_properties(indJ)
                         for (var j=0;j<properties.length;j++) {
-                            var prop = Julia.model_get_property(indJ,properties[j])
+                            var prop_name = properties[j]
+                            var prop = Julia.model_get_property(indJ,prop_name)
                             if (typeof(prop)==='object' && prop.length===2) {
                                 if (typeof(prop[0])==='string' && typeof(prop[1])==='number') {
-                                   unit[properties[j]] = {"text": prop[0],"ind": prop[1]}
+                                   unit[prop_name] = {"text": prop[0],"ind": prop[1]}
+                                }
+                                else {
+                                    unit[prop_name] = prop
                                 }
                             }
                             else {
-                                unit[properties[j]] = prop
+                                if (skipStringing.includes(prop_name) || typeof(prop)==='object') {
+                                    unit[prop_name] = prop
+                                }
+                                else {
+                                    unit[prop_name] = prop.toString()
+                                }
                             }
                         }
-
+                        console.log(JSON.stringify(unit))
                         model.push(unit)
                     }
                 }

@@ -12,7 +12,6 @@ model_properties(index) = [keys(layers[index])...]
 function model_get_property(index,property_name)
     layer = layers[index]
     property = layer[property_name]
-    names_comp = ["labelColor","connections_up","connections_down"]
     if  isa(property,Tuple)
         property = join(property,',')
     end
@@ -29,11 +28,13 @@ function update_layers_main(layers,dict,keys,values,ext...)
         if var isa QML.QListAllocated
             temp = QML.value.(var)
             dict[keys[i]] = temp
+        elseif var isa Number
+            dict[keys[i]] = var
         else
             var = String(var)
             var_num = tryparse(Float64, var)
             if var_num == nothing
-              dict[keys[i]] = String(var)
+              dict[keys[i]] = var
               if occursin(",", var) && !occursin("[", var)
                  dict[keys[i]] = str2tuple(Int64,var)
               end
@@ -144,7 +145,7 @@ function load_model_main(layers,url)
     layers = empty!(layers)
     try
       temp = []
-      open(string(name,".json"), "r") do f
+      open(string(url), "r") do f
         temp = JSON.parse(f)  # parse and transform data
       end
       for i =1:length(temp[1])
@@ -161,11 +162,6 @@ function load_model_main(layers,url)
       return true
     catch
       return false
-    end
-    if isempty(layers)
-      return false
-    else
-      return true
     end
   #=data = BSON.load(String(url))
   if haskey(data,:layers)

@@ -32,9 +32,6 @@ ApplicationWindow {
 
     property bool optionsOpen: false
     property bool localtrainingOpen: false
-
-    property var currentFocus: null
-
     property var architecture
 
 
@@ -47,6 +44,8 @@ ApplicationWindow {
     QtObject {
         id: copycache
         property var objectsdata: []
+        property var connections: []
+        property var ids: []
     }
 
     header: Pane {
@@ -187,11 +186,11 @@ ApplicationWindow {
                 var data = model[i]
                 var datastore = copy(data)
                 var names = ["connections_down","connections_up",
-                    "labelColor","x","y","type","group"]
-                for (var j=0;j<7;j++) {
+                    "labelColor","x","y"]
+                for (var j=0;j<names.length;j++) {
                     delete datastore[names[j]]
                 }
-                var object = layerComponent.createObject(layers,{"color" : adjustcolor(data.labelColor),
+                layerComponent.createObject(layers,{"color" : adjustcolor(data.labelColor),
                    "name": data.name,
                    "group": data.group,
                    "type": data.type,
@@ -221,17 +220,14 @@ ApplicationWindow {
                                 ind = a
                             }
                         }
-                        //console.log(ind)
                         var upNode = getUpNode(unit_connected,ind)
-
                         makeConnection(unit,downNode,downNodeRectangle,upNode)
                     }
-
-
                 }
             }
-
-            //
+            deselectunits()
+            propertiesStackView.push(generalpropertiesComponent)
+            updateOverview()
         }
 
         Keys.onPressed: {
@@ -266,6 +262,8 @@ ApplicationWindow {
             }
             else if ((event.key===Qt.Key_C) && (event.modifiers && Qt.ControlModifier)) {
                 copycache.objectsdata = []
+                copycache.connections = []
+                copycache.ids = []
                 for (i=0;i<mainPane.selectioninds.length;i++) {
                     var ind = mainPane.selectioninds[i]
                     unit = layers.children[ind]
@@ -280,6 +278,8 @@ ApplicationWindow {
                                 "y": unit.y,
                                 "datastore": unit.datastore}
                     copycache.objectsdata.push(data)
+                    copycache.ids.push(ind)
+                    copycache.connections.push(getconnections(unit,0))
                 }
             }
             else if ((event.key===Qt.Key_V) && (event.modifiers && Qt.ControlModifier)) {
@@ -287,55 +287,52 @@ ApplicationWindow {
                 var selectioninds = mainPane.selectioninds
                 for (i=0;i<copycache.objectsdata.length;i++) {
                     data = copycache.objectsdata[i]
-                    layerComponent.createObject(layers,{"color" : data.color,
-                                                               "name": data.name,
-                                                               "group": data.group,
-                                                               "type": data.type,
-                                                               "labelColor": data.labelColor,
-                                                               "inputnum": data.inputnum,
-                                                               "outputnum": data.outputnum,
-                                                               "x": data.x+20*pix,
-                                                               "y": data.y+20*pix,
-                                                               "datastore": copy(data.datastore)});
+                    unit = layerComponent.createObject(layers,{
+                       "color" : data.color,
+                       "name": data.name,
+                       "group": data.group,
+                       "type": data.type,
+                       "labelColor": data.labelColor,
+                       "inputnum": copycache.connections[i].up.length,
+                       "outputnum": copycache.connections[i].down.length,
+                       "x": data.x+20*pix,
+                       "y": data.y+20*pix,
+                       "datastore": data.datastore})
                 }
-                propertiesStackView.push(generalpropertiesComponent)
-                var finishInd = layers.children.length-1
-                inds = range(startInd,finishInd,1)
-                for (k=0;k<inds.length;k++) {
-                    unit = layers.children[selectioninds[k]]
-                    var unit_new = layers.children[inds[k]]
-                    upNodes = unit.children[2].children[0]
-                    var new_upNodes = unit_new.children[2].children[0]
-                    for (i=0;i<upNodes.children.length;i++) {
-                        var connectedNode = upNodes.children[i].children[0].connectedNode
-                        var new_connectedNode = new_upNodes.children[i].children[0].connectedNode
-                        var item = upNodes.children[i].children[0].connectedItem
-                        if (connectedNode!==null && new_connectedNode===null) {
-                            var connected_unit = nodetolayer(connectedNode)
-                            var layerind = layerindex(connected_unit)
-                            var nodeind = nodeindex(connected_unit.children[2].children[1],connectedNode)
-                            var itemind = itemindex(item)
-                            if (inds.includes(layerind+startInd)) {
-                                var new_connected_unit = layers.children[startInd+layerind]
-                                new_connectedNode = getDownNode(new_connected_unit,nodeind)
-                                var new_connectedItem = getDownNodeRec(new_connected_unit,nodeind,itemind)
-                                var new_upNode = new_upNodes.children[i].children[0]
-                                new_upNode.connectedNode = new_connectedNode
-                                new_upNode.connectedItem = new_connectedItem
-                                new_connectedItem.x = new_upNode.x - 10*pix
-                                new_connectedItem.y = new_upNode.y - 10*pix
-                                makeConnection(new_connected_unit,new_connectedNode,
-                                    new_connectedItem,new_upNode,
-                                    )
+                for (i=0;i<copycache.objectsdata.length;i++) {
+                    data = copycache.objectsdata[i]
+                    var ids = copycache.ids[i]
+                    var conns_all = copycache.connections[i]
+                    var connections_down = conns_all.down
+                    for (j=0;j<connections_down.length;j++) {
+                        var conns = connections_down[j]
+                        for (var l=0;l<conns.length;l++) {
+                            var conn = conns[l]
+                            var conn_real = conn+startInd
+                            if (copycache.ids.includes(conn)) {
+                                unit = layers.children[startInd+i]
+                                var unit_connected = layers.children[conn_real]
+                                var downNode = getDownNode(unit,j)
+                                var downNodeRectangle = getDownNodeRec(unit,j,l+1)
+                                ind = -1
+                                var connections_up = copycache.connections[conn].up
+                                for (var a=0;a<connections_up.length;a++) {
+                                    if ((connections_up[a])===i) {
+                                        ind = a
+                                    }
+                                }
+                                var upNode = getUpNode(unit_connected,ind)
+                                makeConnection(unit,downNode,downNodeRectangle,upNode)
                             }
                         }
                     }
                 }
-                deselectunits()
-                for (i=startInd;i<=finishInd;i++) {
-                    selectunit(layers.children[i])
+                propertiesStackView.push(generalpropertiesComponent)
+                mainPane.selectioninds = add(selectioninds,startInd)
+                for (i=0;i<mainPane.selectioninds.length;i++) {
+                    selectunit(layers.children[mainPane.selectioninds[i]])
                 }
-                mainPane.selectioninds = inds
+                updateOverview()
             }
         }
         Row {
@@ -855,7 +852,6 @@ ApplicationWindow {
                             property int initialYPos
                             onClicked: {
                                 propertiesStackView.push(generalpropertiesComponent)
-                                currentFocus = null
                                 if (mainPane.justselected===true) {
                                     mainPane.justselected = false
                                 }
@@ -1071,6 +1067,14 @@ ApplicationWindow {
 
 
 //--FUNCTIONS--------------------------------------------------------------------
+
+    function add(array,num) {
+        var array2 = [...array]
+        for (var i=0;i<array2.length;i++) {
+            array2[i] = array2[i] + num
+        }
+        return array2
+    }
 
     function copy(obj) {
         return Object.assign({}, obj)
@@ -1350,7 +1354,7 @@ ApplicationWindow {
             var node = upNodes.children[j].children[0].connectedNode
             var item = upNodes.children[j].children[0].connectedItem
             if (node!==null) {
-                connections_up[j] = layerindex(nodetolayer(node))+indmod
+                connections_up[j] = unitindex(nodetolayer(node))+indmod
             }
         }
         var downNodes = unit.children[2].children[1]
@@ -1360,14 +1364,14 @@ ApplicationWindow {
             for (var v=0; v<downNodes.children[j].children.length-1;v++) {
                 node = downNodes.children[j].children[1+v].connectedNode
                 if (node!==null) {
-                    connections_down[j][v] = layerindex(nodetolayer(node))+indmod
+                    connections_down[j][v] = unitindex(nodetolayer(node))+indmod
                 }
             }
         }
         return {"up": connections_up,"down": connections_down}
     }
 
-    function layerindex(layer) {
+    function unitindex(layer) {
         for (var i=0;i<layers.children.length;i++) {
             if (layer===layers.children[i]) {
                 return(i)
@@ -1686,6 +1690,9 @@ ApplicationWindow {
     function getUpNodes(unit) {
         return unit.children[2].children[0]
     }
+    function getUpNodeRec(unit,ind1,ind2) {
+        return unit.children[2].children[0].children[ind1].children[ind2]
+    }
     function getDownNodes(unit) {
         return unit.children[2].children[1]
     }
@@ -1739,7 +1746,6 @@ ApplicationWindow {
                 hoverEnabled: true
                 Component.onCompleted: {
                     deselectunits()
-                    currentFocus = unit
                     selectunit(unit)
                     getstack(labelColor,group,type,name,unit,datastore)
                 }
@@ -1753,7 +1759,7 @@ ApplicationWindow {
                     }
                 }
                 onExited: {
-                    if (!mainPane.selectioninds.includes(layerindex(unit))){
+                    if (!mainPane.selectioninds.includes(unitindex(unit))){
                         deselectunit(unit)
                     }
                     for (var i=0;i<upNodes.children.length;i++) {
@@ -1769,17 +1775,15 @@ ApplicationWindow {
                 }
                 onPressed: {
                     unit.oldpos = [unit.x,unit.y]
-                    currentFocus = unit
-                    if (mainPane.selectioninds<2) {
+                    if (!mainPane.selectioninds.includes(unitindex(unit))) {
                         deselectunits()
                         selectunit(unit)
                     }
                 }
                 onClicked: {
-                    currentFocus = unit
                     deselectunits()
                     selectunit(unit)
-                    mainPane.selectioninds = [layerindex(unit)]
+                    mainPane.selectioninds = [unitindex(unit)]
                     getstack(labelColor,group,type,name,unit,datastore)
                 }
                 onPositionChanged: {
@@ -1984,8 +1988,12 @@ ApplicationWindow {
                     mouseAdjust[0] = 0//mouse.x - downNodeRectangle.width/2;
                     mouseAdjust[1] = 0//mouse.y - downNodeRectangle.height/2;
                     for (var i=0;i<layers.children.length;i++) {
-                        for (var j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
-                            layers.children[i].children[2].children[0].children[j].children[0].visible = true
+                        var unit_other = layers.children[i]
+                        var upNodes_other = getUpNodes(unit_other)
+                        for (var j=0;j<upNodes_other.children.length;j++) {
+                            if (!getconnections(unit_other,0).up.includes(unitindex(unit))) {
+                                getUpNode(unit_other,j).visible = true
+                            }
                         }
                     }
                 }
@@ -2007,23 +2015,29 @@ ApplicationWindow {
                 onReleased: {
                     updateOverview()
                     for (var i=0;i<layers.children.length;i++) {
-                        for (var j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
-                            if (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null) {
-                                layers.children[i].children[2].children[0].children[j].children[0].visible = false
+                        var unit_other = layers.children[i]
+                        var upNodes_other = getUpNodes(unit_other)
+                        for (var j=0;j<upNodes_other.children.length;j++) {
+                            var upNode_other = getUpNode(unit_other,j)
+                            if (upNode_other.connectedNode===null) {
+                                upNode_other.visible = false
                             }
                         }
                     }
                     for (i=0;i<layers.children.length;i++) {
-                        for (j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
-                            var finishNode = layers.children[i].children[2].children[0].children[j].children[0]
+                        unit_other = layers.children[i]
+                        upNodes_other = getUpNodes(unit_other)
+                        for (j=0;j<upNodes_other.children.length;j++) {
+                            upNode_other = getUpNode(unit_other,j)
                             if (comparelocations(downNodeRectangle,mouse.x,mouse.y,
-                                    finishNode,layers) && (finishNode.connectedNode===null ||
-                                    (finishNode.connectedNode===downNode &&
-                                    finishNode.connectedItem===downNodeRectangle)) &&
-                                    layers.children[i].children[2].children[0].children[0]!==
-                                    upNodes.children[0]) {
-                                makeConnection(unit,downNode,downNodeRectangle,finishNode)
-                                return
+                                    upNode_other,layers) && (upNode_other.connectedNode===null ||
+                                    (upNode_other.connectedNode===downNode &&
+                                    upNode_other.connectedItem===downNodeRectangle)) &&
+                                    getUpNodes(unit_other)!==upNodes.children[0]) {
+                                if (!getconnections(unit_other,0).up.includes(unitindex(unit))) {
+                                    makeConnection(unit,downNode,downNodeRectangle,upNode_other)
+                                    return
+                                }
                             }
                         }
                     }
@@ -2119,8 +2133,10 @@ ApplicationWindow {
                         mouseAdjust[0] = 0//mouse.x - upNode.connectedItem.width/2;
                         mouseAdjust[1] = 0//mouse.y - upNode.connectedItem.height/2;
                         for (var i=0;i<layers.children.length;i++) {
-                            for (var j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
-                                layers.children[i].children[2].children[0].children[j].children[0].visible = true
+                            var unit_other = layers.children[i]
+                            var upNodes_other = getUpNodes(unit_other)
+                            for (var j=0;j<upNodes_other.children.length;j++) {
+                                getUpNode(unit_other,j).visible = true
                             }
                         }
                     }
@@ -2151,25 +2167,31 @@ ApplicationWindow {
                             return
                         }
                         for (var i=0;i<layers.children.length;i++) {
-                            for (var j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
-                                if (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null) {
-                                    layers.children[i].children[2].children[0].children[j].children[0].visible = false
+                            var unit_other = layers.children[i]
+                            var upNodes_other = getUpNodes(unit_other)
+                            for (var j=0;j<upNodes_other.children.length;j++) {
+                                var upNode_other = getUpNode(unit_other,j)
+                                if (upNode_other.connectedNode===null) {
+                                    upNode_other.visible = false
                                 }
                             }
                         }
                         for (i=0;i<layers.children.length;i++) {
-                            for (j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
+                            unit_other = layers.children[i]
+                            upNodes_other = getUpNodes(unit_other)
+                            for (j=0;j<upNodes_other.children.length;j++) {
+                                upNode_other = getUpNode(unit_other,j)
+                                var upNodeRec_other = getUpNodeRec(unit_other,j,1)
                                 if (comparelocations(upNodeRectangle,mouse.x,mouse.y,
-                                        layers.children[i].children[2].children[0].children[j].children[0],layers) &&
-                                        (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null ||
-                                        layers.children[i].children[2].children[0].children[j].children[0].connectedNode===upNode.connectedNode) &&
-                                        layers.children[i].children[2].children[0].children[j].children[1]!==
+                                        upNode_other,layers) && (upNode_other.connectedNode===null ||
+                                        upNode_other.connectedNode===upNode.connectedNode) &&
+                                        upNodeRec_other!==
                                         upNode.connectedNode.parent.parent.parent.children[j].children[1]) {
-                                    upNode.connectedItem.connectedNode = layers.children[i].children[2].children[0].children[j].children[0]
-                                    layers.children[i].children[2].children[0].children[j].children[0].connectedNode = upNode.connectedNode
-                                    layers.children[i].children[2].children[0].children[j].children[0].connectedItem = upNode.connectedItem
-                                    layers.children[i].children[2].children[0].children[j].children[0].visible = true
-                                    var upNodePoint = layers.children[i].children[2].children[0].children[j].children[1].mapToItem(layers,0,0)
+                                    upNode.connectedItem.connectedNode = upNode_other
+                                    upNode_other.connectedNode = upNode.connectedNode
+                                    upNode_other.connectedItem = upNode.connectedItem
+                                    upNode_other.visible = true
+                                    var upNodePoint = upNodeRec_other.mapToItem(layers,0,0)
                                     var downNodePoint = upNode.connectedItem.mapToItem(layers,0,0)
                                     var adjX = downNodePoint.x - upNodePoint.x
                                     var adjY = downNodePoint.y - upNodePoint.y
@@ -2178,7 +2200,7 @@ ApplicationWindow {
                                     upNode.connectedItem.x = upNode.connectedItem.x - adjX
                                     upNode.connectedItem.y = upNode.connectedItem.y - adjY
                                     upNode.connectedItem.connection.destroy()
-                                    var point = layers.children[i].children[2].children[0].children[j].children[1].mapToItem(layers,0,0)
+                                    var point = downNodeRec_other.mapToItem(layers,0,0)
                                     upNode.connectedItem.connection = shapeComponent.createObject(connections, {
                                           "beginX": upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
                                                         upNode.connectedItem.index/(upNode.connectedItem.outputnum+1),
@@ -2188,7 +2210,7 @@ ApplicationWindow {
                                           "finishY": point.y +
                                                      upNode.connectedNode.radius + mouseAdjust[1] + 2*pix,
                                           "origin": upNode.connectedItem})
-                                    if (upNode!==layers.children[i].children[2].children[0].children[j].children[0]) {
+                                    if (upNode!==upNode_other) {
                                         upNode.connectedNode = null
                                         upNode.connectedItem = null
                                     }
@@ -2205,9 +2227,12 @@ ApplicationWindow {
                         upNodeRectangle.x = unit.width*index/(inputnum+1)-upNode.radius
                         upNodeRectangle.y = -upNode.radius + 2*pix
                         for (i=0;i<layers.children.length;i++) {
-                            for (j=0;j<layers.children[i].children[2].children[0].children.length;j++) {
-                                if (layers.children[i].children[2].children[0].children[j].children[0].connectedNode===null) {
-                                    layers.children[i].children[2].children[0].children[j].children[0].visible = false
+                            unit_other = layers.children[i]
+                            upNodes_other = getUpNodes(unit_other)
+                            for (j=0;j<upNodes_other.children.length;j++) {
+                                upNode_other = getUpNode(unit_other,j)
+                                if (upNode_other.connectedNode===null) {
+                                    upNode_other.visible = false
                                 }
                             }
                         }
@@ -2234,7 +2259,7 @@ ApplicationWindow {
             vendorExtensionsEnabled: false
             ShapePath {
                 id: pathShapePath
-                strokeColor: defaultcolors.dark
+                strokeColor: defaultcolors.middark2
                 strokeWidth: 4*pix
                 fillColor: "transparent"
                 capStyle: ShapePath.RoundCap
@@ -2305,33 +2330,55 @@ ApplicationWindow {
 //----Properties components----------------------------------------
     Component {
         id: generalpropertiesComponent
-        RowLayout {
-            ColumnLayout {
-                Layout.leftMargin: 0.2*margin
-                Layout.topMargin: 0.2*margin
-                spacing: 0.2*margin
+        Column {
+            Row {
+                leftPadding: 0.4*margin
+                topPadding: 0.42*margin
+                bottomPadding: 0.2*margin
                 Label {
-                    text: "Number of layers: "
+                    id: nameLabel
+                    text: "Name: "
+                    topPadding: 4*pix
+                    bottomPadding: topPadding
                 }
-                Label {
-                    text: "Number of connections: "
-                }
-                Label {
-                    text: "Number of nonlinearities: "
+                TextField {
+                    text: model_name
+                    defaultHeight: 0.75*buttonHeight
+                    defaultWidth: rightFrame.width - 220*pix
+                    onEditingFinished: {
+                        model_name = displayText
+                    }
                 }
             }
-            ColumnLayout {
-                Layout.leftMargin: 0.2*margin
-                Layout.topMargin: 0.2*margin
-                spacing: 0.2*margin
-                Label {
-                    text: layers.children.length
+            RowLayout {
+                Column {
+                    id: labelColumnLayout
+                    leftPadding: 0.4*margin
+                    topPadding: 0.22*margin
+                    spacing: 0.4*margin
+                    Label {
+                        text: "Number of layers: "
+                    }
+                    Label {
+                        text: "Number of connections: "
+                    }
+                    Label {
+                        text: "Number of nonlinearities: "
+                    }
                 }
-                Label {
-                    text: getconnectionsnum()
-                }
-                Label {
-                    text: getirregularitiesnum()
+                Column {
+                    leftPadding: 0*margin
+                    topPadding: 0.22*margin
+                    spacing: 0.4*margin
+                    Label {
+                        text: layers.children.length
+                    }
+                    Label {
+                        text: getconnectionsnum()
+                    }
+                    Label {
+                        text: getirregularitiesnum()
+                    }
                 }
             }
         }
