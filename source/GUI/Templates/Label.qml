@@ -9,7 +9,7 @@ T.Label {
 
     color: control.palette.windowText
     linkColor: control.palette.link
-    font.family: control.font.family
-    font.pointSize: 9
+    font.family: "Proxima Nova"//control.font.family
+    font.pointSize: 10
     wrapMode: Text.WordWrap
 }

@@ -9,7 +9,9 @@ T.Button {
     id: control
 
     property double margin: 0.02*Screen.width
+    property double pix: Screen.width/3840
     property double tabmargin: 0.5*margin
+    property double font_size: 9
     property bool buttonfocus: false
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
@@ -35,8 +37,8 @@ T.Button {
         Text {
             text: control.text
             anchors.fill: parent
-            font.family: control.font.family
-            font.pointSize: 9
+            font.family: "Proxima Nova"//control.font.family
+            font.pointSize: font_size
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignLeft
             leftPadding: tabmargin
@@ -51,9 +53,23 @@ T.Button {
         anchors.fill: parent.fill
         visible: !control.flat || control.down || control.checked || control.highlighted
         color: control.pressed ? defaultpalette.buttonpressed :
-               control.hovered && !control.buttonfocus ? defaultpalette.buttonhovered:
+               control.hovered && !control.buttonfocus ? defaultcolors.midlight3:
                control.buttonfocus ? defaultpalette.window: defaultpalette.window2
         border.color: control.palette.dark
         border.width: 0
+        Rectangle {
+                y: -1*pix
+                border.color: defaultcolors.dark2
+                border.width: 4*pix
+                width: control.width
+                height: 2*pix
+        }
+        Rectangle {
+                y: control.height
+                border.color: defaultcolors.dark2
+                border.width: 4*pix
+                width: control.width
+                height: 2*pix
+        }
     }
 }

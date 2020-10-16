@@ -1,54 +1,41 @@
 
-using Flux, Flux.Data.MNIST, Statistics
-using Flux: onehotbatch, onecold, logitcrossentropy
-using Base.Iterators: partition
+using Flux, Random
 using Printf, BSON
 using Parameters: @with_kw
 using CUDAapi
 if has_cuda()
-    @info "CUDA is on"
+    #@info "CUDA is on"
     import CUDA
     CUDA.allowscalar(false)
 end
 
-function import_data()
-    # Load labels and images from Flux.Data.MNIST
-    train_labels = MNIST.labels()
-    train_imgs = MNIST.images()
-    return train_imgs, train_labels
+@with_kw mutable struct Args
+    lr::Float64 = 1e-3
+    epochs::Int = 1
+    batch_size = 10
+    savepath::String = "./"
 end
 
-function get_processed_data(args)
-    # Load labels and images from Flux.Data.MNIST
-    train_imgs, train_labels = import_data()
-    mb_idxs = partition(1:length(train_imgs), args.batch_size)
-    train_set = [make_minibatch(train_imgs, train_labels, i) for i in mb_idxs]
+types = ["segmentation","classification","regression"]
 
-    # Prepare test set as one giant minibatch:
-    test_imgs = MNIST.images(:test)
-    test_labels = MNIST.labels(:test)
-    test_set = make_minibatch(test_imgs, test_labels, 1:length(test_imgs))
-
+function get_train_test(data_input, data_labels,args)
+    set = [(data_input[i],data_labels[i]) for i in 1:length(data)]
+    ind = Int64(round(0.8*length(set)))
+    train_set = set[1:ind]
+    test_set = set[ind+1:end]
     return train_set, test_set
 end
 
-# Bundle images together with labels and group into minibatchess
-function make_minibatch(X, Y, idxs)
-    X_batch = Array{Float32}(undef, size(X[1])..., 1, length(idxs))
-    for i in 1:length(idxs)
-        X_batch[:, :, :, i] = Float32.(X[idxs[i]])
+function make_minibatch(set,batch_size)
+    set_minibatch = []
+    finish = Int64(floor(length(set)/batch_size)*batch_size)-1
+    inds = shuffle!([0:batch_size:finish...])
+    for i=0:batch_size:finish
+        push!(set_minibatch,set[i+1:(i+10)])
     end
-    Y_batch = onehotbatch(Y[idxs], 0:9)
-    return (X_batch, Y_batch)
+    return set_minibatch
 end
 
-
-@with_kw mutable struct Args
-    lr::Float64 = 3e-3
-    epochs::Int = 1
-    batch_size = 128
-    savepath::String = "./"
-end
 
 # Build model
 function build_model(args; imgsize = (28,28,1), nclasses = 10)
@@ -96,11 +83,11 @@ function accuracy(x, y, model)
     return 0
 end
 
-function train(; kws...)
+function train(data; kws...)
     args = Args(; kws...)
 
     @info("Loading data set")
-    train_set, test_set = get_processed_data(args)
+    train_set, test_set = get_train_test(data,args)
 
     @info("Building model...")
     model = build_model(args)
@@ -201,6 +188,6 @@ function test(; kws...)
     @show accuracy(test_set...,model)
 end
 
-cd(@__DIR__)
-train()
-test()
+#cd(@__DIR__)
+#train()
+#test()

@@ -36,7 +36,7 @@ ApplicationWindow {
             }
     }
 
-    onClosing: { optionsLoader.sourceComponent = null }
+    //onClosing: { optionsLoader.sourceComponent = null }
 
     GridLayout {
         id: gridLayout
@@ -185,14 +185,21 @@ ApplicationWindow {
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
                                         Layout.row: 1
-                                        text: "Execution environment:"
+                                        text: "Batch size:"
                                     }
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
                                         Layout.row: 1
-                                        text: "Parallel processing:"
+                                        text: "Number of epochs:"
                                         bottomPadding: 0.05*margin
                                     }
+                                    Label {
+                                        Layout.alignment : Qt.AlignLeft
+                                        Layout.row: 1
+                                        text: "Learning rate:"
+                                        bottomPadding: 0.05*margin
+                                    }
+
                                 }
                                 ColumnLayout {
                                     ComboBox {

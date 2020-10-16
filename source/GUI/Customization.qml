@@ -48,135 +48,6 @@ ApplicationWindow {
         property var ids: []
     }
 
-    header: Pane {
-        id: header
-        height: 50*pix
-        padding: 0
-        Row {
-            Button {
-                text: "Save"
-                padding: 0
-                backgroundRadius: 0
-                width: (header.width)/15
-                height: header.height + 1
-                onClicked: {
-                   getarchitecture()
-                   gridLayout.forceActiveFocus()
-                   Julia.save_model(model_name)
-                }
-            }
-            Button {
-                text: "Arrange"
-                padding: 0
-                backgroundRadius: 0
-                width: (header.width)/15
-                height: header.height + 1
-                onClicked: {
-                    if (layers.children.length===0) {
-                        return
-                    }
-                    function getpositions() {
-                        var x = []
-                        var y = []
-                        for (var i=0;i<layers.children.length;i++) {
-                            x[i] = layers.children[i].x - width/2
-                            y[i] = layers.children[i].y - height/2
-                        }
-                        return({"x": x,"y": y})
-                    }
-                    var height = layers.children[0].height
-                    var width = layers.children[0].width
-                    var marginy = 40*pix + height
-                    var marginx = 40*pix + 1.5*width
-                    // Arrange into y groups
-                    var skipinds = []
-                    var positions_orig = getpositions()
-                    for(var k=0;k<layers.children.length-1;k++) {
-                        var positions = getpositions()
-                        for (var i=0;i<skipinds.length;i++) {
-                            positions.y[skipinds[i]] = Infinity
-                        }
-                        var minind = indexofmin(positions.y)
-                        var minval = Math.min(...positions.y)
-                        var dist = dif(positions.y,minval)
-                        for (i=0;i<dist.length;i++) {
-                            if ( i===minind || skipinds.includes(i)) {
-                                continue
-                            }
-                            if (dist[i]>0) {
-                                if (dist[i]<marginy) {
-                                    if (Math.abs(positions_orig.y[minind]-positions_orig.y[i])>height) {
-                                        layers.children[i].y = layers.children[i].y + (marginy - dist[i])
-                                    }
-                                    else {
-                                        layers.children[i].y = layers.children[minind].y
-                                    }
-                                }
-                            }
-                        }
-                        skipinds.push(minind)
-                    }
-                    // Arrange x margins for y groups
-                    skipinds = []
-                    positions_orig = getpositions()
-                    for(k=0;k<layers.children.length-1;k++) {
-                        positions = getpositions()
-                        for (i=0;i<skipinds.length;i++) {
-                            positions.x[skipinds[i]] = Infinity
-                        }
-                        minind = indexofmin(positions.x)
-                        minval = Math.min(...positions.x)
-                        dist = dif(positions.x,minval)
-
-                        for (i=0;i<dist.length;i++) {
-                            if ( i===minind || skipinds.includes(i)) {
-                                continue
-                            }
-                            if (dist[i]>=0 && positions.y[minind]===positions.y[i]) {
-                                layers.children[i].x = minval + marginx
-                            }
-                        }
-                        skipinds.push(minind)
-                    }
-                    var unique_y = getpositions().y.filter((x,i,a)=>a.indexOf(x)===i)
-                    positions = getpositions()
-                    var ind = indexOfMin(positions.y)
-                    var min_x = positions.x[ind]
-                    var buffer = 0
-                    unique_y = unique_y.sort((a,b)=>a-b)
-                    for (i=0;i<(unique_y.length-1);i++) {
-                        var value = unique_y[i+1]-unique_y[i]
-                        positions = getpositions()
-                        var inds = findindex(positions.y,unique_y[i+1])
-                        var array = []
-                        for (var j=0;j<inds.length;j++) {
-                            array.push(layers.children[inds[j]].x)
-                        }
-                        var dev = mean(array) - min_x
-                        for (j=0;j<inds.length;j++) {
-                            layers.children[inds[j]].x = layers.children[inds[j]].x - dev + width/2
-                        }
-                        if (value!==marginy){
-                            buffer = buffer + (marginy - value)
-                            for (j=0;j<inds.length;j++) {
-                                layers.children[inds[j]].y = layers.children[inds[j]].y + buffer
-                            }
-                        }
-                    }
-                    updateMainPane(layers.children[0])
-                    updateConnections()
-                    gridLayout.forceActiveFocus()
-                }
-            }
-        }
-        Rectangle {
-            width: header.width
-            height: 2*pix
-            border.width: 0
-            y: header.height - 1
-            color: defaultpalette.border
-        }
-    }
     GridLayout {
         id: gridLayout
         focus: true
@@ -401,23 +272,23 @@ ApplicationWindow {
                                         boundsBehavior: Flickable.StopAtBounds
                                         model: ListModel {id: inoutlayerModel
                                                           ListElement{
-                                                              type: "Input" // @disable-check M16
-                                                              group: "inout" // @disable-check M16
-                                                              name: "input"// @disable-check M16
-                                                              colorR: 0 // @disable-check M16
-                                                              colorG: 0 // @disable-check M16
-                                                              colorB: 250 // @disable-check M16
-                                                              inputnum: 0 // @disable-check M16
-                                                              outputnum: 1} // @disable-check M16
+                                                              type: "Input"
+                                                              group: "inout"
+                                                              name: "input"
+                                                              colorR: 0
+                                                              colorG: 0
+                                                              colorB: 250
+                                                              inputnum: 0
+                                                              outputnum: 1}
                                                           ListElement{
-                                                              type: "Output" // @disable-check M16
-                                                              group: "inout" // @disable-check M16
-                                                              name: "output" // @disable-check M16
-                                                              colorR: 0 // @disable-check M16
-                                                              colorG: 0 // @disable-check M16
-                                                              colorB: 250 // @disable-check M16
-                                                              inputnum: 1 // @disable-check M16
-                                                              outputnum: 0} // @disable-check M16
+                                                              type: "Output"
+                                                              group: "inout"
+                                                              name: "output"
+                                                              colorR: 0
+                                                              colorG: 0
+                                                              colorB: 250
+                                                              inputnum: 1
+                                                              outputnum: 0}
                                                         }
                                         delegate: buttonComponent
                                     }
@@ -447,32 +318,32 @@ ApplicationWindow {
                                         boundsBehavior: Flickable.StopAtBounds
                                         model: ListModel {id: linearlayerModel
                                                           ListElement{
-                                                              type: "Convolution" // @disable-check M16
-                                                              group: "linear" // @disable-check M16
-                                                              name: "conv"// @disable-check M16
-                                                              colorR: 250 // @disable-check M16
-                                                              colorG: 250 // @disable-check M16
-                                                              colorB: 0 // @disable-check M16
-                                                              inputnum: 1 // @disable-check M16
-                                                              outputnum: 1} // @disable-check M16
+                                                              type: "Convolution"
+                                                              group: "linear"
+                                                              name: "conv"
+                                                              colorR: 250
+                                                              colorG: 250
+                                                              colorB: 0
+                                                              inputnum: 1
+                                                              outputnum: 1}
                                                           ListElement{
-                                                              type: "Transposed convolution" // @disable-check M16
-                                                              group: "linear" // @disable-check M16
-                                                              name: "tconv" // @disable-check M16
-                                                              colorR: 250 // @disable-check M16
-                                                              colorG: 250 // @disable-check M16
-                                                              colorB: 0 // @disable-check M16
-                                                              inputnum: 1 // @disable-check M16
-                                                              outputnum: 1} // @disable-check M16
+                                                              type: "Transposed convolution"
+                                                              group: "linear"
+                                                              name: "tconv"
+                                                              colorR: 250
+                                                              colorG: 250
+                                                              colorB: 0
+                                                              inputnum: 1
+                                                              outputnum: 1}
                                                           ListElement{
-                                                              type: "Dense" // @disable-check M16
-                                                              group: "linear" // @disable-check M16
-                                                              name: "dense" // @disable-check M16
-                                                              colorR: 250 // @disable-check M16
-                                                              colorG: 250 // @disable-check M16
-                                                              colorB: 0 // @disable-check M16
-                                                              inputnum: 1 // @disable-check M16
-                                                              outputnum: 1} // @disable-check M16
+                                                              type: "Dense"
+                                                              group: "linear"
+                                                              name: "dense"
+                                                              colorR: 250
+                                                              colorG: 250
+                                                              colorB: 0
+                                                              inputnum: 1
+                                                              outputnum: 1}
                                                         }
                                         delegate: buttonComponent
                                     }
@@ -502,23 +373,23 @@ ApplicationWindow {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: normlayerModel
                                                       ListElement{
-                                                          type: "Drop-out" // @disable-check M16
-                                                          group: "norm" // @disable-check M16
-                                                          name: "dropout" // @disable-check M16
-                                                          colorR: 0 // @disable-check M16
-                                                          colorG: 250 // @disable-check M16
-                                                          colorB: 0 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Drop-out"
+                                                          group: "norm"
+                                                          name: "dropout"
+                                                          colorR: 0
+                                                          colorG: 250
+                                                          colorB: 0
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                       ListElement{
-                                                          type: "Batch normalisation" // @disable-check M16
-                                                          group: "norm" // @disable-check M16
-                                                          name: "batchnorm" // @disable-check M16
-                                                          colorR: 0 // @disable-check M16
-                                                          colorG: 250 // @disable-check M16
-                                                          colorB: 0 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Batch normalisation"
+                                                          group: "norm"
+                                                          name: "batchnorm"
+                                                          colorR: 0
+                                                          colorG: 250
+                                                          colorB: 0
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -548,50 +419,50 @@ ApplicationWindow {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: activationlayerModel
                                                       ListElement{
-                                                          type: "RelU" // @disable-check M16
-                                                          group: "activation" // @disable-check M16
-                                                          name: "relu" // @disable-check M16
-                                                          colorR: 250 // @disable-check M16
-                                                          colorG: 0 // @disable-check M16
-                                                          colorB: 0 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "RelU"
+                                                          group: "activation"
+                                                          name: "relu"
+                                                          colorR: 250
+                                                          colorG: 0
+                                                          colorB: 0
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                       ListElement{
-                                                          type: "Laeky RelU" // @disable-check M16
-                                                          group: "activation" // @disable-check M16
-                                                          name: "leakyrelu" // @disable-check M16
-                                                          colorR: 250 // @disable-check M16
-                                                          colorG: 0 // @disable-check M16
-                                                          colorB: 0 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Laeky RelU"
+                                                          group: "activation"
+                                                          name: "leakyrelu"
+                                                          colorR: 250
+                                                          colorG: 0
+                                                          colorB: 0
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                       ListElement{
-                                                          type: "ElU" // @disable-check M16
-                                                          group: "activation" // @disable-check M16
-                                                          name: "elu" // @disable-check M16
-                                                          colorR: 250 // @disable-check M16
-                                                          colorG: 0 // @disable-check M16
-                                                          colorB: 0 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "ElU"
+                                                          group: "activation"
+                                                          name: "elu"
+                                                          colorR: 250
+                                                          colorG: 0
+                                                          colorB: 0
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                       ListElement{
-                                                          type: "Tanh" // @disable-check M16
-                                                          group: "activation" // @disable-check M16
-                                                          name: "tanh" // @disable-check M16
-                                                          colorR: 250 // @disable-check M16
-                                                          colorG: 0 // @disable-check M16
-                                                          colorB: 0 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Tanh"
+                                                          group: "activation"
+                                                          name: "tanh"
+                                                          colorR: 250
+                                                          colorG: 0
+                                                          colorB: 0
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                       ListElement{
-                                                          type: "Sigmoid" // @disable-check M16
-                                                          group: "activation" // @disable-check M16
-                                                          name: "sigmoid" // @disable-check M16
-                                                          colorR: 250 // @disable-check M16
-                                                          colorG: 0 // @disable-check M16
-                                                          colorB: 0 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Sigmoid"
+                                                          group: "activation"
+                                                          name: "sigmoid"
+                                                          colorR: 250
+                                                          colorG: 0
+                                                          colorB: 0
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -621,23 +492,23 @@ ApplicationWindow {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: poolinglayerModel
                                                       ListElement{
-                                                          type: "Max pooling" // @disable-check M16
-                                                          group: "pooling" // @disable-check M16
-                                                          name: "maxpool" // @disable-check M16
-                                                          colorR: 150 // @disable-check M16
-                                                          colorG: 0 // @disable-check M16
-                                                          colorB: 255 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Max pooling"
+                                                          group: "pooling"
+                                                          name: "maxpool"
+                                                          colorR: 150
+                                                          colorG: 0
+                                                          colorB: 255
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                       ListElement{
-                                                          type: "Average pooling" // @disable-check M16
-                                                          group: "pooling" // @disable-check M16
-                                                          name: "avgpool" // @disable-check M16
-                                                          colorR: 150 // @disable-check M16
-                                                          colorG: 0 // @disable-check M16
-                                                          colorB: 255 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Average pooling"
+                                                          group: "pooling"
+                                                          name: "avgpool"
+                                                          colorR: 150
+                                                          colorG: 0
+                                                          colorB: 255
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -668,50 +539,50 @@ ApplicationWindow {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: resizinglayerModel
                                                     ListElement{
-                                                        type: "Addition" // @disable-check M16
-                                                        group: "resizing" // @disable-check M16
-                                                        name: "addition" // @disable-check M16
-                                                        colorR: 180 // @disable-check M16
-                                                        colorG: 180 // @disable-check M16
-                                                        colorB: 180// @disable-check M16
-                                                        inputnum: 2 // @disable-check M16
-                                                        outputnum: 1} // @disable-check M16
+                                                        type: "Addition"
+                                                        group: "resizing"
+                                                        name: "addition"
+                                                        colorR: 180
+                                                        colorG: 180
+                                                        colorB: 180
+                                                        inputnum: 2
+                                                        outputnum: 1}
                                                       ListElement{
-                                                          type: "Catenation" // @disable-check M16
-                                                          group: "resizing" // @disable-check M16
-                                                          name: "cat" // @disable-check M16
-                                                          colorR: 180 // @disable-check M16
-                                                          colorG: 180 // @disable-check M16
-                                                          colorB: 180// @disable-check M16
-                                                          inputnum: 2 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Catenation"
+                                                          group: "resizing"
+                                                          name: "cat"
+                                                          colorR: 180
+                                                          colorG: 180
+                                                          colorB: 180
+                                                          inputnum: 2
+                                                          outputnum: 1}
                                                       ListElement{
-                                                          type: "Decatenation" // @disable-check M16
-                                                          group: "resizing" // @disable-check M16
-                                                          name: "decat" // @disable-check M16
-                                                          colorR: 180 // @disable-check M16
-                                                          colorG: 180 // @disable-check M16
-                                                          colorB: 180 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 2} // @disable-check M16
+                                                          type: "Decatenation"
+                                                          group: "resizing"
+                                                          name: "decat"
+                                                          colorR: 180
+                                                          colorG: 180
+                                                          colorB: 180
+                                                          inputnum: 1
+                                                          outputnum: 2}
                                                       ListElement{
-                                                          type: "Scaling" // @disable-check M16
-                                                          group: "resizing" // @disable-check M16
-                                                          name: "scaling" // @disable-check M16
-                                                          colorR: 180 // @disable-check M16
-                                                          colorG: 180 // @disable-check M16
-                                                          colorB: 180 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Scaling"
+                                                          group: "resizing"
+                                                          name: "scaling"
+                                                          colorR: 180
+                                                          colorG: 180
+                                                          colorB: 180
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                       ListElement{
-                                                          type: "Resizing" // @disable-check M16
-                                                          group: "resizing" // @disable-check M16
-                                                          name: "resizing" // @disable-check M16
-                                                          colorR: 180 // @disable-check M16
-                                                          colorG: 180 // @disable-check M16
-                                                          colorB: 180 // @disable-check M16
-                                                          inputnum: 1 // @disable-check M16
-                                                          outputnum: 1} // @disable-check M16
+                                                          type: "Resizing"
+                                                          group: "resizing"
+                                                          name: "resizing"
+                                                          colorR: 180
+                                                          colorG: 180
+                                                          colorB: 180
+                                                          inputnum: 1
+                                                          outputnum: 1}
                                                     }
                                     delegate: buttonComponent
                                 }
@@ -951,6 +822,142 @@ ApplicationWindow {
                             border.color: Qt.rgba(0.2,0.5,0.8,0.8)
                             color: Qt.rgba(0.2,0.5,0.8,0.05)
                         }
+                    }
+                }
+                Button {
+                    id: saveButton
+                    width: 80*pix
+                    height: 80*pix
+                    background: Image {
+                        source: "Icons/saveIcon.png"
+                        fillMode: Image.PreserveAspectFit
+                    }
+                    onPressed: {opacity = 0.5}
+                    onReleased: {opacity = 1}
+                    onClicked: {
+                       getarchitecture()
+                       gridLayout.forceActiveFocus()
+                       Julia.save_model(model_name)
+                    }
+                    x: mainFrame.width-110*pix
+                    y: 30*pix
+                }
+                Button {
+                    id: optionsButton
+                    x: mainFrame.width-110*pix
+                    y: 140*pix
+                    width: 80*pix
+                    height: 80*pix
+                    background: Image {
+                        source: "Icons/optionsIcon.png"
+                        fillMode: Image.PreserveAspectFit
+                    }
+                    onPressed: {opacity = 0.5}
+                    onReleased: {opacity = 1}
+                }
+                Button {
+                    id: arrangeButton
+                    x: mainFrame.width-110*pix
+                    y: 250*pix
+                    width: 80*pix
+                    height: 80*pix
+                    onPressed: {opacity = 0.5}
+                    onReleased: {opacity = 1}
+                    onClicked: {
+                        if (layers.children.length===0) {
+                            return
+                        }
+                        function getpositions() {
+                            var x = []
+                            var y = []
+                            for (var i=0;i<layers.children.length;i++) {
+                                x[i] = layers.children[i].x - width/2
+                                y[i] = layers.children[i].y - height/2
+                            }
+                            return({"x": x,"y": y})
+                        }
+                        var height = layers.children[0].height
+                        var width = layers.children[0].width
+                        var marginy = 40*pix + height
+                        var marginx = 40*pix + 1.5*width
+                        // Arrange into y groups
+                        var skipinds = []
+                        var positions_orig = getpositions()
+                        for(var k=0;k<layers.children.length-1;k++) {
+                            var positions = getpositions()
+                            for (var i=0;i<skipinds.length;i++) {
+                                positions.y[skipinds[i]] = Infinity
+                            }
+                            var minind = indexofmin(positions.y)
+                            var minval = Math.min(...positions.y)
+                            var dist = dif(positions.y,minval)
+                            for (i=0;i<dist.length;i++) {
+                                if ( i===minind || skipinds.includes(i)) {
+                                    continue
+                                }
+                                if (dist[i]>0) {
+                                    if (dist[i]<marginy) {
+                                        if (Math.abs(positions_orig.y[minind]-positions_orig.y[i])>height) {
+                                            layers.children[i].y = layers.children[i].y + (marginy - dist[i])
+                                        }
+                                        else {
+                                            layers.children[i].y = layers.children[minind].y
+                                        }
+                                    }
+                                }
+                            }
+                            skipinds.push(minind)
+                        }
+                        // Arrange x margins for y groups
+                        skipinds = []
+                        positions_orig = getpositions()
+                        for(k=0;k<layers.children.length-1;k++) {
+                            positions = getpositions()
+                            for (i=0;i<skipinds.length;i++) {
+                                positions.x[skipinds[i]] = Infinity
+                            }
+                            minind = indexofmin(positions.x)
+                            minval = Math.min(...positions.x)
+                            dist = dif(positions.x,minval)
+
+                            for (i=0;i<dist.length;i++) {
+                                if ( i===minind || skipinds.includes(i)) {
+                                    continue
+                                }
+                                if (dist[i]>=0 && positions.y[minind]===positions.y[i]) {
+                                    layers.children[i].x = minval + marginx
+                                }
+                            }
+                            skipinds.push(minind)
+                        }
+                        var unique_y = getpositions().y.filter((x,i,a)=>a.indexOf(x)===i)
+                        positions = getpositions()
+                        var ind = indexOfMin(positions.y)
+                        var min_x = positions.x[ind]
+                        var buffer = 0
+                        unique_y = unique_y.sort((a,b)=>a-b)
+                        for (i=0;i<(unique_y.length-1);i++) {
+                            var value = unique_y[i+1]-unique_y[i]
+                            positions = getpositions()
+                            var inds = findindex(positions.y,unique_y[i+1])
+                            var array = []
+                            for (var j=0;j<inds.length;j++) {
+                                array.push(layers.children[inds[j]].x)
+                            }
+                            var dev = mean(array) - min_x
+                            for (j=0;j<inds.length;j++) {
+                                layers.children[inds[j]].x = layers.children[inds[j]].x - dev + width/2
+                            }
+                            if (value!==marginy){
+                                buffer = buffer + (marginy - value)
+                                for (j=0;j<inds.length;j++) {
+                                    layers.children[inds[j]].y = layers.children[inds[j]].y + buffer
+                                }
+                            }
+                        }
+                        updateMainPane(layers.children[0])
+                        updateConnections()
+                        gridLayout.forceActiveFocus()
                     }
                 }
             }
@@ -2464,9 +2471,9 @@ ApplicationWindow {
                         currentIndex: datastore.normalisation.ind
                         model: ListModel {
                            id: optionsModel
-                           ListElement { text: "[0,1]" } //@disable-check M16
-                           ListElement { text: "[-1,1]" } //@disable-check M16
-                           ListElement { text: "zero center" } //@disable-check M16
+                           ListElement { text: "[0,1]" }
+                           ListElement { text: "[-1,1]" }
+                           ListElement { text: "zero center" }
                         }
                         onActivated: {
                             unit.datastore.normalisation.text = currentText
@@ -2545,20 +2552,20 @@ ApplicationWindow {
                         currentIndex: datastore.loss.ind
                         model: ListModel {
                            id: optionsModel
-                           ListElement { text: "MAE" } //@disable-check M16
-                           ListElement { text: "MSE" } //@disable-check M16
-                           ListElement { text: "MSLE" } //@disable-check M16
-                           ListElement { text: "Huber" } //@disable-check M16
-                           ListElement { text: "Crossentropy" } //@disable-check M16
-                           ListElement { text: "Logit crossentropy" } //@disable-check M16
-                           ListElement { text: "Binary crossentropy" } //@disable-check M16
-                           ListElement { text: "Logit binary crossentropy" } //@disable-check M16
-                           ListElement { text: "Kullback-Leibler divergence" } //@disable-check M16
-                           ListElement { text: "Poisson" } //@disable-check M16
-                           ListElement { text: "Hinge" } //@disable-check M16
-                           ListElement { text: "Squared hinge" } //@disable-check M16
-                           ListElement { text: "Dice coefficient" } //@disable-check M16
-                           ListElement { text: "Tversky" } //@disable-check M16
+                           ListElement { text: "MAE" }
+                           ListElement { text: "MSE" }
+                           ListElement { text: "MSLE" }
+                           ListElement { text: "Huber" }
+                           ListElement { text: "Crossentropy" }
+                           ListElement { text: "Logit crossentropy" }
+                           ListElement { text: "Binary crossentropy" }
+                           ListElement { text: "Logit binary crossentropy" }
+                           ListElement { text: "Kullback-Leibler divergence" }
+                           ListElement { text: "Poisson" }
+                           ListElement { text: "Hinge" }
+                           ListElement { text: "Squared hinge" }
+                           ListElement { text: "Dice coefficient" }
+                           ListElement { text: "Tversky" }
                         }
                         onActivated: {
                             unit.datastore.loss.text = currentText
@@ -3621,8 +3628,8 @@ ApplicationWindow {
                         currentIndex: datastore.mode.ind
                         model: ListModel {
                            id: netModel
-                           ListElement { text: "Column major" } //@disable-check M16
-                           ListElement { text: "Row major" } //@disable-check M16
+                           ListElement { text: "Column major" }
+                           ListElement { text: "Row major" }
                         }
                         onActivated: {
                             unit.datastore.mode.text = currentText

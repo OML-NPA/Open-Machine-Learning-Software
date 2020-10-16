@@ -30,8 +30,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
-    Analysis.qml \
     AnalysisOptions.qml \
+    AnalysisView.qml \
     Controls/Button.qml \
     Controls/CheckBox.qml \
     Controls/ColorBox.qml \
@@ -48,6 +48,7 @@ DISTFILES += \
     FeatureDialog.qml \
     LocalTraining.qml \
     Main.qml \
+    MainView.qml \
     Options.qml \
     Plus.png \
     SelectNeuralNetwork.qml \
@@ -59,7 +60,6 @@ DISTFILES += \
     Templates/Label.qml \
     Templates/LayerButton.qml \
     Templates/MenuButton.qml \
-    Templates/Palette.qml \
     Templates/Pane.qml \
     Templates/ProgressBar.qml \
     Templates/ScrollBar.qml \
@@ -68,7 +68,7 @@ DISTFILES += \
     Templates/StopButton.qml \
     Templates/TextField.qml \
     Templates/TreeButton.qml \
-    Training.qml \
+    TrainingOptions.qml \
     TrainingPlot.qml \
-    board.qml \
+    TrainingView.qml \
     qtquickcontrols2.conf

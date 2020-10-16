@@ -83,8 +83,6 @@ function getnorm(type::AbstractString,d,in_size::Tuple)
     end
 end
 
-
-
 function getactivation(type::AbstractString,d,in_size::Tuple)
     if type=="RelU"
         return Activation(x->relu(x))
@@ -211,15 +209,6 @@ function getbranch(layers,in_size,inds_cat,inds_cat_in,ind_output,inds)
     return (branch,inds_out,inds,in_size)
 end
 
-function allcmp(inds)
-    for i = 1:length(inds)
-        if inds[1][1]!=inds[i][1]
-            return false
-        end
-    end
-    return true
-end
-
 function makemodel(layers)
     layers_names = []
     model_layers = []
@@ -249,4 +238,13 @@ function makemodel(layers)
         model_layers = model_layers[1]
     end
     return model_layers
+end
+
+function allcmp(inds)
+    for i = 1:length(inds)
+        if inds[1][1]!=inds[i][1]
+            return false
+        end
+    end
+    return true
 end

@@ -58,7 +58,7 @@ T.CheckBox {
 
         text: control.text
         font.family: control.font.family
-        font.pointSize: 9
+        font.pointSize: 10
         color: control.palette.windowText
     }
 }

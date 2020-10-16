@@ -1,4 +1,3 @@
-
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.2
@@ -7,109 +6,85 @@ import Qt.labs.platform 1.1
 import "Templates"
 import org.julialang 1.0
 
-
-ApplicationWindow {
-    id: window
-    visible: true
-    title: qsTr("Image Analysis Software")
-    minimumWidth: gridLayout.width
-    minimumHeight: gridLayout.height
-    maximumWidth: gridLayout.width
-    maximumHeight: gridLayout.height
-
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: defaultpalette.window
-
-    property double margin: 0.02*Screen.width
-    property double pix: Screen.width/3840
-    property double buttonWidth: 0.1*Screen.width
-    property double buttonHeight: 0.03*Screen.height
-    property color defaultcolor: systempalette.window
-
-    property bool terminate: false
-
-    property var colors: [[0,255,0],[255,0,0],[0,0,255],[255,255,0],[255,0,255]]
-    property string colorR: "0"
-    property string colorG: "0"
-    property string colorB: "0"
-    property int indTree: 0
-    property var model: []
-    property var model_name: "model"
-
-    property string dialogtarget
-
-    onClosing: { trainingLoader.sourceComponent = null }
-
-    FolderDialog {
-            id: folderDialog
-            currentFolder: currentfolder
-            options: FolderDialog.ShowDirsOnly
-            onAccepted: {
-                var dir = folder.toString().replace("file:///","")
-                updateButton.visible = true
-                var count = featureModel.count
-                for (var i=0;i<count;i++) {
-                    featureModel.remove(0)
-                }
-                if (dialogtarget=="Images") {
-                    imagesTextField.text = dir
-                }
-                else if (dialogtarget=="Labels") {
-                    labelsTextField.text = dir
-                }
-            }
-
-    }
-    FileDialog {
-            id: fileDialog
-            nameFilters: [ "*.json"]
-            onAccepted: {
-                var url = file.toString().replace("file:///","")
-                model.length = 0
-                state = Julia.load_model(url)
-                var skipStringing = ["x","y"]
-                if (state!==null) {
-                    neuralnetworkTextField.text = url
-                    var count = Julia.model_count()
-                    for (var i=0;i<count;i++) {
-                        var indJ = i+1
-                        var unit = {}
-                        var properties = Julia.model_properties(indJ)
-                        for (var j=0;j<properties.length;j++) {
-                            var prop_name = properties[j]
-                            var prop = Julia.model_get_property(indJ,prop_name)
-                            if (typeof(prop)==='object' && prop.length===2) {
-                                if (typeof(prop[0])==='string' && typeof(prop[1])==='number') {
-                                   unit[prop_name] = {"text": prop[0],"ind": prop[1]}
-                                }
-                                else {
-                                    unit[prop_name] = prop
-                                }
-                            }
-                            else {
-                                if (skipStringing.includes(prop_name) || typeof(prop)==='object') {
-                                    unit[prop_name] = prop
-                                }
-                                else {
-                                    unit[prop_name] = prop.toString()
-                                }
-                            }
-                        }
-                        console.log(JSON.stringify(unit))
-                        model.push(unit)
-                    }
-                }
-            }
-
-    }
-
-    Loader { id: featuredialogLoader}
-    Loader { id: trainingoptionsLoader}
-    Loader { id: customizationLoader}
-    Loader { id: trainingplotLoader}
-
+Component {
     GridLayout {
         id: gridLayout
+        property var colors: [[0,255,0],[255,0,0],[0,0,255],[255,255,0],[255,0,255]]
+        property string colorR: "0"
+        property string colorG: "0"
+        property string colorB: "0"
+        property int indTree: 0
+        property var model: []
+        property var model_name: "model"
+
+        property string dialogtarget
+
+        Loader { id: featuredialogLoader}
+        Loader { id: trainingoptionsLoader}
+        Loader { id: customizationLoader}
+        Loader { id: trainingplotLoader}
+
+        FolderDialog {
+                id: folderDialog
+                currentFolder: currentfolder
+                options: FolderDialog.ShowDirsOnly
+                onAccepted: {
+                    var dir = folder.toString().replace("file:///","")
+                    updateButton.visible = true
+                    var count = featureModel.count
+                    for (var i=0;i<count;i++) {
+                        featureModel.remove(0)
+                    }
+                    if (dialogtarget=="Images") {
+                        imagesTextField.text = dir
+                    }
+                    else if (dialogtarget=="Labels") {
+                        labelsTextField.text = dir
+                    }
+                }
+        }
+        FileDialog {
+                id: fileDialog
+                nameFilters: [ "*.json"]
+                onAccepted: {
+                    var url = file.toString().replace("file:///","")
+                    model.length = 0
+                    state = Julia.load_model(url)
+                    var skipStringing = ["x","y"]
+                    if (state!==null) {
+                        neuralnetworkTextField.text = url
+                        var count = Julia.model_count()
+                        for (var i=0;i<count;i++) {
+                            var indJ = i+1
+                            var unit = {}
+                            var properties = Julia.model_properties(indJ)
+                            for (var j=0;j<properties.length;j++) {
+                                var prop_name = properties[j]
+                                var prop = Julia.model_get_property(indJ,prop_name)
+                                if (typeof(prop)==='object' && prop.length===2) {
+                                    if (typeof(prop[0])==='string' && typeof(prop[1])==='number') {
+                                       unit[prop_name] = {"text": prop[0],"ind": prop[1]}
+                                    }
+                                    else {
+                                        unit[prop_name] = prop
+                                    }
+                                }
+                                else {
+                                    if (skipStringing.includes(prop_name) || typeof(prop)==='object') {
+                                        unit[prop_name] = prop
+                                    }
+                                    else {
+                                        unit[prop_name] = prop.toString()
+                                    }
+                                }
+                            }
+                            console.log(JSON.stringify(unit))
+                            model.push(unit)
+                        }
+                    }
+                }
+        }
+
         ColumnLayout {
             Layout.margins: margin
             spacing: 0.7*margin
@@ -218,7 +193,6 @@ ApplicationWindow {
                             clip: true
                             anchors.fill: parent
                             padding: 0
-                            //topPadding: 0.01*margin
                             spacing: 0
                             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                             Flickable {
@@ -239,7 +213,7 @@ ApplicationWindow {
                                         onClicked: {
                                             if (imagesTextField.text!=="" && labelsTextField.text!=="") {
                                                 Julia.get_urls_imgs_labels(imagesTextField.text,
-                                                    labelsTextField.text)
+                                                    labelsTextField.text,"segmentation")
                                                 var colors = Julia.get_labels_colors()
                                                 for (var i=0;i<colors.length;i++) {
                                                     featureModel.append({
@@ -341,24 +315,6 @@ ApplicationWindow {
                     }
                 }
             }
-
         }
-
     }
-//---FUNCTIONS----------------------------------------------------------
-
-    function rgbtohtml(colorRGB) {
-        return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
-    }
-
 }
-
-
-
-
-
-
-
-
-
-

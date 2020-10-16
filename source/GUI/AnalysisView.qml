@@ -9,52 +9,38 @@ import Qt.labs.folderlistmodel 2.15
 import "Templates"
 //import org.julialang 1.0
 
-
-ApplicationWindow {
-    id: window
-    visible: true
-    title: qsTr("Image Analysis Software")
-    minimumWidth: gridLayout.width
-    minimumHeight: gridLayout.height
-    maximumWidth: gridLayout.width
-    maximumHeight: gridLayout.height
-
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
-    color: defaultpalette.window
-
-    property double margin: 0.02*Screen.width
-    property double pix: Screen.width/3840
-    property double buttonWidth: 0.1*Screen.width
-    property double buttonHeight: 0.03*Screen.height
-
-    property bool optionsOpen: false
-    property bool localtrainingOpen: false
-
-    property string currentfolder: Qt.resolvedUrl(".")
-
-    onClosing: { analysisLoader.sourceComponent = undefined }
-
-    FolderListModel {
-            id: folderModel
-            showFiles: false
-            folder: currentfolder
-        }
-    FolderDialog {
-            id: folderDialog
-            currentFolder: currentfolder
-            onAccepted: {
-                updatefolder(folderDialog.folder)
-                Julia.returnfolder()
-            }
-    }
-
-    Loader { id: analysisoptionsLoader }
-    Loader { id: selectneuralnetworkLoader }
-
-    GridLayout {
+Component {
+    ColumnLayout {
         id: gridLayout
+        property double margin: 0.02*Screen.width
+        property double pix: Screen.width/3840
+        property double buttonWidth: 0.1*Screen.width
+        property double buttonHeight: 0.03*Screen.height
+
+        property bool optionsOpen: false
+        property bool localtrainingOpen: false
+
+        property string currentfolder: Qt.resolvedUrl(".")
+
+        FolderListModel {
+                id: folderModel
+                showFiles: false
+                folder: currentfolder
+            }
+        FolderDialog {
+                id: folderDialog
+                currentFolder: currentfolder
+                onAccepted: {
+                    updatefolder(folderDialog.folder)
+                    Julia.returnfolder()
+                }
+        }
+
+        Loader { id: analysisoptionsLoader }
+        Loader { id: selectneuralnetworkLoader }
         RowLayout {
             id: rowLayout
+            Layout.alignment: Qt.AlignHCenter
             spacing: margin
             Layout.margins: margin
             Column {
@@ -119,7 +105,7 @@ ApplicationWindow {
                             background: Rectangle {
                                 anchors.fill: parent.fill
                                 color: defaultpalette.window
-                                border.color: systempalette.dark
+                                border.color: defaultcolors.dark
                                 border.width: 2
                             }
                         }
@@ -128,7 +114,7 @@ ApplicationWindow {
                             Layout.column: 2
                             height: 0.2*Screen.height
                             width: buttonWidth + 0.5*margin
-                            backgroundColor: systempalette.light
+                            backgroundColor: defaultcolors.light
                             ScrollView {
                                 clip: true
                                 anchors.fill: parent
@@ -174,19 +160,18 @@ ApplicationWindow {
                             background: Rectangle {
                                 anchors.fill: parent.fill
                                 color: defaultpalette.window
-                                border.color: systempalette.dark
+                                border.color: defaultcolors.dark
                                 border.width: 2
                             }
                         }
                         Frame {
                             height: 0.2*Screen.height
                             width: buttonWidth + 0.5*margin
-                            backgroundColor: systempalette.light
+                            backgroundColor: defaultcolors.light
                             ScrollView {
                                 clip: true
                                 anchors.fill: parent
                                 padding: 0
-                                //topPadding: 0.01*margin
                                 spacing: 0
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                                 ListView {
@@ -194,18 +179,7 @@ ApplicationWindow {
                                     height: childrenRect.height
                                     spacing: 0
                                     boundsBehavior: Flickable.StopAtBounds
-                                    model: ListModel {id: featureModel
-                                                      ListElement{
-                                                          name: "Yeast cell" // @disable-check M16
-                                                          colorR: 0 // @disable-check M16
-                                                          colorG: 255 // @disable-check M16
-                                                          colorB: 0} // @disable-check M16
-                                                      ListElement{
-                                                          name: "Vacuole" // @disable-check M16
-                                                          colorR: 255 // @disable-check M16
-                                                          colorG: 0 // @disable-check M16
-                                                          colorB: 0} // @disable-check M16
-                                                    }
+                                    model: ListModel {id: featureModel}
                                     delegate: Rectangle {
                                         width: buttonWidth + 0.5*margin-4
                                         height: buttonHeight-2
@@ -236,56 +210,42 @@ ApplicationWindow {
                     }
                 }
             }
-            ColumnLayout {
-                spacing: 0.4*margin
-                id: columnLayout
-                Button {
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.row: 2
-                    Layout.column: 1
-                    text: "Options"
-                    Layout.preferredWidth: buttonWidth
-                    Layout.preferredHeight: buttonHeight
-                    onClicked: {
-                           if (analysisoptionsLoader.sourceComponent === null) {
-                               analysisoptionsLoader.source = "AnalysisOptions.qml"
+        }
+        ColumnLayout {
+            id: columnLayout
+            spacing: 0.4*margin
+            Layout.alignment: Qt.AlignHCenter
+            Button {
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                Layout.row: 2
+                Layout.column: 1
+                text: "Options"
+                Layout.preferredWidth: buttonWidth
+                Layout.preferredHeight: buttonHeight
+                onClicked: {
+                       if (analysisoptionsLoader.sourceComponent === null) {
+                           analysisoptionsLoader.source = "AnalysisOptions.qml"
 
-                           }
-                    }
-                }
-                Button {
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.row: 2
-                    Layout.column: 1
-                    text: "Start analysis"
-                    Layout.preferredWidth: buttonWidth
-                    Layout.preferredHeight: buttonHeight
-                }
-                ProgressBar {
-                    id: progressbar
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.row: 2
-                    Layout.column: 2
-                    value: 0
-                    Layout.preferredWidth: buttonWidth
-                    Layout.preferredHeight: buttonHeight/2
+                       }
                 }
             }
-
-
+            Button {
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                Layout.row: 2
+                Layout.column: 1
+                text: "Start analysis"
+                Layout.preferredWidth: buttonWidth
+                Layout.preferredHeight: buttonHeight
+            }
+            ProgressBar {
+                id: progressbar
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                Layout.row: 2
+                Layout.column: 2
+                value: 0
+                Layout.preferredWidth: buttonWidth
+                Layout.preferredHeight: buttonHeight/2
+            }
         }
     }
-//---FUNCTIONS----------------------------------------------------------
-
-    function updatefolder(path) {
-        currentfolder = path
-        folderModel.folder = currentfolder
-        folderView.model = folderModel
-        Julia.browsefolder(folderDialog.folder)
-    }
-
-    function rgbtohtml(colorRGB) {
-        return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
-    }
-
 }

@@ -64,8 +64,9 @@ ApplicationWindow {
                             {"name": "Mother/daugther assignment", "stackview": motherdaugtherassignmentView}]
                         delegate : MenuButton {
                             id: general
-                            width: 1.3*buttonWidth
-                            height: buttonHeight
+                            width: 1.5*buttonWidth
+                            height: 1.3*buttonHeight
+                            font_size: 11
                             onClicked: {
                                 stack.push(modelData.stackview);
                                 for (var i=0;i<(menubuttonRepeater.count);i++) {
@@ -233,26 +234,6 @@ ApplicationWindow {
                                 Label {
                                     text: "pixels per µm"
                                     bottomPadding: 0.05*margin
-                                }
-                            }
-                            RowLayout {
-                                spacing: 0.3*margin
-                                Label {
-                                    text: "Neural Network:"
-                                    bottomPadding: 0.05*margin
-                                }
-                                ComboBox {
-                                    editable: false
-                                    Layout.preferredWidth: 0.9*buttonWidth
-                                    model: ListModel {
-                                        id: netModel
-                                        ListElement { text: "defaultNetE5D4Yeast" }
-                                    }
-                                }
-                                Button {
-                                    Layout.preferredWidth: buttonWidth/2
-                                    Layout.preferredHeight: buttonHeight
-                                    text: "Browse"
                                 }
                             }
                         }

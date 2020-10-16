@@ -39,7 +39,7 @@ T.ComboBox {
         validator: control.validator
 
         font.family: control.font.family
-        font.pointSize: 9
+        font.pointSize: 10
         color: control.editable ? control.palette.text : control.palette.buttonText
         selectionColor: control.palette.highlight
         selectedTextColor: control.palette.highlightedText

@@ -41,8 +41,8 @@ T.TextField {
         height: control.height - (control.topPadding + control.bottomPadding)
 
         text: control.placeholderText
-        font.family: control.font.family
-        font.pointSize: 9
+        font.family: "Proxima Nova"//control.font.family
+        font.pointSize: 10
         color: control.placeholderTextColor
         verticalAlignment: control.verticalAlignment
         visible: !control.length && !control.preeditText && (!control.activeFocus || control.horizontalAlignment !== Qt.AlignHCenter)
