@@ -86,20 +86,19 @@ Component {
         }
 
         ColumnLayout {
-            Layout.margins: margin
             spacing: 0.7*margin
             ColumnLayout {
                 spacing: 0.5*margin
                 RowLayout {
                     spacing: 0.3*margin
                     Label {
-                        text: "Neural Network \ntemplate:"
+                        text: "Template:"
                         bottomPadding: 0.05*margin
-                        Layout.preferredWidth: 0.55*buttonWidth
+                        Layout.preferredWidth: 0.38*buttonWidth
                     }
                     TextField {
                         id: neuralnetworkTextField
-                        Layout.preferredWidth: 1.4*buttonWidth
+                        Layout.preferredWidth: 1.55*buttonWidth
                         Layout.preferredHeight: buttonHeight
                     }
                     Button {
@@ -117,11 +116,11 @@ Component {
                     Label {
                         text: "Images:"
                         bottomPadding: 0.05*margin
-                        Layout.preferredWidth: 0.55*buttonWidth
+                        Layout.preferredWidth: 0.38*buttonWidth
                     }
                     TextField {
                         id: imagesTextField
-                        Layout.preferredWidth: 1.4*buttonWidth
+                        Layout.preferredWidth: 1.55*buttonWidth
                         Layout.preferredHeight: buttonHeight
                     }
                     Button {
@@ -139,11 +138,11 @@ Component {
                     Label {
                         text: "Labels:"
                         bottomPadding: 0.05*margin
-                        Layout.preferredWidth: 0.55*buttonWidth
+                        Layout.preferredWidth: 0.38*buttonWidth
                     }
                     TextField {
                         id: labelsTextField
-                        Layout.preferredWidth: 1.4*buttonWidth
+                        Layout.preferredWidth: 1.55*buttonWidth
                         Layout.preferredHeight: buttonHeight
                     }
                     Button {
@@ -161,15 +160,16 @@ Component {
                     Label {
                         text: "Name:"
                         bottomPadding: 0.05*margin
-                        Layout.preferredWidth: 0.55*buttonWidth
+                        Layout.preferredWidth: 0.38*buttonWidth
                     }
                     TextField {
-                        Layout.preferredWidth: 1.4*buttonWidth
+                        Layout.preferredWidth: 1.55*buttonWidth
                         Layout.preferredHeight: buttonHeight
                     }
                 }
             }
             RowLayout {
+                Layout.alignment: Qt.AlignHCenter
                 spacing:1.75*margin
                 Column {
                     spacing: -2
@@ -188,7 +188,7 @@ Component {
                     Frame {
                         height: 0.2*Screen.height
                         width: buttonWidth + 0.5*margin
-                        backgroundColor: defaultpalette.listview
+                        backgroundColor: "white"
                         ScrollView {
                             clip: true
                             anchors.fill: parent

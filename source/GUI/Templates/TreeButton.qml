@@ -38,7 +38,7 @@ T.Button {
     background: Rectangle {
         anchors.fill: parent.fill
         visible: !control.flat || control.down || control.checked || control.highlighted
-        color: defaultcolors.light
+        color: "white"
         border.color: control.palette.dark
         border.width: (Screen.width/3840)*(control.visualFocus ? 4 : 0)
     }

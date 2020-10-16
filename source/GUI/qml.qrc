@@ -32,5 +32,7 @@
         <file>VisualisationView.qml</file>
         <file>AnalysisOptions.qml</file>
         <file>MainView.qml</file>
+        <file>MenuButtonH.qml</file>
+        <file>Templates/NewsPanel.qml</file>
     </qresource>
 </RCC>

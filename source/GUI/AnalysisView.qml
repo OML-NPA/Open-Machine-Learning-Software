@@ -12,11 +12,6 @@ import "Templates"
 Component {
     ColumnLayout {
         id: gridLayout
-        property double margin: 0.02*Screen.width
-        property double pix: Screen.width/3840
-        property double buttonWidth: 0.1*Screen.width
-        property double buttonHeight: 0.03*Screen.height
-
         property bool optionsOpen: false
         property bool localtrainingOpen: false
 
@@ -42,7 +37,6 @@ Component {
             id: rowLayout
             Layout.alignment: Qt.AlignHCenter
             spacing: margin
-            Layout.margins: margin
             Column {
                 spacing: 0.3*margin
                 RowLayout {
@@ -114,7 +108,7 @@ Component {
                             Layout.column: 2
                             height: 0.2*Screen.height
                             width: buttonWidth + 0.5*margin
-                            backgroundColor: defaultcolors.light
+                            backgroundColor: "white"
                             ScrollView {
                                 clip: true
                                 anchors.fill: parent
@@ -214,6 +208,7 @@ Component {
         ColumnLayout {
             id: columnLayout
             spacing: 0.4*margin
+            Layout.topMargin: margin
             Layout.alignment: Qt.AlignHCenter
             Button {
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter

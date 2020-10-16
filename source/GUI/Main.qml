@@ -12,7 +12,7 @@ import "Templates"
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("Image Analysis Software")
+    title: qsTr("  Deep Data Analysis Software v.0.1")
     minimumWidth: 1670*pix
     minimumHeight: 1200*pix
 
@@ -39,7 +39,7 @@ ApplicationWindow {
                                   "controlbase": defaultcolors.light,
                                   "controlborder": defaultcolors.middark2,
                                   "border": defaultcolors.dark2,
-                                  "listview": "white"
+                                  "listview": defaultcolors.light
                                   }
 
     property string currentfolder: Qt.resolvedUrl(".")
@@ -47,6 +47,7 @@ ApplicationWindow {
         width: window.width
         height: buttonHeight
         color: menuPane.backgroundColor
+
     }
 
     GridLayout {
@@ -75,9 +76,12 @@ ApplicationWindow {
                         delegate : MenuButton {
                             id: general
                             width: 1.3*buttonWidth
-                            height: 1.3*buttonHeight
+                            height: 1.5*buttonHeight
                             font_size: 13
                             onClicked: {
+                                if (window.header.children[0]!==undefined) {
+                                    window.header.children[0].destroy()
+                                }
                                 stack.push(modelData.stackview);
                                 for (var i=0;i<(menubuttonRepeater.count);i++) {
                                     menubuttonRepeater.itemAt(i).buttonfocus = false
@@ -92,6 +96,7 @@ ApplicationWindow {
             }
             ColumnLayout {
                 id: columnLayout
+                Layout.margins: margin
                 StackView {
                     id: stack
                     initialItem: mainView

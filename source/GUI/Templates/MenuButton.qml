@@ -13,6 +13,7 @@ T.Button {
     property double tabmargin: 0.5*margin
     property double font_size: 9
     property bool buttonfocus: false
+    property bool horizontal: false
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             implicitContentWidth + leftPadding + rightPadding)
@@ -28,20 +29,34 @@ T.Button {
     icon.color: control.checked || control.highlighted ? control.palette.brightText :
                 control.flat && !control.down ? (control.visualFocus ? control.palette.highlight : control.palette.windowText) : control.palette.buttonText
 
+    FontMetrics {
+        id: fontMetrics
+        font.family: "Proxima Nova"
+    }
+
     contentItem: IconLabel {
         spacing: control.spacing
         mirrored: control.mirrored
         display: control.display
 
         icon: control.icon
-        Text {
+        Label {
+            id: textText
             text: control.text
-            anchors.fill: parent
             font.family: "Proxima Nova"//control.font.family
             font.pointSize: font_size
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignLeft
-            leftPadding: tabmargin
+            leftPadding: horizontal ? 0 : tabmargin
+            Component.onCompleted: {
+                if (horizontal) {
+                    var text_width = fontMetrics.advanceWidth(text)
+                    x = (control.width - text_width)/2 - 0.22*text_width
+                }
+                else {
+                    anchors.fill = parent
+                }
+            }
         }
 
 
@@ -53,23 +68,25 @@ T.Button {
         anchors.fill: parent.fill
         visible: !control.flat || control.down || control.checked || control.highlighted
         color: control.pressed ? defaultpalette.buttonpressed :
-               control.hovered && !control.buttonfocus ? defaultcolors.midlight3:
+               control.hovered && !control.buttonfocus ? defaultcolors.midlight2:
                control.buttonfocus ? defaultpalette.window: defaultpalette.window2
         border.color: control.palette.dark
         border.width: 0
         Rectangle {
-                y: -1*pix
+                y: horizontal ? 0 : -1*pix
+                x: horizontal ? -1*pix : 0
                 border.color: defaultcolors.dark2
                 border.width: 4*pix
-                width: control.width
-                height: 2*pix
+                width: horizontal ? 2*pix : control.width
+                height: horizontal ? control.height : 2*pix
         }
         Rectangle {
-                y: control.height
+                y: horizontal ? 0 : control.height
+                x: horizontal ? control.width : 0
                 border.color: defaultcolors.dark2
                 border.width: 4*pix
-                width: control.width
-                height: 2*pix
+                width: horizontal ? 2*pix : control.width
+                height: horizontal ? control.height : 2*pix
         }
     }
 }

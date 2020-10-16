@@ -11,7 +11,7 @@ import "Templates"
 import org.julialang 1.0
 
 ApplicationWindow {
-    id: window
+    id: customizationWindow
     visible: true
     title: qsTr("Image Analysis Software")
     minimumWidth: 2200*pix
@@ -27,12 +27,13 @@ ApplicationWindow {
     property double defaultWidth: buttonWidth*5/2
     property double defaultHeight: buttonHeight*20
 
-    property double paneHeight: window.height - header.height - 4*pix
-    property double paneWidth: window.width-leftFrame.width-rightFrame.width-4*pix
+    property double paneHeight: customizationWindow.height - 4*pix
+    property double paneWidth: customizationWindow.width-leftFrame.width-rightFrame.width-4*pix
 
     property bool optionsOpen: false
     property bool localtrainingOpen: false
     property var architecture
+    property double iconSize: 70*pix
 
 
     onClosing: { customizationLoader.sourceComponent = undefined }
@@ -210,7 +211,7 @@ ApplicationWindow {
             spacing: 0
             Frame {
                 id: leftFrame
-                height: window.height - header.height + 1
+                height: customizationWindow.height + 1
                 width: 500*pix + 1
                 padding:0
                 Item {
@@ -219,7 +220,7 @@ ApplicationWindow {
                         id: layersLabel
                         width: leftFrame.width
                         text: "Layers:"
-                        font.pointSize: 10
+                        font.pointSize: 12
                         padding: 0.2*margin
                         leftPadding: 0.2*margin
                         background: Rectangle {
@@ -232,26 +233,26 @@ ApplicationWindow {
                     Frame {
                         id: layersFrame
                         y: layersLabel.height -2*pix
-                        height: 0.6*(window.height - header.height - 2*layersLabel.height)
+                        height: 0.6*(customizationWindow.height - 2*layersLabel.height)
                         width: leftFrame.width
                         padding: 0
                         backgroundColor: defaultpalette.listview
                         ScrollableItem {
                             y: 2*pix
                             id: layersFlickable
-                            height: 0.6*(window.height - header.height - 2*layersLabel.height)-4*pix
+                            height: 0.6*(customizationWindow.height - 2*layersLabel.height)-4*pix
                             width: leftFrame.width-2*pix
                             contentHeight: 1.25*buttonHeight*(inoutlayerView.count + linearlayerView.count +
                                 normlayerView.count + activationlayerView.count + poolinglayerView.count +
-                                resizinglayerView.count) + 6*0.75*buttonHeight
+                                resizinglayerView.count) + 6*0.9*buttonHeight
                             ScrollBar.horizontal.visible: false
                             Item {
                                 id: layersRow
                                 Label {
                                     id: inoutLabel
                                     width: leftFrame.width-4*pix
-                                    height: 0.75*buttonHeight
-                                    font.pointSize: 10
+                                    height: 0.9*buttonHeight
+                                    font.pointSize: 12
                                     color: "#777777"
                                     topPadding: 0.10*linearLabel.height
                                     text: "Input and output layers"
@@ -261,7 +262,7 @@ ApplicationWindow {
                                         x: 2*pix
                                         color: defaultpalette.window
                                         width: leftFrame.width-4*pix
-                                        height: 0.75*buttonHeight
+                                        height: 0.9*buttonHeight
                                     }
                                 }
                                 ListView {
@@ -295,9 +296,9 @@ ApplicationWindow {
                                 Label {
                                     id: linearLabel
                                     width: leftFrame.width-4*pix
-                                    height: 0.75*buttonHeight
+                                    height: 0.9*buttonHeight
                                     anchors.top: inoutlayerView.bottom
-                                    font.pointSize: 10
+                                    font.pointSize: 12
                                     color: "#777777"
                                     topPadding: 0.10*linearLabel.height
                                     text: "Linear layers"
@@ -307,7 +308,7 @@ ApplicationWindow {
                                         x: 2*pix
                                         color: defaultpalette.window
                                         width: leftFrame.width-4*pix
-                                        height: 0.75*buttonHeight
+                                        height: 0.9*buttonHeight
                                     }
                                 }
                                 ListView {
@@ -351,8 +352,8 @@ ApplicationWindow {
                                     id: normLabel
                                     anchors.top: linearlayerView.bottom
                                     width: leftFrame.width-4*pix
-                                    height: 0.75*buttonHeight
-                                    font.pointSize: 10
+                                    height: 0.9*buttonHeight
+                                    font.pointSize: 12
                                     color: "#777777"
                                     topPadding: 0.10*activationLabel.height
                                     text: "Normalisation layers"
@@ -362,7 +363,7 @@ ApplicationWindow {
                                         x: 2*pix
                                         color: defaultpalette.window
                                         width: leftFrame.width-4*pix
-                                        height: 0.75*buttonHeight
+                                        height: 0.9*buttonHeight
                                     }
                                 }
                                 ListView {
@@ -397,8 +398,8 @@ ApplicationWindow {
                                     id: activationLabel
                                     anchors.top: normlayerView.bottom
                                     width: leftFrame.width-4*pix
-                                    height: 0.75*buttonHeight
-                                    font.pointSize: 10
+                                    height: 0.9*buttonHeight
+                                    font.pointSize: 12
                                     color: "#777777"
                                     topPadding: 0.10*activationLabel.height
                                     text: "Activation layers"
@@ -408,7 +409,7 @@ ApplicationWindow {
                                         x: 2*pix
                                         color: defaultpalette.window
                                         width: leftFrame.width-4*pix
-                                        height: 0.75*buttonHeight
+                                        height: 0.9*buttonHeight
                                     }
                                 }
                                 ListView {
@@ -470,8 +471,8 @@ ApplicationWindow {
                                     id: poolingLabel
                                     anchors.top: activationlayerView.bottom
                                     width: leftFrame.width-4*pix
-                                    height: 0.75*buttonHeight
-                                    font.pointSize: 10
+                                    height: 0.9*buttonHeight
+                                    font.pointSize: 12
                                     color: "#777777"
                                     topPadding: 0.10*poolingLabel.height
                                     text: "Pooling layers"
@@ -481,7 +482,7 @@ ApplicationWindow {
                                         x: 2*pix
                                         color: defaultpalette.window
                                         width: leftFrame.width-4*pix
-                                        height: 0.75*buttonHeight
+                                        height: 0.9*buttonHeight
                                     }
                                 }
                                 ListView {
@@ -517,8 +518,8 @@ ApplicationWindow {
                                     id: resizingLabel
                                     anchors.top: poolinglayerView.bottom
                                     width: leftFrame.width-4*pix
-                                    height: 0.75*buttonHeight
-                                    font.pointSize: 10
+                                    height: 0.9*buttonHeight
+                                    font.pointSize: 12
                                     color: "#777777"
                                     topPadding: 0.10*activationLabel.height
                                     text: "Resizing layers"
@@ -528,7 +529,7 @@ ApplicationWindow {
                                         x: 2*pix
                                         color: defaultpalette.window
                                         width: leftFrame.width-4*pix
-                                        height: 0.75*buttonHeight
+                                        height: 0.9*buttonHeight
                                     }
                                 }
                                 ListView {
@@ -597,7 +598,7 @@ ApplicationWindow {
                         id: layergroupsLabel
                         width: leftFrame.width
                         text: "Layer groups:"
-                        font.pointSize: 10
+                        font.pointSize: 12
                         padding: 0.2*margin
                         leftPadding: 0.2*margin
                         background: Rectangle {
@@ -609,7 +610,7 @@ ApplicationWindow {
                     }
                     Frame {
                         y: layergroupsLabel.height - 2*pix
-                        height: 0.4*(window.height - header.height - 2*layergroupsLabel.height)+4*pix
+                        height: 0.4*(customizationWindow.height - 2*layergroupsLabel.height)+4*pix
                         width: leftFrame.width
                         padding: 0
                         backgroundColor: defaultpalette.listview
@@ -617,7 +618,7 @@ ApplicationWindow {
                         ScrollableItem {
                             clip: true
                             y: 2*pix
-                            height: 0.4*(window.height - header.height - 2*layergroupsLabel.height)
+                            height: 0.4*(customizationWindow.height - 2*layergroupsLabel.height)
                             width: leftFrame.width-2*pix
                             contentHeight: 1.25*buttonHeight*(defaultgroupsView.count)
                                            +0.75*buttonHeight
@@ -627,8 +628,8 @@ ApplicationWindow {
                                 Label {
                                     id: defaultLabel
                                     width: leftFrame.width-4*pix
-                                    height: 0.75*buttonHeight
-                                    font.pointSize: 10
+                                    height: 0.9*buttonHeight
+                                    font.pointSize: 12
                                     color: "#777777"
                                     topPadding: 0.10*defaultLabel.height
                                     text: "Default layer groups"
@@ -638,7 +639,7 @@ ApplicationWindow {
                                         x: 2*pix
                                         color: defaultpalette.window
                                         width: leftFrame.width-4*pix
-                                        height: 0.75*buttonHeight
+                                        height: 0.9*buttonHeight
                                     }
                                 }
                                 ListView {
@@ -681,8 +682,8 @@ ApplicationWindow {
             }
             Frame {
                 id: mainFrame
-                width : window.width-leftFrame.width-rightFrame.width
-                height : window.height - header.height
+                width : customizationWindow.width-leftFrame.width-rightFrame.width
+                height : customizationWindow.height
                 padding: 2*pix
                 antialiasing: true
                 layer.enabled: true
@@ -826,43 +827,61 @@ ApplicationWindow {
                 }
                 Button {
                     id: saveButton
-                    width: 80*pix
-                    height: 80*pix
+                    x: mainFrame.width-iconSize*1.5
+                    y: iconSize*0.5
+                    width: iconSize
+                    height: iconSize
                     background: Image {
                         source: "Icons/saveIcon.png"
                         fillMode: Image.PreserveAspectFit
                     }
+                    Component.onCompleted: {
+                        customToolTip.createObject(saveButton,
+                           {"parent": saveButton,
+                           text: "Save"})
+                    }
                     onPressed: {opacity = 0.5}
-                    onReleased: {opacity = 1}
                     onClicked: {
                        getarchitecture()
                        gridLayout.forceActiveFocus()
                        Julia.save_model(model_name)
+                       opacity = 1
                     }
-                    x: mainFrame.width-110*pix
-                    y: 30*pix
                 }
                 Button {
                     id: optionsButton
-                    x: mainFrame.width-110*pix
-                    y: 140*pix
-                    width: 80*pix
-                    height: 80*pix
+                    x: mainFrame.width-iconSize*1.5
+                    y: iconSize*0.5 + 1.25*iconSize
+                    width: iconSize
+                    height: iconSize
+                    Component.onCompleted: {
+                        customToolTip.createObject(optionsButton,
+                           {"parent": optionsButton,
+                           text: "Options"})
+                    }
                     background: Image {
                         source: "Icons/optionsIcon.png"
                         fillMode: Image.PreserveAspectFit
                     }
                     onPressed: {opacity = 0.5}
-                    onReleased: {opacity = 1}
+                    onClicked: {opacity = 1}
                 }
                 Button {
                     id: arrangeButton
-                    x: mainFrame.width-110*pix
-                    y: 250*pix
-                    width: 80*pix
-                    height: 80*pix
+                    x: mainFrame.width-iconSize*1.5
+                    y: iconSize*0.5 + 2*1.25*iconSize
+                    width: iconSize
+                    height: iconSize
+                    Component.onCompleted: {
+                        customToolTip.createObject(arrangeButton,
+                           {"parent": arrangeButton,
+                           text: "Arrange"})
+                    }
+                    background: Image {
+                        source: "Icons/arrangeIcon.png"
+                        fillMode: Image.PreserveAspectFit
+                    }
                     onPressed: {opacity = 0.5}
-                    onReleased: {opacity = 1}
                     onClicked: {
                         if (layers.children.length===0) {
                             return
@@ -958,12 +977,13 @@ ApplicationWindow {
                         updateMainPane(layers.children[0])
                         updateConnections()
                         gridLayout.forceActiveFocus()
+                        opacity = 1
                     }
                 }
             }
             Frame {
                 id: rightFrame
-                height: window.height
+                height: customizationWindow.height
                 width: 500*pix
                 padding:0
                 Item {
@@ -972,7 +992,7 @@ ApplicationWindow {
                         id: propertiesLabel
                         width: rightFrame.width
                         text: "Properties:"
-                        font.pointSize: 10
+                        font.pointSize: 12
                         padding: 0.2*margin
                         leftPadding: 0.2*margin
                         background: Rectangle {
@@ -985,16 +1005,16 @@ ApplicationWindow {
                     Frame {
                         id: propertiesFrame
                         y: propertiesLabel.height -2*pix
-                        height: 0.6*(window.height - header.height - 2*layersLabel.height)
+                        height: 0.6*(customizationWindow.height - 2*layersLabel.height)
                         width: rightFrame.width
                         padding: 0
                         backgroundColor: defaultpalette.window
                         ScrollableItem {
                             id: propertiesFlickable
                             y: 2*pix
-                            height: 0.6*(window.height - header.height - 2*layersLabel.height) - 4*pix
+                            height: 0.6*(customizationWindow.height - 2*layersLabel.height) - 4*pix
                             width: rightFrame.width-2*pix
-                            contentHeight: 0.6*(window.height - header.height - 2*layersLabel.height) - 4*pix
+                            contentHeight: 0.6*(customizationWindow.height - 2*layersLabel.height) - 4*pix
                             ScrollBar.horizontal.visible: false
                             Item {
                                 StackView {
@@ -1041,7 +1061,7 @@ ApplicationWindow {
                         id: overviewLabel
                         width: rightFrame.width
                         text: "Overview:"
-                        font.pointSize: 10
+                        font.pointSize: 12
                         padding: 0.2*margin
                         leftPadding: 0.2*margin
                         background: Rectangle {
@@ -1054,7 +1074,7 @@ ApplicationWindow {
                     Frame {
                         id: overviewFrame
                         y: overviewLabel.height - 2*pix
-                        height: 0.4*(window.height - header.height - 2*layersLabel.height) + 4*pix
+                        height: 0.4*(customizationWindow.height - 2*layersLabel.height) + 4*pix
                         width: rightFrame.width
                         padding: 0
                         backgroundColor: defaultpalette.listview
@@ -1297,7 +1317,7 @@ ApplicationWindow {
 
     function updateOverview() {
         function Timer() {
-            return Qt.createQmlObject("import QtQuick 2.0; Timer {}", window);
+            return Qt.createQmlObject("import QtQuick 2.0; Timer {}", customizationWindow);
         }
         function delay(delayTime, cb) {
             var timer = new Timer();
@@ -1737,11 +1757,12 @@ ApplicationWindow {
                 Label {
                     id: nameLabel
                     text: name
-                    font.pointSize: 10
+                    font.pointSize: 11
                 }
                 Label {
                     id: typeLabel
                     text: type
+                    font.pointSize: 9
                     color: "#777777"
                 }
             }
@@ -2334,13 +2355,25 @@ ApplicationWindow {
         }
     }
 
+    Component {
+        id: customToolTip
+        ToolTip {
+            x: -1.1*width
+            y: Math.round((parent.height - height)/2)
+            delay: 200
+            font.family: "Proxima Nova"
+            visible: parent.hovered
+            background: Rectangle {color: "white"; border.width: 2*pix}
+        }
+    }
+
 //----Properties components----------------------------------------
     Component {
         id: generalpropertiesComponent
         Column {
             Row {
                 leftPadding: 0.4*margin
-                topPadding: 0.42*margin
+                topPadding: 0.39*margin
                 bottomPadding: 0.2*margin
                 Label {
                     id: nameLabel
@@ -2413,7 +2446,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -2423,7 +2456,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -2503,7 +2536,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -2513,7 +2546,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -2596,7 +2629,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -2606,7 +2639,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -2700,7 +2733,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -2710,7 +2743,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -2794,7 +2827,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -2804,7 +2837,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -2869,7 +2902,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -2879,7 +2912,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -2944,7 +2977,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -2954,7 +2987,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -3019,7 +3052,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -3029,7 +3062,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -3094,7 +3127,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -3104,7 +3137,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -3169,7 +3202,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -3179,7 +3212,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -3253,7 +3286,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -3263,7 +3296,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -3377,7 +3410,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -3387,7 +3420,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -3495,7 +3528,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -3505,7 +3538,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -3570,7 +3603,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -3580,7 +3613,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }
@@ -3659,7 +3692,7 @@ ApplicationWindow {
                 leftPadding: 20*pix
                 bottomPadding: 20*pix
                 ColorBox {
-                    topPadding: 0.37*margin
+                    topPadding: 0.39*margin
                     leftPadding: 0.1*margin
                     rightPadding: 0.2*margin
                     colorRGB: labelColor
@@ -3669,7 +3702,7 @@ ApplicationWindow {
                     topPadding: 0.28*margin
                     leftPadding: 0.10*margin
                     text: type
-                    font.pointSize: 10
+                    font.pointSize: 12
                     color: "#777777"
                     wrapMode: Text.NoWrap
                 }

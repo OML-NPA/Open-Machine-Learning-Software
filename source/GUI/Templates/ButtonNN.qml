@@ -31,7 +31,7 @@ T.Button {
         icon: control.icon
         text: control.text
         font.family: control.font.family
-        font.pointSize: 9
+        font.pointSize: 10
         color: control.checked || control.highlighted ? control.palette.brightText :
                control.flat && !control.down ? (control.visualFocus ? control.palette.highlight : control.palette.windowText) : control.palette.buttonText
     }
