@@ -13,7 +13,7 @@ import org.julialang 1.0
 ApplicationWindow {
     id: customizationWindow
     visible: true
-    title: qsTr("Image Analysis Software")
+    title: qsTr("  Deep Data Analysis Software")
     minimumWidth: 2200*pix
     minimumHeight: 1500*pix
 
@@ -202,7 +202,10 @@ ApplicationWindow {
                 propertiesStackView.push(generalpropertiesComponent)
                 mainPane.selectioninds = add(selectioninds,startInd)
                 for (i=0;i<mainPane.selectioninds.length;i++) {
-                    selectunit(layers.children[mainPane.selectioninds[i]])
+                    unit = layers.children[mainPane.selectioninds[i]]
+                    if (unit!==undefined) {
+                        selectunit(unit)
+                    }
                 }
                 updateOverview()
             }
@@ -2315,8 +2318,8 @@ ApplicationWindow {
     Component {
         id: buttonComponent
         ButtonNN {
-            x: +2
-            width: leftFrame.width-23*pix
+            x: +2*pix
+            width: leftFrame.width-24*pix
             height: 1.25*buttonHeight
             onPressed: {
                 var object = layerComponent.createObject(layers,{"color" : adjustcolor([colorR,colorG,colorB]),

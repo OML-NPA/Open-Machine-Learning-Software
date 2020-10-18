@@ -11,9 +11,9 @@ import "Templates"
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("Image Analysis Software")
+    title: qsTr("  Deep Data Analysis Software")
     minimumWidth: gridLayout.width
-    minimumHeight: gridLayout.height
+    minimumHeight: 800*pix
     maximumWidth: gridLayout.width
     maximumHeight: gridLayout.height
 
@@ -47,6 +47,7 @@ ApplicationWindow {
                 spacing: 0
                 padding: -1
                 width: 1.3*buttonWidth
+                height: window.height
                 topPadding: tabmargin/2
                 bottomPadding: tabmargin/2
                 backgroundColor: defaultpalette.window2
@@ -66,7 +67,6 @@ ApplicationWindow {
                             id: general
                             width: 1.5*buttonWidth
                             height: 1.3*buttonHeight
-                            font_size: 11
                             onClicked: {
                                 stack.push(modelData.stackview);
                                 for (var i=0;i<(menubuttonRepeater.count);i++) {
@@ -77,12 +77,6 @@ ApplicationWindow {
                             text: modelData.name
                         }
                     }
-                    Rectangle {
-                        width: 1.3*buttonWidth
-                        height: 6*buttonHeight
-                        color: menuPane.backgroundColor
-                    }
-
                 }
             }
             ColumnLayout {

@@ -9,13 +9,6 @@ if has_cuda()
     CUDA.allowscalar(false)
 end
 
-@with_kw mutable struct Args
-    lr::Float64 = 1e-3
-    epochs::Int = 1
-    batch_size = 10
-    savepath::String = "./"
-end
-
 types = ["segmentation","classification","regression"]
 
 function get_train_test(data_input, data_labels,args)

@@ -6,13 +6,13 @@ import Qt.labs.platform 1.1
 import QtQml.Models 2.15
 import Qt.labs.folderlistmodel 2.15
 import "Templates"
-//import org.julialang 1.0
+import org.julialang 1.0
 
 
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("  Deep Data Analysis Software v.0.1")
+    title: qsTr("  Deep Data Analysis Software")
     minimumWidth: 1670*pix
     minimumHeight: 1200*pix
 
@@ -43,11 +43,21 @@ ApplicationWindow {
                                   }
 
     property string currentfolder: Qt.resolvedUrl(".")
+
+    onClosing: Julia.save_data()
+
     header: Rectangle {
         width: window.width
         height: buttonHeight
         color: menuPane.backgroundColor
 
+    }
+
+    MouseArea {
+        id: mainMouseArea
+        width: window.width
+        height: window.height
+        onClicked: mainMouseArea.focus = true
     }
 
     GridLayout {

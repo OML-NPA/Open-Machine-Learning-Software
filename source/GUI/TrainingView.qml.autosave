@@ -86,11 +86,7 @@ Component {
                 }
         }
 
-        MouseArea {
-            width: 500
-            height:500
-            onClicked: console.log("clicked")
-        }
+        
 
         Column {
             x: 0

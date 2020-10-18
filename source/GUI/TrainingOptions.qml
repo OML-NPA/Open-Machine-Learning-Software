@@ -5,15 +5,15 @@ import QtQuick.Window 2.2
 import QtQuick.Layouts 1.2
 import Qt.labs.platform 1.1
 import "Templates"
-//import org.julialang 1.0
+import org.julialang 1.0
 
 
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("Image Analysis Software")
+    title: qsTr("  Deep Data Analysis Software v.0.1")
     minimumWidth: gridLayout.width
-    minimumHeight: gridLayout.height
+    minimumHeight: 800*pix
     maximumWidth: gridLayout.width
     maximumHeight: gridLayout.height
 
@@ -24,9 +24,6 @@ ApplicationWindow {
     property double buttonHeight: 0.03*Screen.height
     property double tabmargin: 0.5*margin
     property double pix: Screen.width/3840
-    property var analysisOptions: {parent_imgs: ""; parent_label: "";
-        labels_color: []; labels_incl: []; border: []; mirror: true;
-        num_angles: 6; pix_fr_lim: 0.1}
 
     FolderDialog {
             id: folderDialog
@@ -36,8 +33,6 @@ ApplicationWindow {
             }
     }
 
-    //onClosing: { optionsLoader.sourceComponent = null }
-
     GridLayout {
         id: gridLayout
         RowLayout {
@@ -45,6 +40,7 @@ ApplicationWindow {
             Pane {
                 spacing: 0
                 width: 1.3*buttonWidth
+                height: window.height
                 padding: -1
                 topPadding: tabmargin/2
                 bottomPadding: tabmargin/2
@@ -70,12 +66,6 @@ ApplicationWindow {
                             text: modelData.name
                         }
                     }
-                    Rectangle {
-                        width: 1.3*buttonWidth
-                        height: 8*buttonHeight
-                        color: defaultpalette.window2
-                    }
-
                 }
             }
             ColumnLayout {
@@ -128,13 +118,14 @@ ApplicationWindow {
                             }
                             CheckBox {
                                 text: "Mirroring"
+                                checkState : Julia.get_data(
+                                           ["Training","Options","Processing","mirroring"]) ?
+                                           Qt.Checked : Qt.Unchecked
                                 onClicked: {
-                                    if (checkState==Qt.Checked) {
-                                        analysisOptions.mirroring = true
-                                    }
-                                    else  {
-                                        analysisOptions.mirroring = false
-                                    }
+                                    var value = checkState==Qt.Checked ? true : false
+                                    Julia.set_data(
+                                        ["Training","Options","Processing","mirroring"],
+                                        value)
                                 }
                             }
                             Row {
@@ -144,10 +135,13 @@ ApplicationWindow {
                                 }
                                 SpinBox {
                                     from: 1
-                                    value: 6
+                                    value: Julia.get_data(
+                                               ["Training","Options","Processing","num_angles"])
                                     to: 10
                                     onValueModified: {
-                                        analysisOptions.num_angles = value
+                                        Julia.set_data(
+                                            ["Training","Options","Processing","num_angles"],
+                                            value)
                                     }
                                 }
                             }
@@ -158,7 +152,8 @@ ApplicationWindow {
                                 }
                                 SpinBox {
                                     from: 0
-                                    value: 10
+                                    value: 100*Julia.get_data(
+                                               ["Training","Options","Processing","min_fr_pix"])
                                     to: 100
                                     stepSize: 10
                                     property real realValue: value/100
@@ -166,7 +161,9 @@ ApplicationWindow {
                                         return Number(value/100).toLocaleString(locale,'f',1)
                                     }
                                     onValueModified: {
-                                        analysisOptions.pix_fr_lim = value/100
+                                        Julia.set_data(
+                                            ["Training","Options","Processing","min_fr_pix"],
+                                            value/100)
                                     }
                                 }
                             }
@@ -201,33 +198,62 @@ ApplicationWindow {
                                     }
 
                                 }
-                                ColumnLayout {
-                                    ComboBox {
-                                        editable: false
-                                        model: ListModel {
-                                            id: modelEnv
-                                            ListElement { text: "GPU, if available" }
-                                            ListElement { text: "CPU" }
-                                        }
-                                        onAccepted: {
-                                            if (find(editText) === -1)
-                                                model.append({text: editText})
+                                Column {
+                                    topPadding: 0*pix
+                                    spacing: 0.50*margin
+                                    SpinBox {
+                                        from: 1
+                                        value: Julia.get_data(
+                                                   ["Training","Options","Hyperparameters","batch_size"])
+                                        to: 10000
+                                        stepSize: 1
+                                        editable: true
+                                        onValueModified: {
+                                            Julia.set_data(
+                                                ["Training","Options","Hyperparameters","batch_size"],
+                                                value)
                                         }
                                     }
-                                    ComboBox {
-                                        editable: false
-                                        model: ListModel {
-                                            id: modelPar
-                                            ListElement { text: "1" }
-                                            ListElement { text: "2" }
-                                            ListElement { text: "3" }
-                                            ListElement { text: "4" }
-                                            ListElement { text: "5" }
-                                            ListElement { text: "6" }
+                                    SpinBox {
+                                        from: 1
+                                        value: Julia.get_data(
+                                                   ["Training","Options","Hyperparameters","epochs"])
+                                        to: 100000
+                                        stepSize: 1
+                                        editable: true
+                                        onValueModified: {
+                                            Julia.set_data(
+                                                ["Training","Options","Hyperparameters","epochs"],
+                                                value)
                                         }
-                                        onAccepted: {
-                                            if (find(editText) === -1)
-                                                model.append({text: editText})
+                                    }
+                                    SpinBox {
+                                        from: 1
+                                        value: 100000*Julia.get_data(
+                                                   ["Training","Options","Hyperparameters","learning_rate"])
+                                        to: 1000
+                                        stepSize: 100
+                                        editable: true
+                                        property real realValue: value/100000
+                                        textFromValue: function(value, locale) {
+                                            return Number(value/100000).toLocaleString(locale,'e',0)
+                                        }
+                                        onValueModified: {
+                                            if (value>1000) {
+                                                stepSize = 1000
+                                            }
+                                            else if (value>100) {
+                                                stepSize = 100
+                                            }
+                                            else if (value>10) {
+                                                stepSize = 10
+                                            }
+                                            else {
+                                                stepSize = 1
+                                            }
+                                            Julia.set_data(
+                                                ["Training","Options","Hyperparameters","learning_rate"],
+                                                value/100000)
                                         }
                                     }
                                 }

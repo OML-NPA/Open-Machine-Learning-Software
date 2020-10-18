@@ -13,7 +13,7 @@ import "Templates"
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("Image Analysis Software")
+    title: qsTr("  Deep Data Analysis Software v.0.1")
     minimumWidth: gridLayout.width
     minimumHeight: gridLayout.height
     maximumWidth: gridLayout.width

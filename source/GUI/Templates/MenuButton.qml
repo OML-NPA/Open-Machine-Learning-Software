@@ -11,7 +11,7 @@ T.Button {
     property double margin: 0.02*Screen.width
     property double pix: Screen.width/3840
     property double tabmargin: 0.5*margin
-    property double font_size: 9
+    property double font_size: 11
     property bool buttonfocus: false
     property bool horizontal: false
 

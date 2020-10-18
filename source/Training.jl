@@ -2,13 +2,6 @@ using Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP
 import Base.any
 import ImageSegmentation.label_components
 
-# Variable definitions
-dict = Dict{String,Any}()
-layers = []
-url_imgs = Array{String}(undef,0)
-url_labels = Array{String}(undef,0)
-data_imgs = Array{Array}(undef,0)
-data_labels = Array{BitArray}(undef,0)
 
 # Helper functions
 function areaopen(im::BitArray,area::Real)
@@ -163,13 +156,13 @@ function get_urls_imgs_labels_main(url_imgs,url_labels,
         end
     end
 end
-get_urls_imgs_labels(parent_imgs,parent_labels) =
+get_urls_imgs_labels(parent_imgs,parent_labels,type) =
     get_urls_imgs_labels_main(url_imgs,url_labels,
     parent_imgs,parent_labels,type)
 
 function process_images_labels_main(data_imgs,data_labels,url_imgs,
         url_labels,labels_color,labels_incl,border,
-        pix_fr_lim,pix_num,num_angles,type)
+        min_fr_pix,pix_num,num_angles,type)
 
     # Functions
     function get_image(url_img)
@@ -224,7 +217,7 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
         return img,label
     end
 
-    function augment(img,label,angles_num,pix_num,pix_fr_lim)
+    function augment(img,label,angles_num,pix_num,min_fr_pix)
 
         function rotate_img(img,angle)
             if angle!=0
@@ -243,7 +236,7 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
             end
         end
 
-        lim = pix_num^2*pix_fr_lim
+        lim = pix_num^2*min_fr_pix
         angles = range(0,stop=2*pi,length=num_angles+1)
         angles = angles[1:end-1]
         imgs_out = []
@@ -295,7 +288,7 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
         if type=="segmentation"
             img,label = correct_view(img,label)
             label = correct_label(label,labels_color,labels_incl,border)
-            img,label = augment(img,label,num_angles,pix_num,pix_fr_lim)
+            img,label = augment(img,label,num_angles,pix_num,min_fr_pix)
         end
         push!(temp_imgs,img)
         push!(temp_labels,label)
@@ -311,10 +304,10 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
     return nothing
 end
 process_images_labels(labels_color,labels_incl,border,
-        pix_fr_lim,pix_num,num_angles,type) =
+        min_fr_pix,pix_num,num_angles,type) =
     process_images_labels_main(data_imgs,data_labels,url_imgs,
             url_labels,labels_color,labels_incl,border,
-            pix_fr_lim,pix_num,num_angles,type)
+            min_fr_pix,pix_num,num_angles,type)
 
 
 function get_labels_colors_main(url_labels::Array{String})
