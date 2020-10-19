@@ -14,8 +14,6 @@ Component {
         property string colorB: "0"
         property int indTree: 0
         property var model: []
-        property var model_name: "model"
-
         property string dialogtarget
 
         Loader { id: featuredialogLoader}
@@ -46,55 +44,13 @@ Component {
         }
         FileDialog {
                 id: fileDialog
-                nameFilters: [ "*.json"]
+                nameFilters: [ "*.model"]
                 onAccepted: {
                     var url = file.toString().replace("file:///","")
-                    model.length = 0
-                    state = Julia.load_model(url)
-                    var skipStringing = ["x","y"]
-                    if (state!==null) {
-                        neuralnetworkTextField.text = url
-                        var count = Julia.model_count()
-                        for (var i=0;i<count;i++) {
-                            var indJ = i+1
-                            var unit = {}
-                            var properties = Julia.model_properties(indJ)
-                            for (var j=0;j<properties.length;j++) {
-                                var prop_name = properties[j]
-                                var prop = Julia.model_get_property(indJ,prop_name)
-                                if (typeof(prop)==='object' && prop.length===2) {
-                                    if (typeof(prop[0])==='string' && typeof(prop[1])==='number') {
-                                       unit[prop_name] = {"text": prop[0],"ind": prop[1]}
-                                    }
-                                    else {
-                                        unit[prop_name] = prop
-                                    }
-                                }
-                                else {
-                                    if (skipStringing.includes(prop_name) || typeof(prop)==='object') {
-                                        unit[prop_name] = prop
-                                    }
-                                    else {
-                                        unit[prop_name] = prop.toString()
-                                    }
-                                }
-                            }
-                            model.push(unit)
-                        }
-                    }
-                    Julia.set_data(["Training","template"],url)
+                    importmodel(model,url)
                 }
         }
-
-        MouseArea {
-            width: 500
-            height:500
-            onClicked: console.log("clicked")
-        }
-
         Column {
-            x: 0
-            y: 0
             spacing: 0.7*margin
             ColumnLayout {
                 spacing: 0.5*margin
@@ -107,10 +63,16 @@ Component {
                     }
                     TextField {
                         id: neuralnetworkTextField
-                        text: Julia.get_data(["Training","template"])
                         readOnly: true
                         width: 1.55*buttonWidth
                         height: buttonHeight
+                        Component.onCompleted: {
+                            var url = Julia.get_data(["Training","template"])
+                            if (Julia.isfile(url)) {
+                                text = url
+                                importmodel(model,url)
+                            }
+                        }
                     }
                     Button {
                         width: buttonWidth/2
@@ -120,6 +82,7 @@ Component {
                             dialogtarget = "Network"
                             fileDialog.open()
                         }
+
                     }
                 }
                 Row {
@@ -131,10 +94,15 @@ Component {
                     }
                     TextField {
                         id: imagesTextField
-                        text: Julia.get_data(["Training","images"])
                         readOnly: true
                         width: 1.55*buttonWidth
                         height: buttonHeight
+                        Component.onCompleted: {
+                            var url = Julia.get_data(["Training","images"])
+                            if (Julia.isdir(url)) {
+                                text = url
+                            }
+                        }
                     }
                     Button {
                         width: buttonWidth/2
@@ -155,10 +123,15 @@ Component {
                     }
                     TextField {
                         id: labelsTextField
-                        text: Julia.get_data(["Training","labels"])
                         readOnly: true
                         width: 1.55*buttonWidth
                         height: buttonHeight
+                        Component.onCompleted: {
+                            var url = Julia.get_data(["Training","labels"])
+                            if (Julia.isdir(url)) {
+                                text = url
+                            }
+                        }
                     }
                     Button {
                         width: buttonWidth/2
@@ -179,9 +152,12 @@ Component {
                     }
                     TextField {
                         id: nameTextField
-                        text: Julia.get_data(["Training","name"])
                         width: 1.55*buttonWidth
                         height: buttonHeight
+                        onEditingFinished: Julia.set_data(["Training","name"],text)
+                        Component.onCompleted: {
+                            text = Julia.get_data(["Training","name"])
+                        }
                     }
                 }
             }

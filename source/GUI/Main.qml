@@ -16,6 +16,7 @@ ApplicationWindow {
     minimumWidth: 1670*pix
     minimumHeight: 1200*pix
 
+    property double panel_width: window.width - menuPane.width - 2*margin
     color: defaultpalette.window
     property double pix: Screen.width/3840
     property double margin: 0.02*Screen.width
@@ -161,4 +162,40 @@ ApplicationWindow {
             folderView.model = folderModel
             Julia.browsefolder(folderDialog.folder)
         }
+
+    function importmodel(model,url) {
+        model.length = 0
+        var state = Julia.load_model(url)
+        var skipStringing = ["x","y"]
+        if (state!==null) {
+            var count = Julia.model_count()
+            for (var i=0;i<count;i++) {
+                var indJ = i+1
+                var unit = {}
+                var properties = Julia.model_properties(indJ)
+                for (var j=0;j<properties.length;j++) {
+                    var prop_name = properties[j]
+                    var prop = Julia.model_get_property(indJ,prop_name)
+                    if (typeof(prop)==='object' && prop.length===2) {
+                        if (typeof(prop[0])==='string' && typeof(prop[1])==='number') {
+                           unit[prop_name] = {"text": prop[0],"ind": prop[1]}
+                        }
+                        else {
+                            unit[prop_name] = prop
+                        }
+                    }
+                    else {
+                        if (skipStringing.includes(prop_name) || typeof(prop)==='object') {
+                            unit[prop_name] = prop
+                        }
+                        else {
+                            unit[prop_name] = prop.toString()
+                        }
+                    }
+                }
+                model.push(unit)
+            }
+        }
+        Julia.set_data(["Training","template"],url)
+    }
 }

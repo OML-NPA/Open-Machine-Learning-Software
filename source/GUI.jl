@@ -52,7 +52,7 @@ options_temp = Options_temp()
     template::String = ""
     images::String = ""
     labels::String = ""
-    name::String = ""
+    name::String = "model"
     Options = options_temp
 end
 training = Training()
@@ -123,15 +123,15 @@ function load_data!(master)
         dict = JSON.parse(f)
       end
     end
-    dict_to_strcut!(master,dict)
+    dict_to_struct!(master,dict)
 end
 
-function dict_to_strcut!(master,dict::Dict)
+function dict_to_struct!(master,dict::Dict)
   ks = [keys(dict)...]
   for i = 1:length(ks)
     value = dict[ks[i]]
     if value isa Dict
-      dict_to_strcut(getproperty(master,Symbol(ks[i])),value)
+      dict_to_struct!(getproperty(master,Symbol(ks[i])),value)
     else
       setproperty!(master,Symbol(ks[i]),value)
     end
@@ -158,7 +158,10 @@ load_data!(master)
     # Data handling
     get_data,
     set_data,
-    save_data
+    save_data,
+    # Other
+    isfile,
+    isdir
 )
 load("GUI//Main.qml")
 exec()

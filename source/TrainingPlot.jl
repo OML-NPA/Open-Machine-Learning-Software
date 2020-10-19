@@ -10,6 +10,7 @@ if has_cuda()
 end
 
 types = ["segmentation","classification","regression"]
+args = training.Options.Hyperparameters
 
 function get_train_test(data_input, data_labels,args)
     set = [(data_input[i],data_labels[i]) for i in 1:length(data)]

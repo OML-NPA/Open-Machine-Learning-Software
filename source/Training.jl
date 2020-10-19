@@ -2,7 +2,6 @@ using Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP
 import Base.any
 import ImageSegmentation.label_components
 
-
 # Helper functions
 function areaopen(im::BitArray,area::Real)
     im_segm = label_components(im).+1
@@ -473,7 +472,7 @@ function save_model_main(name,layers)
     vals = collect(values(layers[i]))
     push!(istuple,findall(isa.(vals,Tuple)))
   end
-  open(string(name,".json"),"w") do f
+  open(string(name,".model"),"w") do f
     JSON.print(f,(layers,istuple))
   end
   #BSON.@save(string(name,".bson"),layers)

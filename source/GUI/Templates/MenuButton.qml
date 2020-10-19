@@ -51,7 +51,8 @@ T.Button {
             Component.onCompleted: {
                 if (horizontal) {
                     var text_width = fontMetrics.advanceWidth(text)
-                    x = (control.width - text_width)/2 - 0.22*text_width
+                    control.width = text_width + 150*pix
+                    x = (control.width - text_width)/2 - 0.23*text_width
                 }
                 else {
                     anchors.fill = parent

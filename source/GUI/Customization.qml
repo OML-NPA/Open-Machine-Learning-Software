@@ -847,7 +847,7 @@ ApplicationWindow {
                     onClicked: {
                        getarchitecture()
                        gridLayout.forceActiveFocus()
-                       Julia.save_model(model_name)
+                       Julia.save_model(Julia.get_data(["Training","name"]))
                        opacity = 1
                     }
                 }
@@ -2385,11 +2385,19 @@ ApplicationWindow {
                     bottomPadding: topPadding
                 }
                 TextField {
-                    text: model_name
                     defaultHeight: 0.75*buttonHeight
                     defaultWidth: rightFrame.width - 220*pix
                     onEditingFinished: {
                         model_name = displayText
+                    }
+                    Component.onCompleted: {
+                        var name = Julia.get_data(["Training","name"])
+                        if (name.length===0) {
+                            text = "model"
+                        }
+                        else {
+                            text = name
+                        }
                     }
                 }
             }
