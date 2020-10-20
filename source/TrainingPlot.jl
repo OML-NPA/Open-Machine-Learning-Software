@@ -1,6 +1,5 @@
 
 using Flux, Random
-using Printf, BSON
 using Parameters: @with_kw
 using CUDAapi
 if has_cuda()
@@ -10,7 +9,7 @@ if has_cuda()
 end
 
 types = ["segmentation","classification","regression"]
-args = training.Options.Hyperparameters
+args = master.Training.Options.Hyperparameters
 
 function get_train_test(data_input, data_labels,args)
     set = [(data_input[i],data_labels[i]) for i in 1:length(data)]

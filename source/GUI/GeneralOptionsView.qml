@@ -4,6 +4,7 @@ import QtQuick.Window 2.2
 import QtQuick.Layouts 1.2
 import Qt.labs.platform 1.1
 import "Templates"
+import org.julialang 1.0
 
 Component {
     id: generalOptionsView
@@ -78,7 +79,7 @@ Component {
                             Label {
                                 Layout.alignment : Qt.AlignLeft
                                 Layout.row: 1
-                                text: "Execution environment:"
+                                text: "Allow GPU:"
                             }
                             Label {
                                 Layout.alignment : Qt.AlignLeft
@@ -88,32 +89,39 @@ Component {
                             }
                         }
                         ColumnLayout {
-                            ComboBox {
-                                editable: false
-                                model: ListModel {
-                                    id: modelEnv
-                                    ListElement { text: "GPU, if available" }
-                                    ListElement { text: "CPU" }
-                                }
-                                onAccepted: {
-                                    if (find(editText) === -1)
-                                        model.append({text: editText})
+                            CheckBox {
+                                checkState : Julia.get_data(
+                                           ["Options","Hardware_resources","allow_GPU"]) ?
+                                           Qt.Checked : Qt.Unchecked
+                                onClicked: {
+                                    var value = checkState==Qt.Checked ? true : false
+                                    Julia.set_data(
+                                        ["Options","Hardware_resources","allow_GPU"],
+                                        value)
                                 }
                             }
                             ComboBox {
                                 editable: false
-                                model: ListModel {
-                                    id: modelPar
-                                    ListElement { text: "1" }
-                                    ListElement { text: "2" }
-                                    ListElement { text: "3" }
-                                    ListElement { text: "4" }
-                                    ListElement { text: "5" }
-                                    ListElement { text: "6" }
+                                model: ListModel {id: coresModel}
+                                onActivated: {
+                                    Julia.set_data(
+                                        ["Options","Hardware_resources","num_cores"],
+                                        parseInt(currentText,10))
                                 }
-                                onAccepted: {
-                                    if (find(editText) === -1)
-                                        model.append({text: editText})
+                                Component.onCompleted: {
+                                    var val = Julia.get_data(
+                                        ["Options","Hardware_resources","num_cores"])
+                                    var num_cores = Julia.num_cores()
+                                    for (var i=0;i<num_cores;i++) {
+                                        coresModel.append({"text": i+1})
+                                        var num = parseInt(coresModel.get(i).text,10)
+                                        if (num===val) {
+                                            currentIndex = i
+                                        }
+                                    }
+                                    if (currentIndex===-1) {
+                                        currentIndex = num_cores-1
+                                    }
                                 }
                             }
                         }

@@ -1,10 +1,6 @@
 
-using QML, JSON, BSON
+using QML, JSON, BSON, Printf, Parameters
 import Base.string
-
-include("Training.jl")
-include("Customization.jl")
-include("TrainingPlot.jl")
 
 # Variable definitions
 dict = Dict{String,Any}()
@@ -21,8 +17,13 @@ end
 main = Main_s()
 
 # Options
+@with_kw mutable struct Hardware_resources
+    allow_GPU::Bool = true
+    num_cores::Int64 = Threads.nthreads()
+end
+hardware_resources = Hardware_resources()
 @with_kw mutable struct Options
-    a::Int = 0
+    Hardware_resources = hardware_resources
 end
 options = Options()
 
@@ -52,7 +53,7 @@ options_temp = Options_temp()
     template::String = ""
     images::String = ""
     labels::String = ""
-    name::String = "model"
+    name::String = "new"
     Options = options_temp
 end
 training = Training()
@@ -78,6 +79,11 @@ visualisation = Visualisation()
     Visualisation = visualisation
 end
 master = Master()
+
+include("Training.jl")
+include("Customization.jl")
+include("TrainingPlot.jl")
+
 
 function get_data_main(master::Master,fields::QML.QListAllocated)
     data = master
@@ -138,6 +144,10 @@ function dict_to_struct!(master,dict::Dict)
   end
 end
 
+function num_cores()
+  return Threads.nthreads()
+end
+
 if !isfile("config.json")
   save_data()
 end
@@ -161,7 +171,8 @@ load_data!(master)
     save_data,
     # Other
     isfile,
-    isdir
+    isdir,
+    num_cores
 )
 load("GUI//Main.qml")
 exec()

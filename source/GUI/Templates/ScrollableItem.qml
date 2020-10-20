@@ -16,6 +16,7 @@ Flickable{
     default property alias content : pane.contentItem
 
     Pane {
+
         id:pane
         anchors.fill: parent
         padding: 0

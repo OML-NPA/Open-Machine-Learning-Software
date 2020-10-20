@@ -54,13 +54,6 @@ ApplicationWindow {
 
     }
 
-    MouseArea {
-        id: mainMouseArea
-        width: window.width
-        height: window.height
-        onClicked: mainMouseArea.focus = true
-    }
-
     GridLayout {
         id: gridLayout
         RowLayout {
@@ -149,7 +142,21 @@ ApplicationWindow {
                 }
            }
         }
+        MouseArea {
+            width: window.width
+            height: window.height
+            onPressed: {
+                focus = true
+                mouse.accepted = false
+            }
+            onReleased: mouse.accepted = false;
+            onDoubleClicked: mouse.accepted = false;
+            onPositionChanged: mouse.accepted = false;
+            onPressAndHold: mouse.accepted = false;
+            onClicked: mouse.accepted = false;
+        }
     }
+
 //--Functions---------------------------------------------------------
 
     function rgbtohtml(colorRGB) {

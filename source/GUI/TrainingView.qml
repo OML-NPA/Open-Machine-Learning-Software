@@ -47,6 +47,7 @@ Component {
                 nameFilters: [ "*.model"]
                 onAccepted: {
                     var url = file.toString().replace("file:///","")
+                    neuralnetworkTextField.text = url
                     importmodel(model,url)
                 }
         }

@@ -1,7 +1,5 @@
 
 using Flux, Statistics
-using Printf, BSON
-using QML
 outdims = Flux.outdims
 
 # Layers
@@ -21,10 +19,6 @@ struct Catenation
     dims
 end
 (m::Catenation)(x) = cat(x...,dims=m.dims)
-
-struct Addition
-end
-(m::Addition)(x) = sum(x)
 
 struct Decatenation
     outputs
@@ -49,6 +43,30 @@ function Decatenation_func(x,outputs::Int64,dims::Int64)
     return x_out
 end
 (m::Decatenation)(x) = Decatenation_func(x,outputs,dims)
+
+struct Addition
+end
+(m::Addition)(x) = sum(x)
+
+struct Resizing
+    new_size::Array
+    type::String
+end
+function Resizing_func(x,new_size::Array,type::String)
+    old_size = size(x,1,2,3)
+
+end
+(m::Resizing)(x) = Resizing_func(x,new_size,type)
+
+struct Scaling
+    new_size::Array
+    type::String
+end
+function Scaling_func(x,factor::Array)
+    old_size = size(x,1,2,3)
+
+end
+(m::Scaling)(x) = Scaling_func(x,new_size,type)
 
 struct Activation
     f

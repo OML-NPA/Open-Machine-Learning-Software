@@ -306,6 +306,19 @@ ApplicationWindow {
                 }
             }
         }
+        MouseArea {
+            width: window.width
+            height: window.height
+            onPressed: {
+                focus = true
+                mouse.accepted = false
+            }
+            onReleased: mouse.accepted = false;
+            onDoubleClicked: mouse.accepted = false;
+            onPositionChanged: mouse.accepted = false;
+            onPressAndHold: mouse.accepted = false;
+            onClicked: mouse.accepted = false;
+        }
     }
 
 }

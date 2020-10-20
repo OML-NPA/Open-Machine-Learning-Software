@@ -49,10 +49,9 @@ ApplicationWindow {
         property var ids: []
     }
 
-    GridLayout {
-        id: gridLayout
+    Item {
+        id: mainItem
         focus: true
-
         Component.onCompleted: {
             for (var i=0;i<model.length;i++) {
                 var data = model[i]
@@ -101,7 +100,6 @@ ApplicationWindow {
             propertiesStackView.push(generalpropertiesComponent)
             updateOverview()
         }
-
         Keys.onPressed: {
             if (event.key===Qt.Key_Backspace || event.key===Qt.Key_Delete) {
                 var inds = mainPane.selectioninds
@@ -250,7 +248,8 @@ ApplicationWindow {
                                 resizinglayerView.count) + 6*0.9*buttonHeight
                             ScrollBar.horizontal.visible: false
                             Item {
-                                id: layersRow
+                                id: listItem
+
                                 Label {
                                     id: inoutLabel
                                     width: leftFrame.width-4*pix
@@ -846,7 +845,7 @@ ApplicationWindow {
                     onPressed: {opacity = 0.5}
                     onClicked: {
                        getarchitecture()
-                       gridLayout.forceActiveFocus()
+                       customizationItem.forceActiveFocus()
                        Julia.save_model(Julia.get_data(["Training","name"]))
                        opacity = 1
                     }
@@ -979,7 +978,7 @@ ApplicationWindow {
                         }
                         updateMainPane(layers.children[0])
                         updateConnections()
-                        gridLayout.forceActiveFocus()
+                        customizationItem.forceActiveFocus()
                         opacity = 1
                     }
                 }
@@ -989,6 +988,7 @@ ApplicationWindow {
                 height: customizationWindow.height
                 width: 500*pix
                 padding:0
+
                 Item {
                     id: propertiesColumn
                     Label {
@@ -1019,7 +1019,16 @@ ApplicationWindow {
                             width: rightFrame.width-2*pix
                             contentHeight: 0.6*(customizationWindow.height - 2*layersLabel.height) - 4*pix
                             ScrollBar.horizontal.visible: false
+
                             Item {
+                                MouseArea {
+                                    width: propertiesFrame.width
+                                    height: propertiesFrame.height
+                                    onClicked: {
+                                        focus = true
+                                        mouse.accepted = false
+                                    }
+                                }
                                 StackView {
                                     id: propertiesStackView
                                     initialItem: generalpropertiesComponent
@@ -1092,6 +1101,19 @@ ApplicationWindow {
                     }
                 }
             }
+        }
+        MouseArea {
+            width: customizationWindow.width
+            height: customizationWindow.height
+            onPressed: {
+                focus = true
+                mouse.accepted = false
+            }
+            onReleased: mouse.accepted = false;
+            onDoubleClicked: mouse.accepted = false;
+            onPositionChanged: mouse.accepted = false;
+            onPressAndHold: mouse.accepted = false;
+            onClicked: mouse.accepted = false;
         }
     }
 
@@ -3203,7 +3225,8 @@ ApplicationWindow {
             property string type
             property var group
             property var labelColor
-            property var datastore: { "name": name, "type": type, "group": group,"poolsize": "2", "stride": "2"}
+            property var datastore: { "name": name, "type": type, "group": group,
+                "poolsize": "2", "stride": "2"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
                     unit.datastore = datastore
@@ -3529,7 +3552,8 @@ ApplicationWindow {
             property string type
             property var group
             property var labelColor
-            property var datastore: { "name": name, "type": type, "group": group,"multiplier": "2"}
+            property var datastore: { "name": name, "type": type, "group": group,"multiplier": "2",
+                "dimensions": "1,2"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
                     unit.datastore = datastore
@@ -3562,7 +3586,7 @@ ApplicationWindow {
                     Layout.topMargin: 0.22*margin
                     spacing: 0.24*margin
                     Repeater {
-                        model: ["Name","Multiplier"]
+                        model: ["Name","Multiplier","Dimensions"]
                         Label {
                             text: modelData+": "
                             topPadding: 4*pix
@@ -3589,6 +3613,16 @@ ApplicationWindow {
                         validator: RegExpValidator { regExp: /([1-9]\d{0,1})|(0,\d{1-2})/ }
                         onEditingFinished: {
                             unit.datastore.multiplier = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.dimensions
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator {
+                            regExp: /(1|2|3|1,2|1,2,3|2,3|1,3)/ }
+                        onEditingFinished: {
+                            unit.datastore.dimensions = displayText
                         }
                     }
                 }
