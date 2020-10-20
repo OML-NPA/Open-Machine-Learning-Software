@@ -569,18 +569,18 @@ ApplicationWindow {
                                                           inputnum: 1
                                                           outputnum: 2}
                                                       ListElement{
-                                                          type: "Scaling"
+                                                          type: "Upscaling"
                                                           group: "resizing"
-                                                          name: "scaling"
+                                                          name: "upscaling"
                                                           colorR: 180
                                                           colorG: 180
                                                           colorB: 180
                                                           inputnum: 1
                                                           outputnum: 1}
                                                       ListElement{
-                                                          type: "Resizing"
+                                                          type: "Flattening"
                                                           group: "resizing"
-                                                          name: "resizing"
+                                                          name: "flattening"
                                                           colorR: 180
                                                           colorG: 180
                                                           colorB: 180
@@ -1506,10 +1506,8 @@ ApplicationWindow {
             return pushstack(catpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Decatenation":
             return pushstack(decatpropertiesComponent,labelColor,group,type,name,unit,datastore)
-        case "Scaling":
-            return pushstack(scalingpropertiesComponent,labelColor,group,type,name,unit,datastore)
-        case "Resizing":
-            return pushstack(resizingpropertiesComponent,labelColor,group,type,name,unit,datastore)
+        case "Upscaling":
+            return pushstack(upscalingpropertiesComponent,labelColor,group,type,name,unit,datastore)
         default:
             pushstack(emptypropertiesComponent,labelColor,group,type,name,unit,datastore)
         }
@@ -3545,7 +3543,7 @@ ApplicationWindow {
     }
 
     Component {
-        id: scalingpropertiesComponent
+        id: upscalingpropertiesComponent
         Column {
             property var unit
             property var name
@@ -3610,7 +3608,7 @@ ApplicationWindow {
                         text: datastore.multiplier
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        validator: RegExpValidator { regExp: /([1-9]\d{0,1})|(0,\d{1-2})/ }
+                        validator: RegExpValidator { regExp: /([2-5])/ }
                         onEditingFinished: {
                             unit.datastore.multiplier = displayText
                         }
@@ -3620,98 +3618,9 @@ ApplicationWindow {
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
                         validator: RegExpValidator {
-                            regExp: /(1|2|3|1,2|1,2,3|2,3|1,3)/ }
+                            regExp: /(1|2|3|1,2|1,2,3)/ }
                         onEditingFinished: {
                             unit.datastore.dimensions = displayText
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    Component {
-        id: resizingpropertiesComponent
-        Column {
-            property var unit
-            property var name
-            property string type
-            property var group
-            property var labelColor
-            property var datastore: { "name": name, "type": type, "group": group,"newsize": "100,100", "mode": {"text": "Column major", "ind": 1}}
-            Component.onCompleted: {
-                if (unit.datastore===undefined) {
-                    unit.datastore = datastore
-                }
-            }
-            Row {
-                leftPadding: 20*pix
-                bottomPadding: 20*pix
-                ColorBox {
-                    topPadding: 0.39*margin
-                    leftPadding: 0.1*margin
-                    rightPadding: 0.2*margin
-                    colorRGB: labelColor
-                }
-                Label {
-                    id: typeLabel
-                    topPadding: 0.28*margin
-                    leftPadding: 0.10*margin
-                    text: type
-                    font.pointSize: 12
-                    color: "#777777"
-                    wrapMode: Text.NoWrap
-                }
-            }
-            RowLayout {
-                ColumnLayout {
-                    id: labelColumnLayout
-                    Layout.alignment: Qt.AlignTop
-                    Layout.leftMargin: 0.4*margin
-                    Layout.topMargin: 0.22*margin
-                    spacing: 0.24*margin
-                    Repeater {
-                        model: ["Name","New size","Mode"]
-                        Label {
-                            text: modelData+": "
-                            topPadding: 4*pix
-                            bottomPadding: topPadding
-                        }
-                    }
-                }
-                ColumnLayout {
-                    Layout.alignment: Qt.AlignTop
-                    Layout.topMargin: 0.2*margin
-                    TextField {
-                        text: datastore.name
-                        defaultHeight: 0.75*buttonHeight
-                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        onEditingFinished: {
-                            unit.datastore.name = displayText
-                            unit.children[0].children[0].text = displayText
-                        }
-                    }
-                    TextField {
-                        text: datastore.newsize
-                        defaultHeight: 0.75*buttonHeight
-                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        validator: RegExpValidator { regExp: /(([1-9]\d{0,3})|([1-9]\d{0,3},[1-9]\d{0,3})|([1-9]\d{0,3},[1-9]\d{0,3},[1-9]\d{0,3}))/ }
-                        onEditingFinished: {
-                            unit.datastore.newsize = displayText
-                        }
-                    }
-                    ComboBox {
-                        defaultHeight: 0.75*buttonHeight
-                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        currentIndex: datastore.mode.ind
-                        model: ListModel {
-                           id: netModel
-                           ListElement { text: "Column major" }
-                           ListElement { text: "Row major" }
-                        }
-                        onActivated: {
-                            unit.datastore.mode.text = currentText
-                            unit.datastore.mode.ind = currentIndex
                         }
                     }
                 }

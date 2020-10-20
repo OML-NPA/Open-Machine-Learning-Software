@@ -48,25 +48,37 @@ struct Addition
 end
 (m::Addition)(x) = sum(x)
 
-struct Resizing
-    new_size::Array
-    type::String
+struct Upscaling
+    multiplier::Int
+    new_size::Tuple
 end
-function Resizing_func(x,new_size::Array,type::String)
+function Upscaling_func(x,multiplier::Int,new_size::Tuple)
     old_size = size(x,1,2,3)
-
+    type = typeof(x)
+    new_x = zeros(type, new_size)
+    if dims==[1]
+        for i = 1:multiplier
+            new_x[i:multiplier:end,:,:,:] = x
+        end
+    elseif dims==[2]
+        for i = 1:multiplier
+            new_x[:,i:multiplier:end,:,:] = x
+        end
+    elseif dims==[3]
+        for i = 1:multiplier
+            new_x[:,:,i:multiplier:end,:] = x
+        end
+    elseif dims==[1,2]
+        for i = 1:multiplier
+            new_x[i:multiplier:end,i:multiplier:end,:,:] = x
+        end
+    elseif dims==[1,2,3]
+        for i = 1:multiplier
+            new_x[i:multiplier:end,i:multiplier:end,i:multiplier:end,:] = x
+        end
+    end
 end
-(m::Resizing)(x) = Resizing_func(x,new_size,type)
-
-struct Scaling
-    new_size::Array
-    type::String
-end
-function Scaling_func(x,factor::Array)
-    old_size = size(x,1,2,3)
-
-end
-(m::Scaling)(x) = Scaling_func(x,new_size,type)
+(m::Upscaling)(x) = Upscaling_func(x,multiplier,new_size)
 
 struct Activation
     f
@@ -74,7 +86,6 @@ end
 (m::Activation)(x) = m.f.(x)
 
 # Model constructor
-
 function getlinear(type::AbstractString,d,in_size::Tuple)
     if type=="Convolution"
         layer = Conv(d["filtersize"], in_size[3]=>d["filters"],pad=SamePad(),
@@ -154,12 +165,16 @@ function getresizing(type::AbstractString,d,in_size)
             end
         end
         return (Decatenation(d["outputs"],d["dimension"]), out)
-    elseif type=="Scaling"
-        out = (in_size[1]*multiplier,in_size[2]*multiplier,in_size[3])
-        return (Scaling(d["multiplier"]), out)
-    elseif type=="Resizing"
-        out = (d["newsize"][1:2]...,in_size[3])
-        return (Resizing(d["newsize"],d["mode"]), out)
+    elseif type=="Upscaling"
+        multiplier = d["multiplier"]
+        new_size = out
+        for i in dims
+            new_size[i] = new_size[i]*multiplier
+        end
+        return (Upscaling(multiplier,new_size), out)
+    elseif type=="Flattening"
+        out = (prod(size(x)),1,1)
+        return (flatten(), out)
     end
 end
 
