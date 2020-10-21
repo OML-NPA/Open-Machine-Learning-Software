@@ -206,19 +206,48 @@ Component {
                                         }
                                         onClicked: {
                                             if (imagesTextField.text!=="" && labelsTextField.text!=="") {
+                                                var count = featureModel.count
+                                                for (var i=0;i<count;i++) {
+                                                    featureModel.remove(0)
+                                                }
                                                 Julia.get_urls_imgs_labels(imagesTextField.text,
                                                     labelsTextField.text,"segmentation")
                                                 var colors = Julia.get_labels_colors()
-                                                for (var i=0;i<colors.length;i++) {
-                                                    featureModel.append({
-                                                            "name": "feature "+i,
-                                                            "colorR": colors[i][0],
-                                                            "colorG": colors[i][1],
-                                                            "colorB": colors[i][2],
-                                                            "border": false,
-                                                            "parent": ""})
+                                                Julia.reset_features()
+                                                for (i=0;i<colors.length;i++) {
+                                                    var feature = {
+                                                        "name": "feature "+(i+1),
+                                                        "colorR": colors[i][0],
+                                                        "colorG": colors[i][1],
+                                                        "colorB": colors[i][2],
+                                                        "border": false,
+                                                        "parent": ""}
+                                                    featureModel.append(feature)
+                                                    Julia.append_features(feature.name,
+                                                                          feature.colorR,
+                                                                          feature.colorG,
+                                                                          feature.colorB,
+                                                                          feature.border,
+                                                                          feature.parent)
                                                 }
                                                 updateButton.visible = false
+                                            }
+                                        }
+                                        Component.onCompleted: {
+                                            var num_features = Julia.num_features()
+                                            if (num_features!==0) {
+                                                updateButton.visible = false
+                                                for (var i=0;i<num_features;i++) {
+                                                    var color = Julia.get_feature_field(i+1,"color")
+                                                    var feature = {
+                                                        "name": Julia.get_feature_field(i+1,"name"),
+                                                        "colorR": color[0],
+                                                        "colorG": color[1],
+                                                        "colorB": color[2],
+                                                        "border": Julia.get_feature_field(i+1,"border"),
+                                                        "parent": Julia.get_feature_field(i+1,"parent")}
+                                                    featureModel.append(feature)
+                                                }
                                             }
                                         }
                                     }

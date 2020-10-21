@@ -399,6 +399,36 @@ function update_layers_main(layers,dict,keys,values,ext...)
     dict = fixtypes(dict)
     push!(layers, copy(dict))
 end
+
+function reset_features_main(features)
+    empty!(features)
+end
+reset_features() = reset_features_main(features)
+
+function append_features_main(features,name,colorR,colorG,colorB,border,parent)
+    push!(features,Features(String(name),Int64.([colorR,colorG,colorB]),
+        border,String(parent)))
+end
+append_features(name,colorR,colorG,colorB,border,parent) =
+    append_features_main(features,name,colorR,colorG,colorB,border,parent)
+
+function update_features_main(features,index,name,colorR,colorG,colorB,border,parent)
+    features[index] = Features(String(name),Int64.([colorR,colorG,colorB]),
+        border,String(parent))
+end
+update_features(index,name,colorR,colorG,colorB,border,parent) =
+    update_features_main(features,index,name,colorR,colorG,colorB,border,parent)
+
+function num_features_main(features)
+    return length(features)
+end
+num_features() = num_features_main(features)
+
+function get_feature_main(features,index,fieldname)
+    return getfield(features[index], Symbol(String(fieldname)))
+end
+get_feature_field(index,fieldname) = get_feature_main(features,index,fieldname)
+
 function fixtypes(dict::Dict)
     for key in [
         "filters",
@@ -447,7 +477,7 @@ function reset_layers_main(layers)
 end
 reset_layers() = reset_layers_main(layers)
 
-function save_model_main(name,layers)
+function save_model_main(layers,feeatures,name)
   #=function fix_jlqml_error(layers)
       istuple = []
       for i = 1:length(layers)
@@ -470,13 +500,13 @@ function save_model_main(name,layers)
     push!(istuple,findall(isa.(vals,Tuple)))
   end
   open(string(name,".model"),"w") do f
-    JSON.print(f,(layers,istuple))
+    JSON.print(f,(layers,istuple,features))
   end
   #BSON.@save(string(name,".bson"),layers)
 end
-save_model(name) = save_model_main(name,layers)
+save_model(name) = save_model_main(layers,features,name)
 
-function load_model_main(layers,url)
+function load_model_main(layers,features,url)
     layers = empty!(layers)
     try
       temp = []
@@ -487,6 +517,7 @@ function load_model_main(layers,url)
         push!(layers,copy(temp[1][i]))
       end
       istuple = temp[2]
+      features = push!(features,temp[3]...)
       for i = 1:length(layers)
         k = collect(keys(layers[i]))
         inds = istuple[i]
@@ -506,4 +537,4 @@ function load_model_main(layers,url)
       return false
   end=#
 end
-load_model(url) = load_model_main(layers,url)
+load_model(url) = load_model_main(layers,features,url)

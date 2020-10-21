@@ -12,8 +12,15 @@ url_imgs = Array{String}(undef,0)
 url_labels = Array{String}(undef,0)
 data_imgs = Array{Array}(undef,0)
 data_labels = Array{BitArray}(undef,0)
+@with_kw mutable struct Features
+    name::String = ""
+    color::Array = [0,0,0]
+    border::Bool = false
+    parent::String = ""
+end
+features = []
 
-# Main
+# Mainfea
 @with_kw mutable struct Main_s
     a::Int = 0
 end
@@ -160,6 +167,11 @@ load_data!(master)
     reset_layers,
     update_layers,
     save_model,
+    num_features,
+    reset_features,
+    append_features,
+    update_features,
+    get_feature_field,
     # Model loading
     load_model,
     model_count,

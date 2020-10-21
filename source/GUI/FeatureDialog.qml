@@ -5,17 +5,17 @@ import QtQuick.Window 2.2
 import QtQuick.Layouts 1.2
 import Qt.labs.platform 1.1
 import "Templates"
-//import org.julialang 1.0
+import org.julialang 1.0
 
 
 ApplicationWindow {
     id: window
     visible: true
     title: qsTr("  Deep Data Analysis Software v.0.1")
-    minimumWidth: gridLayout.width
-    minimumHeight: gridLayout.height
-    maximumWidth: gridLayout.width
-    maximumHeight: gridLayout.height
+    minimumWidth: columnLayout.width
+    minimumHeight: columnLayout.height
+    maximumWidth: columnLayout.width
+    maximumHeight: columnLayout.height
 
     SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
     color: defaultpalette.window
@@ -28,11 +28,10 @@ ApplicationWindow {
     property color menucolor: "#fafafa"
     property color defaultcolor: systempalette.window
 
-    onClosing: { featuredialogLoader.sourceComponent = null }
+    onClosing: {featuredialogLoader.sourceComponent = null}
 
-
-    GridLayout {
-        id: gridLayout
+    ColumnLayout {
+        id: columnLayout
         ColumnLayout {
             Layout.margins: margin
             spacing: 0.4*margin
@@ -84,10 +83,8 @@ ApplicationWindow {
                                 }
                             }
                         }
-
                     }
                 }
-
             }
             Row {
                 Label {
@@ -184,27 +181,26 @@ ApplicationWindow {
                                 }
                             }
                         }
-                        featureModel.get(indTree).name = new_name
-                        featureModel.get(indTree).parent = parentComboBox.currentText
-                        /*featureModel.get(indTree).colorR = parseFloat(red.text)
-                        featureModel.get(indTree).colorG = parseFloat(green.text)
-                        featureModel.get(indTree).colorB = parseFloat(blue.text)
+                        var feature = featureModel.get(indTree)
+                        feature.name = new_name
+                        feature.parent = parentComboBox.currentText
+                        /*feature.colorR = parseFloat(red.text)
+                        feature.colorG = parseFloat(green.text)
+                        feature.colorB = parseFloat(blue.text)
                         featureView.itemAtIndex(indTree).children[0].children[0].color =
                                 rgbtohtml([featureModel.get(indTree).colorR,
                                            featureModel.get(indTree).colorG,
                                            featureModel.get(indTree).colorB])*/
+                        Julia.update_features(indTree+1,
+                                              feature.name,
+                                              feature.colorR,
+                                              feature.colorG,
+                                              feature.colorB,
+                                              feature.border,
+                                              feature.parent)
                         featuredialogLoader.sourceComponent = null
                     }
                 }
-                /*Button {
-                    text: "Delete"
-                    Layout.preferredWidth: buttonWidth/2
-                    Layout.preferredHeight: buttonHeight
-                    onClicked: {
-                        featureModel.remove(indTree)
-                        featuredialogLoader.sourceComponent = null
-                    }
-                }*/
             }
         }
     }
