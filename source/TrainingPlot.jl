@@ -1,7 +1,4 @@
 
-using Flux, Random
-using Parameters: @with_kw
-using CUDAapi
 if has_cuda()
     #@info "CUDA is on"
     import CUDA

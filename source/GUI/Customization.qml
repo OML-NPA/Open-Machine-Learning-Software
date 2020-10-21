@@ -50,7 +50,7 @@ ApplicationWindow {
     }
 
     Item {
-        id: mainItem
+        id: customizationItem
         focus: true
         Component.onCompleted: {
             for (var i=0;i<model.length;i++) {

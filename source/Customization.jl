@@ -1,5 +1,4 @@
 
-using Flux, Statistics
 outdims = Flux.outdims
 
 # Layers
@@ -51,10 +50,10 @@ end
 struct Upscaling
     multiplier::Int
     new_size::Tuple
+    dims::Array
 end
-function Upscaling_func(x,multiplier::Int,new_size::Tuple)
-    old_size = size(x,1,2,3)
-    type = typeof(x)
+function Upscaling_func(x,multiplier::Int,new_size::Tuple,dims::Array)
+    type = typeof(x[1])
     new_x = zeros(type, new_size)
     if dims==[1]
         for i = 1:multiplier
@@ -70,15 +69,22 @@ function Upscaling_func(x,multiplier::Int,new_size::Tuple)
         end
     elseif dims==[1,2]
         for i = 1:multiplier
-            new_x[i:multiplier:end,i:multiplier:end,:,:] = x
+            for j = 1:multiplier
+                new_x[i:multiplier:end,j:multiplier:end,:,:] = x
+            end
         end
     elseif dims==[1,2,3]
         for i = 1:multiplier
-            new_x[i:multiplier:end,i:multiplier:end,i:multiplier:end,:] = x
+            for j = 1:multiplier
+                for l = 1:multiplier
+                    new_x[i:multiplier:end,j:multiplier:end,l:multiplier:end,:] = x
+                end
+            end
         end
     end
+    return new_x
 end
-(m::Upscaling)(x) = Upscaling_func(x,multiplier,new_size)
+(m::Upscaling)(x) = Upscaling_func(x,multiplier,new_size,dims)
 
 struct Activation
     f
@@ -167,11 +173,13 @@ function getresizing(type::AbstractString,d,in_size)
         return (Decatenation(d["outputs"],d["dimension"]), out)
     elseif type=="Upscaling"
         multiplier = d["multiplier"]
-        new_size = out
+        dims = d["dimensions"]
+        new_size = [out...]
         for i in dims
             new_size[i] = new_size[i]*multiplier
         end
-        return (Upscaling(multiplier,new_size), out)
+        new_size = (new_size...,)
+        return (Upscaling(multiplier,new_size,dims), out)
     elseif type=="Flattening"
         out = (prod(size(x)),1,1)
         return (flatten(), out)

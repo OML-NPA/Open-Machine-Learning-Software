@@ -1,6 +1,3 @@
-using Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP
-import Base.any
-import ImageSegmentation.label_components
 
 # Helper functions
 function areaopen(im::BitArray,area::Real)
