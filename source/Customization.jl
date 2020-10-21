@@ -48,32 +48,32 @@ end
 (m::Addition)(x) = sum(x)
 
 struct Upscaling
-    multiplier::Int
+    multiplier::Float64
     new_size::Tuple
-    dims::Array
+    dims
 end
-function Upscaling_func(x,multiplier::Int,new_size::Tuple,dims::Array)
+function Upscaling_func(x,multiplier::Float64,new_size::Tuple,dims)
     type = typeof(x[1])
     new_x = zeros(type, new_size)
-    if dims==[1]
+    if dims==1
         for i = 1:multiplier
             new_x[i:multiplier:end,:,:,:] = x
         end
-    elseif dims==[2]
+    elseif dims==2
         for i = 1:multiplier
             new_x[:,i:multiplier:end,:,:] = x
         end
-    elseif dims==[3]
+    elseif dims==3
         for i = 1:multiplier
             new_x[:,:,i:multiplier:end,:] = x
         end
-    elseif dims==[1,2]
+    elseif dims==(1,2)
         for i = 1:multiplier
             for j = 1:multiplier
                 new_x[i:multiplier:end,j:multiplier:end,:,:] = x
             end
         end
-    elseif dims==[1,2,3]
+    elseif dims==(1,2,3)
         for i = 1:multiplier
             for j = 1:multiplier
                 for l = 1:multiplier
@@ -174,12 +174,12 @@ function getresizing(type::AbstractString,d,in_size)
     elseif type=="Upscaling"
         multiplier = d["multiplier"]
         dims = d["dimensions"]
-        new_size = [out...]
+        out = [in_size...]
         for i in dims
-            new_size[i] = new_size[i]*multiplier
+            out[i] = out[i]*multiplier
         end
-        new_size = (new_size...,)
-        return (Upscaling(multiplier,new_size,dims), out)
+        out = (out...,)
+        return (Upscaling(multiplier,out,dims), out)
     elseif type=="Flattening"
         out = (prod(size(x)),1,1)
         return (flatten(), out)
@@ -251,6 +251,7 @@ function getbranch(layers,in_size,inds_cat,inds_cat_in,ind_output,inds)
 end
 
 function makemodel(layers)
+    global model
     layers_names = []
     model_layers = []
     for i = 1:length(layers)
@@ -270,14 +271,17 @@ function makemodel(layers)
     while inds!=ind_output
         branch, inds_out_branch, inds, in_size =
             getbranch(layers,in_size,inds_cat,inds_cat_in,ind_output,inds)
-        push!(model_layers,branch...)
+        push!(model_layers,branch)
         push!(inds_out,inds_out_branch)
     end
     if length(model_layers)>1
         model_layers = Chain(model_layers...)
-    else
+    elseif occursin("Chain",string(typeof(model_layers[1])))
         model_layers = model_layers[1]
+    else
+        model_layers = Chain(model_layers[1])
     end
+    model = model_layers
     return model_layers
 end
 

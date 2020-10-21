@@ -7,7 +7,7 @@ import Base.string, Base.any, ImageSegmentation.label_components
 # Variable definitions
 dict = Dict{String,Any}()
 layers = []
-model =
+model = Chain()
 url_imgs = Array{String}(undef,0)
 url_labels = Array{String}(undef,0)
 data_imgs = Array{Array}(undef,0)
