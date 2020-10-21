@@ -21,6 +21,25 @@ Component {
         Loader { id: customizationLoader}
         Loader { id: trainingplotLoader}
 
+        function load_model_features() {
+            var num_features = Julia.num_features()
+            if (num_features!==0) {
+                updateButton.visible = false
+                updatemodelButton.visible = true
+                for (var i=0;i<num_features;i++) {
+                    var color = Julia.get_feature_field(i+1,"color")
+                    var feature = {
+                        "name": Julia.get_feature_field(i+1,"name"),
+                        "colorR": color[0],
+                        "colorG": color[1],
+                        "colorB": color[2],
+                        "border": Julia.get_feature_field(i+1,"border"),
+                        "parent": Julia.get_feature_field(i+1,"parent")}
+                    featureModel.append(feature)
+                }
+            }
+        }
+
         FolderDialog {
                 id: folderDialog
                 currentFolder: currentfolder
@@ -28,6 +47,7 @@ Component {
                 onAccepted: {
                     var dir = folder.toString().replace("file:///","")
                     updateButton.visible = true
+                    updatemodelButton.visible = false
                     var count = featureModel.count
                     for (var i=0;i<count;i++) {
                         featureModel.remove(0)
@@ -49,6 +69,8 @@ Component {
                     var url = file.toString().replace("file:///","")
                     neuralnetworkTextField.text = url
                     importmodel(model,url)
+                    load_model_features()
+                    nameTextField.text = Julia.get_data(["Training","name"])
                 }
         }
         Column {
@@ -72,6 +94,7 @@ Component {
                             if (Julia.isfile(url)) {
                                 text = url
                                 importmodel(model,url)
+                                load_model_features()
                             }
                         }
                     }
@@ -83,7 +106,6 @@ Component {
                             dialogtarget = "Network"
                             fileDialog.open()
                         }
-
                     }
                 }
                 Row {
@@ -231,26 +253,30 @@ Component {
                                                                           feature.parent)
                                                 }
                                                 updateButton.visible = false
+                                                updatemodelButton.visible = true
                                             }
                                         }
                                         Component.onCompleted: {
-                                            var num_features = Julia.num_features()
-                                            if (num_features!==0) {
-                                                updateButton.visible = false
-                                                for (var i=0;i<num_features;i++) {
-                                                    var color = Julia.get_feature_field(i+1,"color")
-                                                    var feature = {
-                                                        "name": Julia.get_feature_field(i+1,"name"),
-                                                        "colorR": color[0],
-                                                        "colorG": color[1],
-                                                        "colorB": color[2],
-                                                        "border": Julia.get_feature_field(i+1,"border"),
-                                                        "parent": Julia.get_feature_field(i+1,"parent")}
-                                                    featureModel.append(feature)
-                                                }
-                                            }
+                                            load_model_features()
                                         }
                                     }
+                                    TreeButton {
+                                        id: updatemodelButton
+                                        anchors.top: featureView.bottom
+                                        width: buttonWidth + 0.5*margin-24*pix
+                                        height: buttonHeight-2*pix
+                                        hoverEnabled: true
+                                        visible: false
+                                        Label {
+                                            topPadding: 0.15*margin
+                                            leftPadding: 105*pix
+                                            text: "Update model"
+                                        }
+                                        onClicked: {
+                                            Julia.save_model(nameTextField.text)
+                                        }
+                                    }
+
                                     ListView {
                                         id: featureView
                                         height: childrenRect.height
@@ -332,7 +358,6 @@ Component {
                         Layout.preferredHeight: buttonHeight
                         onClicked: {
                             if (trainingplotLoader.sourceComponent === null) {
-
                                 trainingplotLoader.source = "TrainingPlot.qml"}
                             }
                     }

@@ -511,13 +511,19 @@ function load_model_main(layers,features,url)
     try
       temp = []
       open(string(url), "r") do f
-        temp = JSON.parse(f)  # parse and transform data
+        copy!(temp,JSON.parse(f))  # parse and transform data
       end
-      for i =1:length(temp[1])
+      for i = 1:length(temp[1])
         push!(layers,copy(temp[1][i]))
       end
+
+      features_dict = temp[3]
+      for i = 1:length(features_dict)
+          features_temp = Features()
+          dict_to_struct!(features_temp,features_dict[i])
+          push!(features,features_temp)
+      end
       istuple = temp[2]
-      features = push!(features,temp[3]...)
       for i = 1:length(layers)
         k = collect(keys(layers[i]))
         inds = istuple[i]

@@ -846,7 +846,10 @@ ApplicationWindow {
                     onClicked: {
                        getarchitecture()
                        customizationItem.forceActiveFocus()
-                       Julia.save_model(Julia.get_data(["Training","name"]))
+                       var name = Julia.get_data(["Training","name"])
+                       var url = Qt.resolvedUrl(".").replace("file:///","")+name+".model"
+                       neuralnetworkTextField.text = url
+                       Julia.save_model(name)
                        opacity = 1
                     }
                 }
