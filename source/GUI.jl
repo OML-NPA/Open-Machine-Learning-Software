@@ -12,6 +12,13 @@ url_imgs = Array{String}(undef,0)
 url_labels = Array{String}(undef,0)
 data_imgs = Array{Array}(undef,0)
 data_labels = Array{BitArray}(undef,0)
+
+@with_kw mutable struct Model_data
+    input_size::Tuple = (160,160,1)
+    loss::String = "Dice coefficient"
+end
+model_data = Model_data()
+
 @with_kw mutable struct Features
     name::String = ""
     color::Array = [0,0,0]
@@ -94,7 +101,6 @@ include("Training.jl")
 include("Customization.jl")
 include("TrainingPlot.jl")
 
-
 function get_data_main(master::Master,fields::QML.QListAllocated)
     data = master
     fields = QML.value.(fields)
@@ -166,7 +172,9 @@ load_data!(master)
     # Model saving
     reset_layers,
     update_layers,
+    make_model,
     save_model,
+    # Handle features
     num_features,
     reset_features,
     append_features,

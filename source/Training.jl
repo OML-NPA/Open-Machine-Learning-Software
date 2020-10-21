@@ -157,8 +157,7 @@ get_urls_imgs_labels(parent_imgs,parent_labels,type) =
     parent_imgs,parent_labels,type)
 
 function process_images_labels_main(data_imgs,data_labels,url_imgs,
-        url_labels,labels_color,labels_incl,border,
-        min_fr_pix,pix_num,num_angles,type)
+        url_labels,master,features)
 
     # Functions
     function get_image(url_img)
@@ -231,7 +230,6 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
                 return(img)
             end
         end
-
         lim = pix_num^2*min_fr_pix
         angles = range(0,stop=2*pi,length=num_angles+1)
         angles = angles[1:end-1]
@@ -274,7 +272,18 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
         end
         return (imgs_out,labels_out)
     end
-
+    type = "segmentation"
+    options = master.Training.Options
+    min_fr_pix = options.min_fr_pix
+    num_angles = options.num_angles
+    pix_num =
+    labels_color = []
+    labels_incl = []
+    border = []
+    for i = 1:length(features)
+    end
+    labels_color,labels_incl,border,
+    min_fr_pix,pix_num,num_angles,type
     # Code
     temp_imgs = []
     temp_labels = []
@@ -299,8 +308,7 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
     data_labels .= temp_labels
     return nothing
 end
-process_images_labels(labels_color,labels_incl,border,
-        min_fr_pix,pix_num,num_angles,type) =
+process_images_labels() =
     process_images_labels_main(data_imgs,data_labels,url_imgs,
             url_labels,labels_color,labels_incl,border,
             min_fr_pix,pix_num,num_angles,type)
@@ -477,53 +485,29 @@ function reset_layers_main(layers)
 end
 reset_layers() = reset_layers_main(layers)
 
-function save_model_main(layers,feeatures,name)
-  #=function fix_jlqml_error(layers)
+function save_model_main(layers,features,model,model_data,name)
+  function fix_jlqml_error(layers,features,name)
       istuple = []
       for i = 1:length(layers)
-        vals = collect(values(layers[1]))
+        vals = collect(values(layers[i]))
         push!(istuple,findall(isa.(vals,Tuple)))
       end
-      layers = JSON.parse(JSON.json(layers))
-      for i = 1:length(layers)
-        k = collect(keys(layers[i]))
-        inds = istuple[i]
-        for j = 1:length(inds)
-            layers[i][k[inds[j]]] = (layers[i][k[inds[j]]]...,)
-        end
+      url = string(name,".model")
+      open(url,"w") do f
+        JSON.print(f,(layers,features))
       end
-  end=#
-  #fix_jlqml_error(layers)
-  istuple = []
-  for i = 1:length(layers)
-    vals = collect(values(layers[i]))
-    push!(istuple,findall(isa.(vals,Tuple)))
-  end
-  open(string(name,".model"),"w") do f
-    JSON.print(f,(layers,istuple,features))
-  end
-  #BSON.@save(string(name,".bson"),layers)
-end
-save_model(name) = save_model_main(layers,features,name)
-
-function load_model_main(layers,features,url)
-    layers = empty!(layers)
-    try
       temp = []
-      open(string(url), "r") do f
-        copy!(temp,JSON.parse(f))  # parse and transform data
+      open(url, "r") do f
+        copy!(temp,JSON.parse(f))
       end
-      for i = 1:length(temp[1])
-        push!(layers,copy(temp[1][i]))
-      end
-
-      features_dict = temp[3]
+      empty!(layers)
+      copy!(layers,temp[1])
+      features_dict = temp[2]
       for i = 1:length(features_dict)
           features_temp = Features()
           dict_to_struct!(features_temp,features_dict[i])
           push!(features,features_temp)
       end
-      istuple = temp[2]
       for i = 1:length(layers)
         k = collect(keys(layers[i]))
         inds = istuple[i]
@@ -531,16 +515,24 @@ function load_model_main(layers,features,url)
             layers[i][k[inds[j]]] = (layers[i][k[inds[j]]]...,)
         end
       end
-      return true
-    catch
-      return false
-    end
-  #=data = BSON.load(String(url))
+      return (layers,features)
+  end
+  layers, features = fix_jlqml_error(layers,features,name)
+  BSON.@save(string(name,".model"),layers,features,model,model_data)
+end
+save_model(name) = save_model_main(layers,features,model,name)
+
+function load_model_main(layers,features,model,model_data,url)
+  layers = empty!(layers)
+  data = BSON.load(String(url))
   if haskey(data,:layers)
-      push!(layers,data[:layers]...)
+      copy!(layers,data[:layers])
+      copy!(features,data[:features])
+      copy!(model,data[:model])
+      copy!(model_data,data[:model_data])
       return true
   else
       return false
-  end=#
+  end
 end
-load_model(url) = load_model_main(layers,features,url)
+load_model(url) = load_model_main(layers,features,model,url)

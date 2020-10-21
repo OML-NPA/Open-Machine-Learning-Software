@@ -250,7 +250,7 @@ function getbranch(layers,in_size,inds_cat,inds_cat_in,ind_output,inds)
     return (branch,inds_out,inds,in_size)
 end
 
-function makemodel(layers)
+function make_model_main(layers,model_data)
     global model
     layers_names = []
     model_layers = []
@@ -260,6 +260,7 @@ function makemodel(layers)
     ind = findall(x -> x=="Input",layers_names)
     input_params = layers[ind][1]
     in_size = (input_params["size"]...,)
+    model_data.input_size = in_size
     inds = input_params["connections_down"][1]
     inds_cat = findall(x -> x=="Catenation",layers_names)
     inds_cat_in = Array{Array{Int64}}(undef,length(inds_cat))
@@ -267,6 +268,7 @@ function makemodel(layers)
         inds_cat_in[i] = layers[inds_cat[i]]["connections_up"]
     end
     ind_output = findall(x -> x=="Output",layers_names)
+    model_data.loss = layers[ind_output]["loss"][1]
     inds_out = []
     while inds!=ind_output
         branch, inds_out_branch, inds, in_size =
@@ -284,6 +286,8 @@ function makemodel(layers)
     model = model_layers
     return model_layers
 end
+make_model() = make_model_main(layers,model_data)
+
 
 function allcmp(inds)
     for i = 1:length(inds)
