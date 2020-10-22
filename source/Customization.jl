@@ -120,17 +120,13 @@ end
 
 function getactivation(type::AbstractString,d,in_size::Tuple)
     if type=="RelU"
-        RelU = x->relu(x)
-        return Activation(RelU)
+        return Activation(relu)
     elseif type=="Laeky RelU"
-        LeakyRelu = x->leakyrelu(x,a=d["scale"])
-        return Activation(LeakyRelu)
+        return Activation(leakyrelu)
     elseif type=="ElU"
-        Elu = x->elu(x,a=d["alpha"])
-        return Activation(Elu)
+        return Activation(elu)
     elseif type=="Tanh"
-        Tanh = x->tanh(x)
-        return Activation(Tanh)
+        return Activation(tanh)
     end
 end
 
