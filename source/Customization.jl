@@ -284,10 +284,9 @@ function make_model_main(layers,model_data)
         model_layers = Chain(model_layers[1])
     end
     model = model_layers
-    return model_layers
+    return nothing
 end
 make_model() = make_model_main(layers,model_data)
-
 
 function allcmp(inds)
     for i = 1:length(inds)

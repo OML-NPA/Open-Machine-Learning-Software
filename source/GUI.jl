@@ -2,11 +2,12 @@
 using QML, JSON, BSON, Printf, Parameters
 using Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP
 using Flux, Random, CUDAapi, Statistics, Plots
-import Base.string, Base.any, ImageSegmentation.label_components
+import Base.string, Base.any, Base.copy!, ImageSegmentation.label_components
 
 # Variable definitions
 layers = []
 model = Chain()
+features = []
 url_imgs = Array{String}(undef,0)
 url_labels = Array{String}(undef,0)
 data_imgs = Array{Array}(undef,0)
@@ -24,9 +25,8 @@ model_data = Model_data()
     border::Bool = false
     parent::String = ""
 end
-features = []
 
-# Mainfea
+# Main
 @with_kw mutable struct Main_s
     a::Int = 0
 end

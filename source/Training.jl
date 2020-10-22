@@ -16,6 +16,13 @@ function fix_QML_types(var)
     end
 end
 
+function copystruct!(struct1,struct2)
+    fields = fieldnames(typeof(struct1))
+    for i = 1:length(fields)
+        setfield!(struct1,fields[i],getfield(struct2,fields[i]))
+    end
+end
+
 function areaopen(im::BitArray,area::Real)
     im_segm = label_components(im).+1
     im_segm[im] .= 0
@@ -491,17 +498,18 @@ function save_model_main(layers,features,model,model_data,name)
 end
 save_model(name) = save_model_main(layers,features,model,model_data,name)
 
-function load_model_main(layers,features,model,model_data,url)
+function load_model_main(layers,features,url)
+  global model, model_data
   layers = empty!(layers)
   data = BSON.load(String(url))
   if haskey(data,:layers)
       copy!(layers,data[:layers])
       copy!(features,data[:features])
-      copy!(model,data[:model])
-      copy!(model_data,data[:model_data])
+      model = data[:model]
+      model_data = data[:model_data]
       return true
   else
       return false
   end
 end
-load_model(url) = load_model_main(layers,features,model,model_data,url)
+load_model(url) = load_model_main(layers,features,url)
