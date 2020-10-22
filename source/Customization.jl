@@ -120,13 +120,17 @@ end
 
 function getactivation(type::AbstractString,d,in_size::Tuple)
     if type=="RelU"
-        return Activation(x->relu(x))
+        RelU = x->relu(x)
+        return Activation(RelU)
     elseif type=="Laeky RelU"
-        return Activation(x->leakyrelu(x,a=d["scale"]))
+        LeakyRelu = x->leakyrelu(x,a=d["scale"])
+        return Activation(LeakyRelu)
     elseif type=="ElU"
-        return Activation(x->elu(x,a=d["alpha"]))
+        Elu = x->elu(x,a=d["alpha"])
+        return Activation(Elu)
     elseif type=="Tanh"
-        return Activation(x->tanh(x))
+        Tanh = x->tanh(x)
+        return Activation(Tanh)
     end
 end
 
@@ -268,7 +272,7 @@ function make_model_main(layers,model_data)
         inds_cat_in[i] = layers[inds_cat[i]]["connections_up"]
     end
     ind_output = findall(x -> x=="Output",layers_names)
-    model_data.loss = layers[ind_output]["loss"][1]
+    model_data.loss = layers[ind_output[1]]["loss"][1]
     inds_out = []
     while inds!=ind_output
         branch, inds_out_branch, inds, in_size =

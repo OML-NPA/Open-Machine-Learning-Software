@@ -5,7 +5,6 @@ using Flux, Random, CUDAapi, Statistics, Plots
 import Base.string, Base.any, ImageSegmentation.label_components
 
 # Variable definitions
-dict = Dict{String,Any}()
 layers = []
 model = Chain()
 url_imgs = Array{String}(undef,0)
@@ -114,7 +113,7 @@ get_data(fields) = get_data_main(master,fields)
 
 function set_data_main(master::Master,fields::QML.QListAllocated,value)
     data = master
-    fields = QML.value.(fields)
+    fields = String.(QML.value.(fields))
     if value isa AbstractString
         value = String(value)
     elseif value isa Integer

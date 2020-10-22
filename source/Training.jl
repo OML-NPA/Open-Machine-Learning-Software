@@ -1,5 +1,21 @@
 
 # Helper functions
+
+function fix_QML_types(var)
+    if var isa AbstractString
+        return String(var)
+    elseif var isa Integer
+        return Int64(var)
+    elseif var isa AbstractFloat
+        return Float64(var)
+    else
+        if var isa QML.QListAllocated
+            var = QML.value.(var)
+        end
+        return fix_QML_types.(var)
+    end
+end
+
 function areaopen(im::BitArray,area::Real)
     im_segm = label_components(im).+1
     im_segm[im] .= 0
@@ -361,52 +377,44 @@ function model_get_property(index,property_name)
     return property
 end
 
-function update_layers_main(layers,dict,keys,values,ext...)
+function reset_layers_main(layers)
+    layers = empty!(layers)
+end
+reset_layers() = reset_layers_main(layers)
+
+function update_layers_main(layers,keys,values,ext...)
+    keys = fix_QML_types(keys)
+    values = fix_QML_types(values)
+    ext = fix_QML_types(ext)
     dict = Dict{String,Any}()
-    keys = QML.value.(keys)
-    values = QML.value.(values)
     sizehint!(dict, length(keys))
     for i = 1:length(keys)
         var = values[i]
-        if var isa QML.QListAllocated
-            temp = QML.value.(var)
-            dict[keys[i]] = temp
-        elseif var isa Number
-            dict[keys[i]] = var
-        else
-            var = String(var)
+        if var isa String
             var_num = tryparse(Float64, var)
             if var_num == nothing
-              dict[keys[i]] = var
               if occursin(",", var) && !occursin("[", var)
                  dict[keys[i]] = str2tuple(Int64,var)
+              else
+                 dict[keys[i]] = var
               end
             else
               dict[keys[i]] = var_num
             end
+        else
+            dict[keys[i]] = var
         end
     end
-    if length(ext) != 0
+    if length(ext)!=0
         for i = 1:2:length(ext)
-            if ext[i+1] isa Float64 || ext[i+1] isa Float32 ||
-                    ext[i+1] isa String
-                dict[ext[i]] = ext[i+1]
-            else
-                dict[ext[i]] = QML.value.(ext[i+1])
-                if isa(dict[ext[i]],Array) && !isempty(dict[ext[i]]) &&
-                        !isa(dict[ext[i]][1], Real)
-                    ar = []
-                    for j = 1:length(dict[ext[i]])
-                        push!(ar,QML.value.(dict[ext[i]][j]))
-                    end
-                    dict[ext[i]] = ar
-                end
-            end
+            dict[ext[i]] = ext[i+1]
         end
     end
     dict = fixtypes(dict)
     push!(layers, copy(dict))
 end
+update_layers(keys,values,ext...) = update_layers_main(layers,
+    keys,values,ext...)
 
 function reset_features_main(features)
     empty!(features)
@@ -415,14 +423,14 @@ reset_features() = reset_features_main(features)
 
 function append_features_main(features,name,colorR,colorG,colorB,border,parent)
     push!(features,Features(String(name),Int64.([colorR,colorG,colorB]),
-        border,String(parent)))
+        Bool(border),String(parent)))
 end
 append_features(name,colorR,colorG,colorB,border,parent) =
     append_features_main(features,name,colorR,colorG,colorB,border,parent)
 
 function update_features_main(features,index,name,colorR,colorG,colorB,border,parent)
     features[index] = Features(String(name),Int64.([colorR,colorG,colorB]),
-        border,String(parent))
+        Bool(border),String(parent))
 end
 update_features(index,name,colorR,colorG,colorB,border,parent) =
     update_features_main(features,index,name,colorR,colorG,colorB,border,parent)
@@ -466,8 +474,6 @@ function fixtypes(dict::Dict)
     end
     return dict
 end
-update_layers(keys,values,ext...) = update_layers_main(layers,
-    dict,keys,values,ext...)
 
 function str2tuple(type::Type,str::String)
     if occursin("[",str)
@@ -480,47 +486,10 @@ function str2tuple(type::Type,str::String)
     return (ar...,)
 end
 
-function reset_layers_main(layers)
-    layers = empty!(layers)
-end
-reset_layers() = reset_layers_main(layers)
-
 function save_model_main(layers,features,model,model_data,name)
-  function fix_jlqml_error(layers,features,name)
-      istuple = []
-      for i = 1:length(layers)
-        vals = collect(values(layers[i]))
-        push!(istuple,findall(isa.(vals,Tuple)))
-      end
-      url = string(name,".model")
-      open(url,"w") do f
-        JSON.print(f,(layers,features))
-      end
-      temp = []
-      open(url, "r") do f
-        copy!(temp,JSON.parse(f))
-      end
-      empty!(layers)
-      copy!(layers,temp[1])
-      features_dict = temp[2]
-      for i = 1:length(features_dict)
-          features_temp = Features()
-          dict_to_struct!(features_temp,features_dict[i])
-          push!(features,features_temp)
-      end
-      for i = 1:length(layers)
-        k = collect(keys(layers[i]))
-        inds = istuple[i]
-        for j = 1:length(inds)
-            layers[i][k[inds[j]]] = (layers[i][k[inds[j]]]...,)
-        end
-      end
-      return (layers,features)
-  end
-  layers, features = fix_jlqml_error(layers,features,name)
-  BSON.@save(string(name,".model"),layers,features,model,model_data)
+  BSON.@save(string(name,".model"),layers,features,model,model_data,model_data)
 end
-save_model(name) = save_model_main(layers,features,model,name)
+save_model(name) = save_model_main(layers,features,model,model_data,name)
 
 function load_model_main(layers,features,model,model_data,url)
   layers = empty!(layers)
@@ -535,4 +504,4 @@ function load_model_main(layers,features,model,model_data,url)
       return false
   end
 end
-load_model(url) = load_model_main(layers,features,model,url)
+load_model(url) = load_model_main(layers,features,model,model_data,url)
