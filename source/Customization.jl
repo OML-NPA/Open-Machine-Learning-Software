@@ -250,6 +250,38 @@ function getbranch(layers,in_size,inds_cat,inds_cat_in,ind_output,inds)
     return (branch,inds_out,inds,in_size)
 end
 
+function get_loss(name::String)
+    if name=="MAE"
+        return mae
+    elseif name=="MSE"
+        return mse
+    elseif name=="MSLE"
+        return msle
+    elseif name=="Huber"
+        return huber_loss
+    elseif name=="Crossentropy"
+        return crossentropy
+    elseif name=="Logit crossentropy"
+        return logitcrossentropy
+    elseif name=="Binary crossentropy"
+        return binarycrossentropy
+    elseif name=="Logit binary crossentropy"
+        return logitbinarycrossentropy
+    elseif name=="Kullback-Leiber divergence"
+        return kldivergence
+    elseif name=="Poisson"
+        return poisson_loss
+    elseif name=="Hinge"
+        return hinge_loss
+    elseif name=="Squared hinge"
+        return squared_hinge_loss
+    elseif name=="Dice coefficient"
+        return dice_coeff_loss
+    elseif name=="Tversky"
+        return tversky_loss
+    end
+end
+
 function make_model_main(layers,model_data)
     global model
     layers_names = []
@@ -268,7 +300,8 @@ function make_model_main(layers,model_data)
         inds_cat_in[i] = layers[inds_cat[i]]["connections_up"]
     end
     ind_output = findall(x -> x=="Output",layers_names)
-    model_data.loss = layers[ind_output[1]]["loss"][1]
+    loss_name = layers[ind_output[1]]["loss"][1]
+    model_data.loss = get_loss(loss_name)
     inds_out = []
     while inds!=ind_output
         branch, inds_out_branch, inds, in_size =

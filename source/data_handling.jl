@@ -1,7 +1,7 @@
 
 @with_kw mutable struct Model_data
     input_size::Tuple = (160,160,1)
-    loss::String = "Dice coefficient"
+    loss::Function = crossentropy
 end
 model_data = Model_data()
 

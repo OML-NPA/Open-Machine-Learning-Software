@@ -1,7 +1,7 @@
 
 using QML, JSON, BSON, Printf, Parameters
 using Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP
-using Flux, Random, CUDAapi, Statistics, Plots
+using Flux, Flux.Losses, Random, CUDAapi, Statistics, Plots
 import Base.string, Base.any, Base.copy!, ImageSegmentation.label_components
 
 # Variable definitions

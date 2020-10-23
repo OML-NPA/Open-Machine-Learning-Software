@@ -154,6 +154,8 @@ function rescale(array,r::Tuple)
     array = array.*((r[2]-r[1])/(max_val-min_val)).-min_val.+r[1]
 end
 
+anynan(x) = any(isnan.(x))
+
 function replace_nan!(x)
     type = typeof(x[1])
     for i = eachindex(x)
