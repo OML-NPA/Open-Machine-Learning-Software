@@ -1996,7 +1996,6 @@ ApplicationWindow {
             property var downNode
             property var downNodeItem
             property var connectedNode: null
-            property var connectedItem: null
             property var connection: null
             property double outputnum
             property double index

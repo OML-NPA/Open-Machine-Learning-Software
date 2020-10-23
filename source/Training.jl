@@ -1,186 +1,42 @@
 
-# Helper functions
-
-function fix_QML_types(var)
-    if var isa AbstractString
-        return String(var)
-    elseif var isa Integer
-        return Int64(var)
-    elseif var isa AbstractFloat
-        return Float64(var)
-    else
-        if var isa QML.QListAllocated
-            var = QML.value.(var)
-        end
-        return fix_QML_types.(var)
-    end
-end
-
-function copystruct!(struct1,struct2)
-    fields = fieldnames(typeof(struct1))
-    for i = 1:length(fields)
-        setfield!(struct1,fields[i],getfield(struct2,fields[i]))
-    end
-end
-
-function areaopen(im::BitArray,area::Real)
-    im_segm = label_components(im).+1
-    im_segm[im] .= 0
-    labels_color = unique(im_segm)
-    labels_color = labels_color[labels_color.!=0]
-    for i=1:length(labels_color)
-        if sum(.==(im,labels_color[i]))<area
-            im[im_segm==labels_color(i)] = false
-        end
-    end
-    return im
-end
-
-function erode(array::BitArray,num::Int64)
-    array2 = copy(array)
-    for i=1:num
-        erode!(array2)
-    end
-    return(array2)
-end
-
-function dilate(array::BitArray,num::Int64)
-    array2 = copy(array)
-    for i=1:num
-        dilate!(array2)
-    end
-    return(array2)
-end
-
-function arsplit(ar,dim)
-    type = typeof(ar[1])
-    dim2 = dim==1 ? 2 : 1
-    ar_out = []
-    if dim==1
-        for i=1:size(ar,dim)
-            push!(ar_out,ar[i,:])
-        end
-    else
-        for i=1:size(ar,dim)
-            push!(ar_out,ar[:,i])
-        end
-    end
-    return ar_out
-end
-
-function perim(array::BitArray)
-    array2 = copy(array)
-    array2[1:end,1] .= 0
-    array2[1:end,end] .= 0
-    array2[1,1:end] .= 0
-    array2[end,1:end] .= 0
-    er = erode(array2,1)
-    return xor.(array2,er)
-end
-
-function any(array::BitArray,dim)
-    vec = BitArray(undef, size(array,dim), 1)
-    if dim==1
-        for i=1:length(vec)
-            vec[i] = any(array[i,:])
-        end
-    elseif dim==2
-        for i=1:length(vec)
-            vec[i] = any(array[:,i])
-        end
-    elseif dim==3
-        for i=1:length(vec)
-            vec[i] = any(array[:,:,i])
-        end
-    end
-    return vec
-end
-
-function rescale(array,r::Tuple)
-    r = Float32.(r)
-    min_val = minimum(array)
-    max_val = maximum(array)
-    array = array.*((r[2]-r[1])/(max_val-min_val)).-min_val.+r[1]
-end
-
-function replace_nan!(x)
-    type = typeof(x[1])
-    for i = eachindex(x)
-        if isnan(x[i])
-            x[i] = zero(type)
-        end
-    end
-end
-
-function getdirs(dir)
-    return filter(x -> isdir(joinpath(dir, x)),readdir(dir))
-end
-
-function getfiles(dir)
-    return filter(x -> !isdir(joinpath(dir, x)),
-        readdir(dir))
-end
-
-function remove_ext(files)
-    filenames = copy(files)
-    for i=1:length(files)
-        chars = collect(files[i])
-        ind = findfirst(chars.=='.')
-        filenames[i] = String(chars[1:ind-1])
-    end
-    return filenames
-end
-
-function intersect_inds(ar1,ar2)
-    inds1 = Array{Int64,1}(undef, 0)
-    inds2 = Array{Int64,1}(undef, 0)
-    for i=1:length(ar1)
-        inds_log = ar2.==ar1[i]
-        if any(inds_log)
-            push!(inds1,i)
-            push!(inds2,findfirst(inds_log))
-        end
-    end
-    return (inds1, inds2)
-end
-
-# QML functions
 function get_urls_imgs_labels_main(url_imgs,url_labels,
-        parent_imgs,parent_labels,type)
-    dirs_imgs = getdirs(parent_imgs)
-    dirs_labels = getdirs(parent_labels)
+        master)
+    dir_imgs = master.Training.images
+    dir_labels = master.Training.labels
+    type = "segmentation"
+    dirs_imgs = getdirs(dir_imgs)
+    dirs_labels = getdirs(dir_labels)
     dirs = intersect(dirs_imgs,dirs_labels)
     if length(dirs)==0
         dirs = [""]
     end
     for k = 1:length(dirs)
         if type=="segmentation"
-            files_imgs = getfiles(string(parent_imgs,"/",dirs[k]))
-            files_labels = getfiles(string(parent_labels,"/",dirs[k]))
+            files_imgs = getfiles(string(dir_imgs,"/",dirs[k]))
+            files_labels = getfiles(string(dir_labels,"/",dirs[k]))
             filenames_imgs = remove_ext(files_imgs)
             filenames_labels = remove_ext(files_labels)
             inds1, inds2 = intersect_inds(filenames_labels, filenames_imgs)
             files_imgs = files_imgs[inds1]
             files_labels = files_labels[inds2]
             for l = 1:length(files_imgs)
-                push!(url_imgs,string(parent_imgs,"/",files_imgs[l]))
-                push!(url_labels,string(parent_labels,"/",files_labels[l]))
+                push!(url_imgs,string(dir_imgs,"/",files_imgs[l]))
+                push!(url_labels,string(dir_labels,"/",files_labels[l]))
             end
         else
-            files_imgs = getfiles(string(parent_imgs,"/",dirs[k]))
+            files_imgs = getfiles(string(dir_imgs,"/",dirs[k]))
             filenames_imgs = remove_ext(files_imgs)
             for l = 1:length(files_imgs)
-                push!(url_imgs,string(parent_imgs,"/",files_imgs[l]))
+                push!(url_imgs,string(dir_imgs,"/",files_imgs[l]))
             end
         end
     end
 end
-get_urls_imgs_labels(parent_imgs,parent_labels,type) =
-    get_urls_imgs_labels_main(url_imgs,url_labels,
-    parent_imgs,parent_labels,type)
+get_urls_imgs_labels() =
+    get_urls_imgs_labels_main(url_imgs,url_labels,master)
 
 function process_images_labels_main(data_imgs,data_labels,url_imgs,
-        url_labels,master,features)
+        url_labels,master,features,model_data)
 
     # Functions
     function get_image(url_img)
@@ -253,7 +109,8 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
                 return(img)
             end
         end
-        lim = pix_num^2*min_fr_pix
+
+        lim = prod(pix_num)*min_fr_pix
         angles = range(0,stop=2*pi,length=num_angles+1)
         angles = angles[1:end-1]
         imgs_out = []
@@ -261,8 +118,9 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
         for g = 1:length(angles)
             img2 = rotate_img(img,angles[g])
             label2 = rotate_img(label,angles[g])
-            num1 = Int64(floor(size(label2,1)/(pix_num*0.9)))
-            num2 = Int64(floor(size(label2,2)/(pix_num*0.9)))
+            num1 = Int64(floor(size(label2,1)/(pix_num[1]*0.9)))
+            num2 = Int64(floor(size(label2,2)/(pix_num[2]*0.9)))
+            #@info(num1)
             step1 = Int64(floor(size(label2,1)/num1))
             step2 = Int64(floor(size(label2,2)/num2))
             num_batch = 2*(num1-1)*(num2-1)
@@ -280,11 +138,11 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
                     for j = 1:num2-1
                         ymin = (i-1)*step1+1;
                         xmin = (j-1)*step2+1;
-                        I1 = label3[ymin:ymin+pix_num-1,xmin:xmin+pix_num-1,:]
+                        I1 = label3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
                         if sum(I1)<lim
                             continue
                         end
-                        I2 = img3[ymin:ymin+pix_num-1,xmin:xmin+pix_num-1,:]
+                        I2 = img3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
                         push!(label_temp,I1)
                         push!(img_temp,I2)
                     end
@@ -297,16 +155,26 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
     end
     type = "segmentation"
     options = master.Training.Options
-    min_fr_pix = options.min_fr_pix
-    num_angles = options.num_angles
-    pix_num =
+    min_fr_pix = options.Processing.min_fr_pix
+    num_angles = options.Processing.num_angles
+    pix_num = model_data.input_size[1:2]
     labels_color = []
-    labels_incl = []
     border = []
+    labels_incl = []
+    names = []
     for i = 1:length(features)
+        push!(names,features[i].name)
     end
-    labels_color,labels_incl,border,
-    min_fr_pix,pix_num,num_angles,type
+    for i = 1:length(features)
+        feature = features[i]
+        push!(labels_color,feature.color)
+        push!(border,feature.border)
+        if isempty(feature.parent)
+            push!(labels_incl,[])
+        else
+            push!(labels_incl,findfirst(feature.name.==names))
+        end
+    end
     # Code
     temp_imgs = []
     temp_labels = []
@@ -333,27 +201,7 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
 end
 process_images_labels() =
     process_images_labels_main(data_imgs,data_labels,url_imgs,
-            url_labels,labels_color,labels_incl,border,
-            min_fr_pix,pix_num,num_angles,type)
-
-
-function get_labels_colors_main(url_labels::Array{String})
-    colors_out = []
-    for i=1:length(url_labels)
-        labelimg = RGB.(load(url_labels[i]))
-        unique_colors = unique(labelimg)
-        ind = findfirst(unique_colors.==RGB.(0,0,0))
-        deleteat!(unique_colors,ind)
-        colors = channelview(float.(unique_colors))*255
-        if i==1
-            colors_out = arsplit(colors,2)
-        else
-            colors_out = union(colors_out,arsplit(colors,2))
-        end
-    end
-    return colors_out
-end
-get_labels_colors() = get_labels_colors_main(url_labels)
+            url_labels,master,features,model_data)
 
 function get_labels_colors_main(url_labels::Array{String})
     colors_out = []
@@ -451,47 +299,6 @@ function get_feature_main(features,index,fieldname)
     return getfield(features[index], Symbol(String(fieldname)))
 end
 get_feature_field(index,fieldname) = get_feature_main(features,index,fieldname)
-
-function fixtypes(dict::Dict)
-    for key in [
-        "filters",
-        "dilationfactor",
-        "stride",
-        "inputs",
-        "outputs",
-        "dimension"]
-        if haskey(dict, key)
-            dict[key] = Int64(dict[key])
-        end
-    end
-    if haskey(dict, "size")
-        if length(dict["size"])==2
-            dict["size"] = (dict["size"]...,1)
-        end
-    end
-    for key in ["filtersize", "poolsize","newsize"]
-        if haskey(dict, key)
-            if length(dict[key])==1 && !(dict[key] isa Array)
-                dict[key] = Int64(dict[key])
-                dict[key] = (dict[key], dict[key])
-            else
-                dict[key] = (dict[key]...,)
-            end
-        end
-    end
-    return dict
-end
-
-function str2tuple(type::Type,str::String)
-    if occursin("[",str)
-        str2 = split(str,"")
-        str2 = join(str2[2:end-1])
-        ar = parse.(Int64, split(str2, ","))
-    else
-        ar = parse.(type, split(str, ","))
-    end
-    return (ar...,)
-end
 
 function save_model_main(layers,features,model,model_data,name)
   BSON.@save(string(name,".model"),layers,features,model,model_data,model_data)
