@@ -200,3 +200,7 @@ end
 function num_cores()
   return Threads.nthreads()
 end
+
+function source_dir()
+  return replace(pwd(), "\\" => "/")
+end

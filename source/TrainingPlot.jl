@@ -28,11 +28,12 @@ function accuracy(x, y, model)
     return 0
 end
 
-function train(model,master)
+function train(model,master,features)
     training = master.Training
     get_urls_imgs_labels()
     if isempty(training.url_imgs) ||
-        isempty(training.url_labels)
+        isempty(training.url_labels) ||
+        isempty(features)
         return false
     end
     process_images_labels()

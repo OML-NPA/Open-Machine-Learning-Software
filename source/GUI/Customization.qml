@@ -847,10 +847,10 @@ ApplicationWindow {
                        getarchitecture()
                        customizationItem.forceActiveFocus()
                        var name = Julia.get_data(["Training","name"])
-                       var url = Qt.resolvedUrl(".").replace("file:///","")+name+".model"
+                       var url = Julia.source_dir()+"/models/"+name+".model"
                        neuralnetworkTextField.text = url
                        Julia.make_model()
-                       Julia.save_model(name)
+                       Julia.save_model(url)
                        opacity = 1
                     }
                 }

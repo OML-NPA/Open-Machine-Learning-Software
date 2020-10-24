@@ -303,10 +303,10 @@ function get_feature_main(features,index,fieldname)
 end
 get_feature_field(index,fieldname) = get_feature_main(features,index,fieldname)
 
-function save_model_main(layers,features,model,model_data,name)
-  BSON.@save(string(name,".model"),layers,features,model,model_data,model_data)
+function save_model_main(layers,features,model,model_data,url)
+  BSON.@save(String(url),layers,features,model,model_data,model_data)
 end
-save_model(name) = save_model_main(layers,features,model,model_data,name)
+save_model(url) = save_model_main(layers,features,model,model_data,url)
 
 function load_model_main(layers,features,url)
   global model, model_data

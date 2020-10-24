@@ -19,8 +19,10 @@ include("TrainingPlot.jl")
 
 if !isfile("config.json")
   save_data()
+else
+  load_data!(master)
 end
-load_data!(master)
+
 @qmlfunction(
     # Model saving
     reset_layers,
@@ -49,7 +51,8 @@ load_data!(master)
     isfile,
     isdir,
     num_cores,
-    has_cuda
+    has_cuda,
+    source_dir
 )
 load("GUI//Main.qml")
 exec()
