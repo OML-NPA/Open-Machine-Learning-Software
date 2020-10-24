@@ -74,23 +74,21 @@ Component {
                     RowLayout {
                         spacing: 0.3*margin
                         ColumnLayout {
-                            Layout.alignment : Qt.AlignHCenter
                             spacing: 0.55*margin
                             Label {
-                                Layout.alignment : Qt.AlignLeft
-                                Layout.row: 1
                                 text: "Allow GPU:"
                             }
                             Label {
-                                Layout.alignment : Qt.AlignLeft
-                                Layout.row: 1
                                 text: "Allowed CPU cores:"
                                 bottomPadding: 0.05*margin
                             }
                         }
-                        ColumnLayout {
+                        Column {
+                            spacing: !Julia.has_cuda() ? 30*pix : 25*pix
                             CheckBox {
-                                checkState : Julia.get_data(
+                                x: -35*pix
+                                visible: Julia.has_cuda()
+                                checkState: Julia.get_data(
                                            ["Options","Hardware_resources","allow_GPU"]) ?
                                            Qt.Checked : Qt.Unchecked
                                 onClicked: {
@@ -99,6 +97,11 @@ Component {
                                         ["Options","Hardware_resources","allow_GPU"],
                                         value)
                                 }
+                            }
+                            Label {
+                                topPadding: 10*pix
+                                visible: !Julia.has_cuda()
+                                text: "No CUDA capable device found!"
                             }
                             ComboBox {
                                 editable: false

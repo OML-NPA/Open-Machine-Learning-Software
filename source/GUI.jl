@@ -50,7 +50,8 @@ load_data!(master)
     # Other
     isfile,
     isdir,
-    num_cores
+    num_cores,
+    has_cuda
 )
 load("GUI//Main.qml")
 exec()

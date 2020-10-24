@@ -1,10 +1,4 @@
 
-if master.Options.Hardware_resources.allow_GPU
-    #@info "CUDA is on"
-    import CUDA
-    CUDA.allowscalar(false)
-end
-
 args = master.Training.Options.Hyperparameters
 
 function get_train_test(data_input,data_labels)
@@ -39,7 +33,9 @@ function train(data_imgs,data_labels,model)
     model = build_model(args)
 
     # Load model and datasets onto GPU, if enabled
-    if master.Options.Hardware_resources.allow_GPU
+    if master.Options.Hardware_resources.allow_GPU && has_cuda()
+        import CUDA
+        CUDA.allowscalar(false)
         train_set = gpu.(train_set)
         if ~isempty(test_set)
             test_set = gpu.(test_set)
@@ -48,6 +44,8 @@ function train(data_imgs,data_labels,model)
             test = false
         end
         model = gpu(model)
+    else
+        master.Options.Hardware_resources.allow_GPU = false
     end
     # Precompile model
     model(train_set[1][1])
@@ -55,7 +53,7 @@ function train(data_imgs,data_labels,model)
     # `loss()` calculates the crossentropy loss between our prediction `y_hat`
     # (calculated from `model(x)`) and the ground truth `y`.  We augment the data
     # a bit, adding gaussian random noise to our image to make it more robust.
-    
+
     # Train our model with the given training set using the ADAM optimizer and
     # printing out performance against the test set as we go.
     opt = ADAM(args.lr)
