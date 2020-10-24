@@ -66,7 +66,7 @@ ApplicationWindow {
                         delegate : MenuButton {
                             id: general
                             width: 1.5*buttonWidth
-                            height: 1.3*buttonHeight
+                            height: 1.25*buttonHeight
                             onClicked: {
                                 stack.push(modelData.stackview);
                                 for (var i=0;i<(menubuttonRepeater.count);i++) {

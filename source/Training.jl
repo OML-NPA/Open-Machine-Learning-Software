@@ -1,6 +1,7 @@
 
-function get_urls_imgs_labels_main(url_imgs,url_labels,
-        master)
+function get_urls_imgs_labels_main(master)
+    url_imgs = master.Training.url_imgs
+    url_labels = master.Training.url_labels
     dir_imgs = master.Training.images
     dir_labels = master.Training.labels
     type = master.Training.type
@@ -33,11 +34,13 @@ function get_urls_imgs_labels_main(url_imgs,url_labels,
     end
 end
 get_urls_imgs_labels() =
-    get_urls_imgs_labels_main(url_imgs,url_labels,master)
+    get_urls_imgs_labels_main(master)
 
-function process_images_labels_main(data_imgs,data_labels,url_imgs,
-        url_labels,master,features,model_data)
-
+function process_images_labels_main(master,features,model_data)
+    url_imgs = master.Training.url_imgs
+    url_labels = master.Training.url_labels
+    data_input = master.Training.data_input
+    data_labels = master.Training.data_labels
     # Functions
     function get_image(url_img)
         img = channelview(float.(Gray.(load(url_img))))
@@ -193,17 +196,17 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
         temp_imgs = vcat(temp_imgs...)
         temp_labels = vcat(temp_labels...)
     end
-    resize!(data_imgs,length(temp_imgs))
+    resize!(data_input,length(temp_imgs))
     resize!(data_labels,length(temp_labels))
-    data_imgs .= temp_imgs
+    data_input .= temp_imgs
     data_labels .= temp_labels
     return nothing
 end
 process_images_labels() =
-    process_images_labels_main(data_imgs,data_labels,url_imgs,
-            url_labels,master,features,model_data)
+    process_images_labels_main(master,features,model_data)
 
-function get_labels_colors_main(url_labels::Array{String})
+function get_labels_colors_main(master)
+    url_labels = master.Training.url_labels
     colors_out = []
     for i=1:length(url_labels)
         labelimg = RGB.(load(url_labels[i]))
@@ -219,7 +222,7 @@ function get_labels_colors_main(url_labels::Array{String})
     end
     return colors_out
 end
-get_labels_colors() = get_labels_colors_main(url_labels)
+get_labels_colors() = get_labels_colors_main(master)
 
 model_count() = length(layers)
 model_properties(index) = [keys(layers[index])...]

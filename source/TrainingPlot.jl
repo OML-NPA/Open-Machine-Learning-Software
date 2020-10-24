@@ -1,9 +1,12 @@
 
 args = master.Training.Options.Hyperparameters
 
-function get_train_test(data_input,data_labels)
+function get_train_test(training)
+    data_input = training.data_input
+    data_labels = training.data_labels
+    test_fraction = training.Options.General.test_data_fraction
     set = [(data_input[i],data_labels[i]) for i in 1:length(data_input)]
-    ind = Int64(round(0.8*length(set)))
+    ind = Int64(round(test_fraction*length(set)))
     train_set = set[1:ind]
     test_set = set[ind+1:end]
     return train_set, test_set
@@ -20,20 +23,23 @@ function make_minibatch(set,batch_size)
 end
 
 function accuracy(x, y, model)
-    predicted = cpu(model(x))
+    predicted = cpu(model.(x))
     actual = cpu(y)
     return 0
 end
 
-function train(data_imgs,data_labels,model,master)
+function train(model,master)
+    training = master.Training
+    get_urls_imgs_labels()
+    if isempty(training.url_imgs) ||
+        isempty(training.url_labels)
+        return false
+    end
+    process_images_labels()
 
-    args = master.Training.Options.Hyperparameters
-
+    args = training.Options.Hyperparameters
     @info("Loading data set")
-    train_set, test_set = get_train_test(data_imgs,data_labels,args)
-
-    @info("Building model...")
-    model = build_model(args)
+    train_set, test_set = get_train_test(training)
 
     # Load model and datasets onto GPU, if enabled
     if master.Options.Hardware_resources.allow_GPU && has_cuda()
@@ -60,7 +66,7 @@ function train(data_imgs,data_labels,model,master)
     last_improvement = 0
     for epoch_idx in 1:args.epochs
         # Train for a single epoch
-        Flux.train!(loss, params(model), train_set, opt)
+        Flux.train!(model_data.loss, params(model), train_set, opt)
 
         # Terminate on NaN
         if anynan(paramvec(model))
@@ -70,7 +76,7 @@ function train(data_imgs,data_labels,model,master)
 
         # Calculate accuracy:
         if test==true
-            acc = accuracy(test_set..., model)
+            acc = accuracy(test_set, model)
         end
 
         # If this is the best accuracy we've seen so far, save the model out

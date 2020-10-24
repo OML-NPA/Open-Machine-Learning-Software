@@ -33,6 +33,9 @@ ApplicationWindow {
             }
     }
 
+    onClosing: { trainingoptionsLoader.sourceComponent = null }
+
+
     GridLayout {
         id: gridLayout
         RowLayout {
@@ -51,11 +54,12 @@ ApplicationWindow {
                         id: menubuttonRepeater
                         Component.onCompleted: {menubuttonRepeater.itemAt(0).buttonfocus = true}
                         model: [{"name": "Processing", "stackview": processingView},
-                            {"name": "Hyperparameters", "stackview": hyperparametersView}]
+                            {"name": "Hyperparameters", "stackview": hyperparametersView},
+                            {"name": "General", "stackview": generalView}]
                         delegate : MenuButton {
                             id: general
                             width: 1.3*buttonWidth
-                            height: buttonHeight
+                            height: 1.25*buttonHeight
                             onClicked: {
                                 stack.push(modelData.stackview);
                                 for (var i=0;i<(menubuttonRepeater.count);i++) {
@@ -257,11 +261,47 @@ ApplicationWindow {
                                         }
                                     }
                                 }
-
                             }
-
-
                         }
+                }
+                Component {
+                    id: generalView
+                    Column {
+                        spacing: 0.2*margin
+                        RowLayout {
+                            spacing: 0.3*margin
+                            ColumnLayout {
+                                Layout.alignment : Qt.AlignHCenter
+                                spacing: 0.55*margin
+                                Label {
+                                    Layout.alignment : Qt.AlignLeft
+                                    Layout.row: 1
+                                    text: "Test data fraction:"
+                                }
+                            }
+                            Column {
+                                topPadding: 0*pix
+                                spacing: 0.50*margin
+                                SpinBox {
+                                    from: 0
+                                    value: 10*Julia.get_data(
+                                               ["Training","Options","General","test_data_fraction"])
+                                    to: 9
+                                    stepSize: 1
+                                    editable: true
+                                    property real realValue: value/10
+                                    textFromValue: function(value, locale) {
+                                        return Number(value/10).toLocaleString(locale,'f',1)
+                                    }
+                                    onValueModified: {
+                                        Julia.set_data(
+                                            ["Training","Options","General","test_data_fraction"],
+                                            value/10)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

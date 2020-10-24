@@ -10,10 +10,6 @@ CUDA.allowscalar(false)
 layers = []
 model = Chain()
 features = []
-url_imgs = Array{String}(undef,0)
-url_labels = Array{String}(undef,0)
-data_imgs = Array{Array}(undef,0)
-data_labels = Array{BitArray}(undef,0)
 
 include("helper_functions.jl")
 include("data_handling.jl")

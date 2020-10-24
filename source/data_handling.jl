@@ -30,26 +30,32 @@ end
 options = Options()
 
 # Training
-@with_kw mutable struct Processing_temp
+@with_kw mutable struct Processing_training
     mirroring::Bool = true
     num_angles::Int64 = 6
     min_fr_pix::Float64 = 0.1
 end
-processing_temp = Processing_temp()
+processing_training = Processing_training()
 
-@with_kw mutable struct Hyperparameters_temp
+@with_kw mutable struct Hyperparameters_training
     learning_rate::Float64 = 1e-3
     epochs::Int = 1
     batch_size::Int = 10
     savepath::String = "./"
 end
-hyperparameters_temp = Hyperparameters_temp()
+hyperparameters_training = Hyperparameters_training()
 
-@with_kw mutable struct Options_temp
-    Processing = processing_temp
-    Hyperparameters = hyperparameters_temp
+@with_kw mutable struct General_training
+    test_data_fraction::Float64 = 0.2
 end
-options_temp = Options_temp()
+general_training = General_training()
+
+@with_kw mutable struct Options_training
+    General = general_training
+    Processing = processing_training
+    Hyperparameters = hyperparameters_training
+end
+options_training = Options_training()
 
 @with_kw mutable struct Training
     template::String = ""
@@ -57,7 +63,11 @@ options_temp = Options_temp()
     labels::String = ""
     name::String = "new"
     type::String = "segmentation"
-    Options = options_temp
+    url_imgs::Array = []
+    url_labels::Array = []
+    data_input::Array{Array} = []
+    data_labels = []
+    Options = options_training
 end
 training = Training()
 
