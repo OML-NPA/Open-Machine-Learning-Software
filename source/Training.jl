@@ -3,7 +3,7 @@ function get_urls_imgs_labels_main(url_imgs,url_labels,
         master)
     dir_imgs = master.Training.images
     dir_labels = master.Training.labels
-    type = "segmentation"
+    type = master.Training.type
     dirs_imgs = getdirs(dir_imgs)
     dirs_labels = getdirs(dir_labels)
     dirs = intersect(dirs_imgs,dirs_labels)
@@ -153,7 +153,7 @@ function process_images_labels_main(data_imgs,data_labels,url_imgs,
         end
         return (imgs_out,labels_out)
     end
-    type = "segmentation"
+    type = master.Training.type
     options = master.Training.Options
     min_fr_pix = options.Processing.min_fr_pix
     num_angles = options.Processing.num_angles

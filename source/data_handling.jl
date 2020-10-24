@@ -1,7 +1,7 @@
 
 @with_kw mutable struct Model_data
     input_size::Tuple = (160,160,1)
-    loss::Function = crossentropy
+    loss::Function = Losses.crossentropy
 end
 model_data = Model_data()
 
@@ -56,6 +56,7 @@ options_temp = Options_temp()
     images::String = ""
     labels::String = ""
     name::String = "new"
+    type::String = "segmentation"
     Options = options_temp
 end
 training = Training()

@@ -25,7 +25,10 @@ function accuracy(x, y, model)
     return 0
 end
 
-function train(data_imgs,data_labels,model)
+function train(data_imgs,data_labels,model,master)
+
+    args = master.Training.Options.Hyperparameters
+
     @info("Loading data set")
     train_set, test_set = get_train_test(data_imgs,data_labels,args)
 
@@ -34,8 +37,6 @@ function train(data_imgs,data_labels,model)
 
     # Load model and datasets onto GPU, if enabled
     if master.Options.Hardware_resources.allow_GPU && has_cuda()
-        import CUDA
-        CUDA.allowscalar(false)
         train_set = gpu.(train_set)
         if ~isempty(test_set)
             test_set = gpu.(test_set)
@@ -50,13 +51,9 @@ function train(data_imgs,data_labels,model)
     # Precompile model
     model(train_set[1][1])
 
-    # `loss()` calculates the crossentropy loss between our prediction `y_hat`
-    # (calculated from `model(x)`) and the ground truth `y`.  We augment the data
-    # a bit, adding gaussian random noise to our image to make it more robust.
-
     # Train our model with the given training set using the ADAM optimizer and
     # printing out performance against the test set as we go.
-    opt = ADAM(args.lr)
+    opt = ADAM(args.learning_rate)
 
     @info("Beginning training loop...")
     best_acc = 0.0
@@ -74,13 +71,6 @@ function train(data_imgs,data_labels,model)
         # Calculate accuracy:
         if test==true
             acc = accuracy(test_set..., model)
-        end
-
-        #@info(@sprintf("[%d]: Test accuracy: %.4f", epoch_idx, acc))
-        # If our accuracy is good enough, quit out.
-        if acc >= 0.990
-            @info(" -> Early-exiting: We reached our target accuracy of 99.9%")
-            break
         end
 
         # If this is the best accuracy we've seen so far, save the model out

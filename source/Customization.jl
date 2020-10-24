@@ -252,33 +252,33 @@ end
 
 function get_loss(name::String)
     if name=="MAE"
-        return mae
+        return Losses.mae
     elseif name=="MSE"
-        return mse
+        return Losses.mse
     elseif name=="MSLE"
-        return msle
+        return Losses.msle
     elseif name=="Huber"
-        return huber_loss
+        return Losses.huber_loss
     elseif name=="Crossentropy"
-        return crossentropy
+        return Losses.crossentropy
     elseif name=="Logit crossentropy"
-        return logitcrossentropy
+        return Losses.logitcrossentropy
     elseif name=="Binary crossentropy"
-        return binarycrossentropy
+        return Losses.binarycrossentropy
     elseif name=="Logit binary crossentropy"
-        return logitbinarycrossentropy
+        return Losses.logitbinarycrossentropy
     elseif name=="Kullback-Leiber divergence"
-        return kldivergence
+        return Losses.kldivergence
     elseif name=="Poisson"
-        return poisson_loss
+        return Losses.poisson_loss
     elseif name=="Hinge"
-        return hinge_loss
+        return Losses.hinge_loss
     elseif name=="Squared hinge"
         return squared_hinge_loss
     elseif name=="Dice coefficient"
-        return dice_coeff_loss
+        return Losses.dice_coeff_loss
     elseif name=="Tversky"
-        return tversky_loss
+        return Losses.tversky_loss
     end
 end
 

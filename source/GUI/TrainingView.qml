@@ -232,8 +232,7 @@ Component {
                                                 for (var i=0;i<count;i++) {
                                                     featureModel.remove(0)
                                                 }
-                                                Julia.get_urls_imgs_labels(imagesTextField.text,
-                                                    labelsTextField.text,"segmentation")
+                                                Julia.get_urls_imgs_labels()
                                                 var colors = Julia.get_labels_colors()
                                                 Julia.reset_features()
                                                 for (i=0;i<colors.length;i++) {
