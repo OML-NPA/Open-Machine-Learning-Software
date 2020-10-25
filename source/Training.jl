@@ -2,6 +2,8 @@
 function get_urls_imgs_labels_main(master)
     url_imgs = master.Training.url_imgs
     url_labels = master.Training.url_labels
+    empty!(url_imgs)
+    empty!(url_labels)
     dir_imgs = master.Training.images
     dir_labels = master.Training.labels
     type = master.Training.type
@@ -36,11 +38,7 @@ end
 get_urls_imgs_labels() =
     get_urls_imgs_labels_main(master)
 
-function process_images_labels_main(master,features,model_data)
-    url_imgs = master.Training.url_imgs
-    url_labels = master.Training.url_labels
-    data_input = master.Training.data_input
-    data_labels = master.Training.data_labels
+function process_images_labels_main(master,model_data)
     # Functions
     function get_image(url_img)
         img = channelview(float.(Gray.(load(url_img))))
@@ -156,6 +154,13 @@ function process_images_labels_main(master,features,model_data)
         end
         return (imgs_out,labels_out)
     end
+
+    # Code
+    url_imgs = master.Training.url_imgs
+    url_labels = master.Training.url_labels
+    data_input = master.Training.data_input
+    data_labels = master.Training.data_labels
+    features = model_data.features
     type = master.Training.type
     options = master.Training.Options
     min_fr_pix = options.Processing.min_fr_pix
@@ -165,6 +170,8 @@ function process_images_labels_main(master,features,model_data)
     border = []
     labels_incl = []
     names = []
+    empty!(data_input)
+    empty!(data_labels)
     for i = 1:length(features)
         push!(names,features[i].name)
     end
@@ -178,10 +185,10 @@ function process_images_labels_main(master,features,model_data)
             push!(labels_incl,findfirst(feature.name.==names))
         end
     end
-    # Code
-    temp_imgs = []
-    temp_labels = []
-    for i = 1:length(url_imgs)
+
+    temp_imgs = Vector{Any}(undef,length(url_imgs))
+    temp_labels = Vector{Any}(undef,length(url_imgs))
+    Threads.@threads for i = 1:length(url_imgs)
         img = get_image(url_imgs[i])
         label = get_label(url_labels[i])
         if type=="segmentation"
@@ -189,8 +196,8 @@ function process_images_labels_main(master,features,model_data)
             label = correct_label(label,labels_color,labels_incl,border)
             img,label = augment(img,label,num_angles,pix_num,min_fr_pix)
         end
-        push!(temp_imgs,img)
-        push!(temp_labels,label)
+        temp_imgs[i] = img
+        temp_labels[i] = label
     end
     if type=="segmentation"
         temp_imgs = vcat(temp_imgs...)
@@ -203,44 +210,45 @@ function process_images_labels_main(master,features,model_data)
     return nothing
 end
 process_images_labels() =
-    process_images_labels_main(master,features,model_data)
+    process_images_labels_main(master,model_data)
 
 function get_labels_colors_main(master)
     url_labels = master.Training.url_labels
-    colors_out = []
-    for i=1:length(url_labels)
+    colors_out = Vector{Any}(undef,length(url_labels))
+    Threads.@threads for i=1:length(url_labels)
         labelimg = RGB.(load(url_labels[i]))
         unique_colors = unique(labelimg)
         ind = findfirst(unique_colors.==RGB.(0,0,0))
         deleteat!(unique_colors,ind)
         colors = channelview(float.(unique_colors))*255
-        if i==1
-            colors_out = arsplit(colors,2)
-        else
-            colors_out = union(colors_out,arsplit(colors,2))
-        end
+        colors_out[i] = arsplit(colors,2)
     end
+    colors_out = vcat(colors_out...)
+    colors_out = union(colors_out,arsplit(colors,2))
     return colors_out
 end
 get_labels_colors() = get_labels_colors_main(master)
 
-model_count() = length(layers)
-model_properties(index) = [keys(layers[index])...]
-function model_get_property(index,property_name)
-    layer = layers[index]
+model_count() = length(model_data.layers)
+model_properties(index) = [keys(model_data.layers[index])...]
+function model_get_property_main(model_data,index,property_name)
+    layer = model_data.layers[index]
     property = layer[property_name]
     if  isa(property,Tuple)
         property = join(property,',')
     end
     return property
 end
+model_get_property(index,property_name) =
+    model_get_property_main(model_data,index,property_name)
 
-function reset_layers_main(layers)
-    layers = empty!(layers)
+function reset_layers_main(model_data)
+    empty!(model_data.layers)
 end
-reset_layers() = reset_layers_main(layers)
+reset_layers() = reset_layers_main(model_data)
 
-function update_layers_main(layers,keys,values,ext...)
+function update_layers_main(model_data,keys,values,ext...)
+    layers = model_data.layers
     keys = fix_QML_types(keys)
     values = fix_QML_types(values)
     ext = fix_QML_types(ext)
@@ -271,55 +279,50 @@ function update_layers_main(layers,keys,values,ext...)
     dict = fixtypes(dict)
     push!(layers, copy(dict))
 end
-update_layers(keys,values,ext...) = update_layers_main(layers,
+update_layers(keys,values,ext...) = update_layers_main(model_data,
     keys,values,ext...)
 
-function reset_features_main(features)
-    empty!(features)
+function reset_features_main(model_data)
+    empty!(model_data.features)
 end
-reset_features() = reset_features_main(features)
+reset_features() = reset_features_main(model_data)
 
-function append_features_main(features,name,colorR,colorG,colorB,border,parent)
-    push!(features,Features(String(name),Int64.([colorR,colorG,colorB]),
-        Bool(border),String(parent)))
+function append_features_main(model_data,name,colorR,colorG,colorB,border,parent)
+    push!(model_data.features,Features(String(name),
+        Int64.([colorR,colorG,colorB]),Bool(border),String(parent)))
 end
 append_features(name,colorR,colorG,colorB,border,parent) =
-    append_features_main(features,name,colorR,colorG,colorB,border,parent)
+    append_features_main(model_data,name,colorR,colorG,colorB,border,parent)
 
-function update_features_main(features,index,name,colorR,colorG,colorB,border,parent)
-    features[index] = Features(String(name),Int64.([colorR,colorG,colorB]),
+function update_features_main(model_data,index,name,colorR,colorG,colorB,border,parent)
+    model_data.features[index] = Features(String(name),Int64.([colorR,colorG,colorB]),
         Bool(border),String(parent))
 end
 update_features(index,name,colorR,colorG,colorB,border,parent) =
-    update_features_main(features,index,name,colorR,colorG,colorB,border,parent)
+    update_features_main(model_data,index,name,colorR,colorG,colorB,border,parent)
 
-function num_features_main(features)
-    return length(features)
+function num_features_main(model_data)
+    return length(model_data.features)
 end
-num_features() = num_features_main(features)
+num_features() = num_features_main(model_data)
 
-function get_feature_main(features,index,fieldname)
-    return getfield(features[index], Symbol(String(fieldname)))
+function get_feature_main(model_data,index,fieldname)
+    return getfield(model_data.features[index], Symbol(String(fieldname)))
 end
-get_feature_field(index,fieldname) = get_feature_main(features,index,fieldname)
+get_feature_field(index,fieldname) = get_feature_main(model_data,index,fieldname)
 
-function save_model_main(layers,features,model,model_data,url)
-  BSON.@save(String(url),layers,features,model,model_data,model_data)
+function save_model_main(model_data,url)
+  BSON.@save(String(url),model_data)
 end
-save_model(url) = save_model_main(layers,features,model,model_data,url)
+save_model(url) = save_model_main(model_data,url)
 
-function load_model_main(layers,features,url)
-  global model, model_data
-  layers = empty!(layers)
+function load_model_main(model_data,url)
   data = BSON.load(String(url))
-  if haskey(data,:layers)
-      copy!(layers,data[:layers])
-      copy!(features,data[:features])
-      model = data[:model]
-      model_data = data[:model_data]
+  if haskey(data,:model_data)
+      copystruct!(model_data,data[:model_data])
       return true
   else
       return false
   end
 end
-load_model(url) = load_model_main(layers,features,url)
+load_model(url) = load_model_main(model_data,url)

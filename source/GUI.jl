@@ -6,11 +6,6 @@ import Base.string, Base.any, Base.copy!, ImageSegmentation.label_components
 import CUDA
 CUDA.allowscalar(false)
 
-# Variable definitions
-layers = []
-model = Chain()
-features = []
-
 include("helper_functions.jl")
 include("data_handling.jl")
 include("Training.jl")

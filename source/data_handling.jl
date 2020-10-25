@@ -1,6 +1,9 @@
 
 @with_kw mutable struct Model_data
     input_size::Tuple = (160,160,1)
+    model = Chain()
+    layers::Array = []
+    features::Array = []
     loss::Function = Losses.crossentropy
 end
 model_data = Model_data()

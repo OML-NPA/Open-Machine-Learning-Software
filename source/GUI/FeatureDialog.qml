@@ -11,7 +11,7 @@ import org.julialang 1.0
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("  Deep Data Analysis Software v.0.1")
+    title: qsTr("  Deep Data Analysis Software")
     minimumWidth: columnLayout.width
     minimumHeight: columnLayout.height
     maximumWidth: columnLayout.width
@@ -202,6 +202,19 @@ ApplicationWindow {
                     }
                 }
             }
+        }
+        MouseArea {
+            width: window.width
+            height: window.height
+            onPressed: {
+                focus = true
+                mouse.accepted = false
+            }
+            onReleased: mouse.accepted = false;
+            onDoubleClicked: mouse.accepted = false;
+            onPositionChanged: mouse.accepted = false;
+            onPressAndHold: mouse.accepted = false;
+            onClicked: mouse.accepted = false;
         }
     }
 //---FUNCTIONS----------------------------------------------------------

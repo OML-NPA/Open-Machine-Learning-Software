@@ -282,8 +282,8 @@ function get_loss(name::String)
     end
 end
 
-function make_model_main(layers,model_data)
-    global model
+function make_model_main(model_data)
+    layers = model_data.layers
     layers_names = []
     model_layers = []
     for i = 1:length(layers)
@@ -316,10 +316,10 @@ function make_model_main(layers,model_data)
     else
         model_layers = Chain(model_layers[1])
     end
-    model = model_layers
+    model_data.model = model_layers
     return nothing
 end
-make_model() = make_model_main(layers,model_data)
+make_model() = make_model_main(model_data)
 
 function allcmp(inds)
     for i = 1:length(inds)

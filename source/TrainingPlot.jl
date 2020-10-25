@@ -5,19 +5,27 @@ function get_train_test(training)
     data_input = training.data_input
     data_labels = training.data_labels
     test_fraction = training.Options.General.test_data_fraction
-    set = [(data_input[i],data_labels[i]) for i in 1:length(data_input)]
-    ind = Int64(round(test_fraction*length(set)))
-    train_set = set[1:ind]
-    test_set = set[ind+1:end]
+    set = (data_input,data_labels)
+    ind = Int64(round((1-test_fraction)*length(data_input)))
+    train_set = (data_input[1:ind],data_labels[1:ind])
+    test_set = (data_input[ind+1:end],data_labels[ind+1:end])
     return train_set, test_set
 end
 
-function make_minibatch(set,batch_size)
-    set_minibatch = []
-    finish = Int64(floor(length(set)/batch_size)*batch_size)-1
-    inds = shuffle!([0:batch_size:finish...])
-    for i=0:batch_size:finish
-        push!(set_minibatch,set[i+1:(i+10)])
+function make_minibatch(set::Tuple,batch_size::Int64)
+    finish = Int64(floor(length(set[1])/batch_size)*batch_size)
+    inds = shuffle!([1:batch_size:finish...])
+    dim = length(size(set[1][1]))+1
+    data_input = set[1]
+    data_labels = set[2]
+    set_minibatch = Vector{Tuple}(undef,length(inds))
+    for i=1:length(inds)
+        ind = inds[i]
+        current_input = data_input[ind+1:(ind+10)]
+        current_labels = data_labels[ind+1:(ind+10)]
+        minibatch = (cat(current_input...,dims=dim),
+            cat(current_labels...,dims=dim))
+        set_minibatch[i] = minibatch
     end
     return set_minibatch
 end
@@ -28,32 +36,29 @@ function accuracy(x, y, model)
     return 0
 end
 
-function train(model,master,features)
+function train_main(master,model_data)
     training = master.Training
+    model = model_data.model
+    use_GPU = master.Options.Hardware_resources.allow_GPU && has_cuda()
     get_urls_imgs_labels()
     if isempty(training.url_imgs) ||
         isempty(training.url_labels) ||
-        isempty(features)
+        isempty(model_data.features)
         return false
     end
     process_images_labels()
 
     args = training.Options.Hyperparameters
+    batch_size = args.batch_size
+    learning_rate = args.learning_rate
+    epochs = args.epochs
     @info("Loading data set")
     train_set, test_set = get_train_test(training)
-
+    train_batches = make_minibatch(train_set,batch_size)
+    test_batches = make_minibatch(test_set,batch_size)
     # Load model and datasets onto GPU, if enabled
-    if master.Options.Hardware_resources.allow_GPU && has_cuda()
-        train_set = gpu.(train_set)
-        if ~isempty(test_set)
-            test_set = gpu.(test_set)
-            test = true
-        else
-            test = false
-        end
+    if use_GPU
         model = gpu(model)
-    else
-        master.Options.Hardware_resources.allow_GPU = false
     end
     # Precompile model
     model(train_set[1][1])
@@ -67,6 +72,18 @@ function train(model,master,features)
     last_improvement = 0
     for epoch_idx in 1:args.epochs
         # Train for a single epoch
+
+        if use_GPU
+            train_set = gpu.(train_set)
+            if ~isempty(test_set)
+                test_set = gpu.(test_set)
+                test = true
+            else
+                test = false
+            end
+            model = gpu(model)
+        end
+
         Flux.train!(model_data.loss, params(model), train_set, opt)
 
         # Terminate on NaN
@@ -105,7 +122,7 @@ function train(model,master,features)
 end
 
 # Testing the model, from saved model
-function test(; kws...)
+function test_main(; kws...)
     args = Args(; kws...)
 
     # Loading the test data
