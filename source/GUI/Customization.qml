@@ -2711,7 +2711,7 @@ ApplicationWindow {
                         text: datastore.filters
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{1,5}/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,5}/ }
                         onEditingFinished: {
                             unit.datastore.filters = displayText
                         }
@@ -2815,7 +2815,7 @@ ApplicationWindow {
                         text: datastore.filters
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{1,5}/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,5}/ }
                         onEditingFinished: {
                             unit.datastore.filters = displayText
                         }
@@ -2908,7 +2908,7 @@ ApplicationWindow {
                         text: datastore.neurons
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{1,5}/ }
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,5}/ }
                         onEditingFinished: {
                             unit.datastore.neurons = displayText
                         }

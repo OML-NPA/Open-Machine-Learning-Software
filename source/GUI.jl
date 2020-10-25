@@ -4,10 +4,11 @@ using Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP
 using Flux,Flux.Losses, Random, CUDAapi, Statistics, Plots
 import Base.string, Base.any, Base.copy!, ImageSegmentation.label_components
 import CUDA
-CUDA.allowscalar(false)
+CUDA.allowscalar(true)
 
 include("helper_functions.jl")
 include("data_handling.jl")
+include("train.jl")
 include("Training.jl")
 include("Customization.jl")
 include("TrainingPlot.jl")

@@ -272,6 +272,7 @@ Component {
                                             text: "Update model"
                                         }
                                         onClicked: {
+
                                             Julia.save_model(nameTextField.text)
                                         }
                                     }

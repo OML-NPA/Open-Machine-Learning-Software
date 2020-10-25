@@ -3,7 +3,7 @@ args = master.Training.Options.Hyperparameters
 
 function get_train_test(training)
     data_input = training.data_input
-    data_labels = training.data_labels
+    data_labels = convert.(Array{Float32},training.data_labels)
     test_fraction = training.Options.General.test_data_fraction
     set = (data_input,data_labels)
     ind = Int64(round((1-test_fraction)*length(data_input)))
@@ -30,118 +30,94 @@ function make_minibatch(set::Tuple,batch_size::Int64)
     return set_minibatch
 end
 
-function accuracy(x, y, model)
-    predicted = cpu(model.(x))
-    actual = cpu(y)
-    return 0
+function accuracy(data,model)
+    num = length(data)
+    predicted = Vector{Array{Float32}}(undef,num)
+    actual = Vector{Array{Float32}}(undef,num)
+    fill!(predicted,zeros(Float32,size(data[1][1])))
+    fill!(predicted,zeros(Float32,size(data[1][1])))
+    for i = 1:num
+      predicted[i] = cpu(model(data[i][1]))
+      actual[i] = Float32.(cpu(data[i][2]))
+    end
+    acc = mean(mean.(map(x->abs.(x),predicted.-actual)))
+    return acc
+end
+
+function train!(loss, model, data, opt)
+  num = length(data)
+  ps = Params(params(model))
+  training_loss = Vector{Float32}(undef,num)
+  for i=1:num
+    local temp_loss
+    gs = gradient(ps) do
+      temp_loss = loss(model(data[i][1]),data[i][2])
+      return temp_loss
+    end
+    Flux.update!(opt, ps, gs)
+    training_loss[i] = temp_loss
+  end
+  return mean(training_loss)
 end
 
 function train_main(master,model_data)
     training = master.Training
     model = model_data.model
-    use_GPU = master.Options.Hardware_resources.allow_GPU && has_cuda()
+    loss = model_data.loss
+    use_GPU = false && master.Options.Hardware_resources.allow_GPU && has_cuda()
     get_urls_imgs_labels()
     if isempty(training.url_imgs) ||
         isempty(training.url_labels) ||
         isempty(model_data.features)
         return false
     end
-    process_images_labels()
-
+    go = true
+    try
+      process_images_labels()
+    catch
+      process_images_labels()
+    end
     args = training.Options.Hyperparameters
     batch_size = args.batch_size
     learning_rate = args.learning_rate
     epochs = args.epochs
-    @info("Loading data set")
+    # Preparing train and test sets
     train_set, test_set = get_train_test(training)
-    train_batches = make_minibatch(train_set,batch_size)
-    test_batches = make_minibatch(test_set,batch_size)
+    # Data for precompiling
+    precomp_data = train_set[1][1][:,:,:,:]
     # Load model and datasets onto GPU, if enabled
     if use_GPU
         model = gpu(model)
+        loss = gpu(loss)
+        precomp_data = gpu(precomp_data)
     end
     # Precompile model
-    model(train_set[1][1])
+    model(precomp_data)
 
-    # Train our model with the given training set using the ADAM optimizer and
-    # printing out performance against the test set as we go.
+    # Use ADAM optimiser
     opt = ADAM(args.learning_rate)
 
     @info("Beginning training loop...")
     best_acc = 0.0
     last_improvement = 0
-    for epoch_idx in 1:args.epochs
-        # Train for a single epoch
-
+    # Training loop
+    for epoch_idx = 1:epochs
+        # Make minibatches
+        train_batches = make_minibatch(train_set,batch_size)
+        test_batches = make_minibatch(test_set,batch_size)
+        # Load minibatches onto GPU if enabled
         if use_GPU
-            train_set = gpu.(train_set)
+            train_batches = gpu.(train_batches)
             if ~isempty(test_set)
                 test_set = gpu.(test_set)
                 test = true
             else
                 test = false
             end
-            model = gpu(model)
         end
-
-        Flux.train!(model_data.loss, params(model), train_set, opt)
-
-        # Terminate on NaN
-        if anynan(paramvec(model))
-            @error "NaN params"
-            break
-        end
-
-        # Calculate accuracy:
-        if test==true
-            acc = accuracy(test_set, model)
-        end
-
-        # If this is the best accuracy we've seen so far, save the model out
-        if acc >= best_acc
-            @info(" -> New best accuracy! Saving model out to mnist_conv.bson")
-            BSON.@save joinpath(args.savepath, "mnist_conv.bson") params=cpu.(params(model)) epoch_idx acc
-            best_acc = acc
-            last_improvement = epoch_idx
-        end
-
-        # If we haven't seen improvement in 5 epochs, drop our learning rate:
-        if epoch_idx - last_improvement >= 5 && opt.eta > 1e-6
-            opt.eta /= 10.0
-            @warn(" -> Haven't improved in a while, dropping learning rate to $(opt.eta)!")
-
-            # After dropping learning rate, give it a few epochs to improve
-            last_improvement = epoch_idx
-        end
-
-        if epoch_idx - last_improvement >= 10
-            @warn(" -> We're calling this converged.")
-            break
-        end
+        # Train neural network returning loss
+        training_loss = train!(loss, model, train_batches, opt)
+        # Calculate accuracy
+        acc = accuracy(train_batches, model)
     end
 end
-
-# Testing the model, from saved model
-function test_main(; kws...)
-    args = Args(; kws...)
-
-    # Loading the test data
-    _,test_set = get_processed_data(args)
-
-    # Re-constructing the model with random initial weights
-    model = build_model(args)
-
-    # Loading the saved parameters
-    BSON.@load joinpath(args.savepath, "mnist_conv.bson") params
-
-    # Loading parameters onto the model
-    Flux.loadparams!(model, params)
-
-    test_set = gpu.(test_set)
-    model = gpu(model)
-    @show accuracy(test_set...,model)
-end
-
-#cd(@__DIR__)
-#train()
-#test()
