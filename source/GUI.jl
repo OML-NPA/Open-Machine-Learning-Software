@@ -1,11 +1,5 @@
 
-using QML, JSON, BSON, Printf, Parameters,Observables
-using Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP
-using Flux,Flux.Losses, Random, CUDAapi, Statistics, Plots
-import Base.string, Base.any, Base.copy!, ImageSegmentation.label_components
-import CUDA
-CUDA.allowscalar(true)
-
+include("packages.jl")
 include("helper_functions.jl")
 include("data_handling.jl")
 include("Training.jl")
@@ -17,6 +11,13 @@ if !isfile("config.json")
 else
   load_data!(master)
 end
+
+if !isfile("config.json")
+  save_data()
+else
+  load_data!(master)
+end
+
 @qmlfunction(
     # Model saving
     reset_layers,
@@ -37,7 +38,9 @@ end
     # Data loading
     get_urls_imgs_labels,
     get_labels_colors,
+    prepare_training_data,
     # Data handling
+    reset,
     get_data,
     set_data,
     save_data,
@@ -46,11 +49,11 @@ end
     isdir,
     num_cores,
     has_cuda,
-    source_dir
+    source_dir,
+    yield,
+    info,
+    stop_all,
+    kill
 )
-load("GUI//Main.qml";
-  observables = JuliaPropertyMap(
-    "loss" => master.Training.loss,
-    "accuracy" => master.Training.accuracy,
-    "training_data_ready" => master.Training.data_ready))
+load("GUI//Main.qml")
 exec()

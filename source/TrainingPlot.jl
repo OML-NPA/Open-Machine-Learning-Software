@@ -61,16 +61,7 @@ function train!(loss, model, data, opt)
 end
 
 function prepare_training_data_main(master)
-  if isempty(master.training.url_imgs) ||
-      isempty(master.training.url_labels) ||
-      isempty(model_data.features)
-      return false
-  end
-  try
-    process_images_labels()
-  catch
-    process_images_labels()
-  end
+  master.Training.task = @async process_images_labels()
 end
 prepare_training_data() = prepare_training_data_main(master)
 

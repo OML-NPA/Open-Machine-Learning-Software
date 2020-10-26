@@ -45,7 +45,10 @@ ApplicationWindow {
 
     property string currentfolder: Qt.resolvedUrl(".")
 
-    onClosing: Julia.save_data()
+    onClosing: {
+        Julia.stop_all()
+        //Julia.save_data()
+    }
 
     header: Rectangle {
         width: window.width

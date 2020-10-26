@@ -69,8 +69,9 @@ function process_images_labels_main(master,model_data)
                     label[:,:,labels_incl[i][j]])
             end
         end
-        for i=1:length(inds_borders)
-            label[:,:,num+i] = dilate(perim(label[:,:,inds_borders[i]]),5)
+        for j=1:length(inds_borders)
+            dil = dilate(perim(label[:,:,inds_borders[j]]),5)
+            label[:,:,length(colors)+j] = dil
         end
         return label
     end
@@ -95,7 +96,7 @@ function process_images_labels_main(master,model_data)
         return img,label
     end
 
-    function augment(img,label,angles_num,pix_num,min_fr_pix)
+    function augment(master,k,img,label,angles_num,pix_num,min_fr_pix)
 
         function rotate_img(img,angle)
             if angle!=0
@@ -119,12 +120,12 @@ function process_images_labels_main(master,model_data)
         angles = angles[1:end-1]
         imgs_out = []
         labels_out = []
-        for g = 1:length(angles)
+        num = length(angles)
+        for g = 1:num
             img2 = rotate_img(img,angles[g])
             label2 = rotate_img(label,angles[g])
             num1 = Int64(floor(size(label2,1)/(pix_num[1]*0.9)))
             num2 = Int64(floor(size(label2,2)/(pix_num[2]*0.9)))
-            #@info(num1)
             step1 = Int64(floor(size(label2,1)/num1))
             step2 = Int64(floor(size(label2,2)/num2))
             num_batch = 2*(num1-1)*(num2-1)
@@ -154,11 +155,16 @@ function process_images_labels_main(master,model_data)
             end
             push!(imgs_out,img_temp...)
             push!(labels_out,label_temp...)
+            master.Training.data_ready[k] = g/num
         end
         return (imgs_out,labels_out)
     end
 
     # Code
+    if isempty(model_data.features)
+        @info "Empty features"
+        return false
+    end
     url_imgs = master.Training.url_imgs
     url_labels = master.Training.url_labels
     data_input = master.Training.data_input
@@ -191,22 +197,31 @@ function process_images_labels_main(master,model_data)
     num = length(url_imgs)
     temp_imgs = Vector{Any}(undef,num)
     temp_labels = Vector{Any}(undef,num)
-    imgs = []
-    labels = []
+    imgs = Array{Any}(undef,num)
+    labels = Array{Any}(undef,num)
     for i = 1:num
         imgs[i] = get_image(url_imgs[i])
         labels[i] = get_label(url_labels[i])
     end
-    Threads.@threads for i = 1:num
-        img = imgs[i]
-        label = labels[i]
-        if type=="segmentation"
-            img,label = correct_view(img,label)
-            label = correct_label(label,labels_color,labels_incl,border)
-            img,label = augment(img,label,num_angles,pix_num,min_fr_pix)
-        end
-        temp_imgs[i] = img
-        temp_labels[i] = label
+    Threads.@threads for k = 1:num #
+            if master.Training.stop_training
+                return false
+            end
+            img = imgs[k]
+            label = labels[k]
+            if type=="segmentation"
+                img,label = correct_view(img,label)
+                label = correct_label(label,labels_color,labels_incl,border)
+                img,label = augment(master,k,img,label,num_angles,pix_num,min_fr_pix)
+            end
+            temp_imgs[k] = img
+            temp_labels[k] = label
+            master.Training.data_ready[k] = 1
+    end
+    if master.Training.stop_training
+        master.Training.stop_training = false
+        master.Training.task_done = true
+        return false
     end
     if type=="segmentation"
         temp_imgs = vcat(temp_imgs...)
@@ -216,7 +231,8 @@ function process_images_labels_main(master,model_data)
     resize!(data_labels,length(temp_labels))
     data_input .= temp_imgs
     data_labels .= temp_labels
-    return nothing
+    master.Training.task_done = true
+    return true
 end
 process_images_labels() =
     process_images_labels_main(master,model_data)
@@ -229,12 +245,12 @@ function get_labels_colors_main(master)
         push!(labelimgs,RGB.(load(url_labels[i])))
     end
     Threads.@threads for i=1:length(url_labels)
-        labelimg = labelimgs[i]
-        unique_colors = unique(labelimg)
-        ind = findfirst(unique_colors.==RGB.(0,0,0))
-        deleteat!(unique_colors,ind)
-        colors = channelview(float.(unique_colors))*255
-        colors_out[i] = arsplit(colors,2)
+            labelimg = labelimgs[i]
+            unique_colors = unique(labelimg)
+            ind = findfirst(unique_colors.==RGB.(0,0,0))
+            deleteat!(unique_colors,ind)
+            colors = channelview(float.(unique_colors))*255
+            colors_out[i] = arsplit(colors,2)
     end
     colors_out = vcat(colors_out...)
     colors_out = unique(colors_out)

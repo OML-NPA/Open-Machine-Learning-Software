@@ -60,6 +60,7 @@ Component {
                         labelsTextField.text = dir
                         Julia.set_data(["Training","labels"],dir)
                     }
+                    Julia.save_data()
                 }
         }
         FileDialog {
@@ -71,6 +72,7 @@ Component {
                     importmodel(model,url)
                     load_model_features()
                     nameTextField.text = Julia.get_data(["Training","name"])
+                    Julia.save_data()
                 }
         }
         Column {
@@ -357,45 +359,65 @@ Component {
                         Layout.preferredWidth: buttonWidth
                         Layout.preferredHeight: buttonHeight
                         onClicked: {
+                            if (imagesTextField.length===0 || labelsTextField.length===0) {
+                                return
+                            }
                             if (text==="Start training") {
-                                text = "Stop training"
+                                text = "Stop data preparation"
+                                Julia.set_data(["Training","stop_training"],false)
                                 Julia.get_urls_imgs_labels()
                                 dataprocessingTimer.running = true
-                                //Julia.prepare_training_data()
-                                /*if (trainingplotLoader.sourceComponent === null) {
-                                    trainingplotLoader.source = "TrainingPlot.qml"}
-                                }*/
+                                Julia.prepare_training_data()
+                                Julia.yield()
                             }
                             else {
-
+                                if (dataprocessingTimer.running) {
+                                    text = "Wait"
+                                }
+                                else {
+                                    text = "Start training"
+                                    progressbar.value = 0
+                                }
+                                Julia.set_data(["Training","stop_training"],true)
+                                Julia.reset(Julia.get_data(["Training","data_ready"]))
                             }
                         }
                         Timer {
                             id: dataprocessingTimer
-                            interval: 250; running: false; repeat: true
+                            interval: 1000; running: false; repeat: true
                             property double step: 0
                             onTriggered: {
+                                if (starttrainingButton.text==="Wait") {
+                                    if (Julia.get_data(["Training","task_done"])) {
+                                        starttrainingButton.text = "Start training"
+                                        running = false
+                                        step = 0
+                                        progressbar.value = 0
+                                        return
+                                    }
+                                    return
+                                }
                                 if (step!==0) {
-                                    var state = observables.training_data_ready
+                                    var state = Julia.get_data(["Training","data_ready"])
+                                    //Julia.info(["Training","data_ready"])
                                     var mean_val = mean(state)
                                     var sum_val = sum(state)
-                                    if (mean_val>progressbar.value) {
-                                        progressbar.value = mean_val
+                                    if (mean_val===1) {
+                                        running = false
+                                        starttrainingButton.text = "Stop training"
                                     }
-                                    else {
-                                        progressbar.value = progressbar.value +
-                                                (mean_val + step - progressbar.value)/10
-                                    }
+                                    progressbar.value = mean_val
                                 }
                                 else {
-                                    state = observables.training_data_ready
+                                    state = Julia.get_data(["Training","data_ready"])
                                     if (state.length!==0) {
-                                        state = observables.training_data_ready
+                                        state = Julia.get_data(["Training","data_ready"])
                                         step = 1/state.length
                                     }
                                     else {
                                         running = false
                                         starttrainingButton.text = "Start training"
+                                        //trainingplotLoader.source = "TrainingPlot.qml"}
                                     }
                                 }
                             }

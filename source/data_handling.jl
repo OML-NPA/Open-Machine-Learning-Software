@@ -71,9 +71,12 @@ options_training = Options_training()
     data_input::Array{Array} = []
     data_labels::Array{Array} = []
     Options = options_training
-    data_ready::Array = []
+    data_ready::Array{Float64} = []
     loss::Array = []
     accuracy::Array = []
+    stop_training::Bool = false
+    task_done::Bool = false
+    task::Task = Task(0)
 end
 training = Training()
 
@@ -145,3 +148,22 @@ function load_data!(master)
     end
     dict_to_struct!(master,dict)
 end
+
+function reset(var)
+  if var isa Array
+    var = similar(var,0)
+  elseif var isa Number
+    var = zero(typeof(var))
+  elseif var isa String
+    var = ""
+  end
+end
+
+function info(fields)
+  @info get_data(fields)
+end
+
+function stop_all_main(master)
+  master.Training.stop_training = true
+end
+stop_all() = stop_all_main(master)
