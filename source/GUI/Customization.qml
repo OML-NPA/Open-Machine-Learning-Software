@@ -1152,18 +1152,6 @@ ApplicationWindow {
         return ar.map(value => dif_subfunc(value,x));
     }
 
-    function abs(ar) {
-        return array.map(Math.abs);
-    }
-
-    function mean(array) {
-        var total = 0
-        for(var i = 0;i<array.length;i++) {
-            total += array[i]
-        }
-        return(total/array.length)
-    }
-
     function findindex(array,value) {
         var array2 = []
         for (var i=0;i<array.length;i++){

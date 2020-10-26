@@ -32,6 +32,15 @@ ApplicationWindow {
 
     onClosing: { trainingplotLoader.sourceComponent = undefined }
 
+    Item {
+        Timer {
+            interval: 1000; running: true; repeat: true
+            onTriggered: {
+
+            }
+        }
+    }
+
     GridLayout {
         id: gridLayout
         Row {
@@ -89,13 +98,6 @@ ApplicationWindow {
                                 axisY: axisY
                                 width: 0.04*buttonHeight
                                 color: "#3498db"
-                                XYPoint { x: 0; y: 5 }
-                                XYPoint { x: 1; y: 30 }
-                                XYPoint { x: 2; y: 50 }
-                                XYPoint { x: 3; y: 70 }
-                                XYPoint { x: 4; y: 80 }
-                                XYPoint { x: 5; y: 85 }
-                                XYPoint { x: 6; y: 86 }
                             }
                         }
                         Label {
@@ -148,13 +150,6 @@ ApplicationWindow {
                                 axisY: lossaxisY
                                 color: "#e67e22"
                                 width: 0.04*buttonHeight
-                                XYPoint { x: 0; y: 4.8 }
-                                XYPoint { x: 1; y: 3 }
-                                XYPoint { x: 2; y: 1.5 }
-                                XYPoint { x: 3; y: 0.7 }
-                                XYPoint { x: 4; y: 0.5 }
-                                XYPoint { x: 5; y: 0.4 }
-                                XYPoint { x: 6; y: 0.37 }
                             }
                         }
                         Label {

@@ -69,8 +69,11 @@ options_training = Options_training()
     url_imgs::Array = []
     url_labels::Array = []
     data_input::Array{Array} = []
-    data_labels = []
+    data_labels::Array{Array} = []
     Options = options_training
+    data_ready::Array = []
+    loss::Array = []
+    accuracy::Array = []
 end
 training = Training()
 

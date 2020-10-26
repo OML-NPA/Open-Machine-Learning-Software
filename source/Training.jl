@@ -34,6 +34,9 @@ function get_urls_imgs_labels_main(master)
             end
         end
     end
+    master.Training.data_ready = Array{Float64}(undef,length(url_imgs))
+    fill!(master.Training.data_ready,0)
+    return nothing
 end
 get_urls_imgs_labels() =
     get_urls_imgs_labels_main(master)
@@ -185,12 +188,18 @@ function process_images_labels_main(master,model_data)
             push!(labels_incl,findfirst(feature.name.==names))
         end
     end
-
-    temp_imgs = Vector{Any}(undef,length(url_imgs))
-    temp_labels = Vector{Any}(undef,length(url_imgs))
-    Threads.@threads for i = 1:length(url_imgs)
-        img = get_image(url_imgs[i])
-        label = get_label(url_labels[i])
+    num = length(url_imgs)
+    temp_imgs = Vector{Any}(undef,num)
+    temp_labels = Vector{Any}(undef,num)
+    imgs = []
+    labels = []
+    for i = 1:num
+        imgs[i] = get_image(url_imgs[i])
+        labels[i] = get_label(url_labels[i])
+    end
+    Threads.@threads for i = 1:num
+        img = imgs[i]
+        label = labels[i]
         if type=="segmentation"
             img,label = correct_view(img,label)
             label = correct_label(label,labels_color,labels_incl,border)
@@ -215,8 +224,12 @@ process_images_labels() =
 function get_labels_colors_main(master)
     url_labels = master.Training.url_labels
     colors_out = Vector{Any}(undef,length(url_labels))
+    labelimgs = []
+    for i=1:length(url_labels)
+        push!(labelimgs,RGB.(load(url_labels[i])))
+    end
     Threads.@threads for i=1:length(url_labels)
-        labelimg = RGB.(load(url_labels[i]))
+        labelimg = labelimgs[i]
         unique_colors = unique(labelimg)
         ind = findfirst(unique_colors.==RGB.(0,0,0))
         deleteat!(unique_colors,ind)
@@ -224,7 +237,7 @@ function get_labels_colors_main(master)
         colors_out[i] = arsplit(colors,2)
     end
     colors_out = vcat(colors_out...)
-    colors_out = union(colors_out,arsplit(colors,2))
+    colors_out = unique(colors_out)
     return colors_out
 end
 get_labels_colors() = get_labels_colors_main(master)

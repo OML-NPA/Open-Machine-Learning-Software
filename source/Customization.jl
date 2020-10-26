@@ -300,6 +300,10 @@ function make_model_main(model_data)
         inds_cat_in[i] = layers[inds_cat[i]]["connections_up"]
     end
     ind_output = findall(x -> x=="Output",layers_names)
+    if isempty(ind_output)
+        @info "no output layer"
+        return
+    end
     loss_name = layers[ind_output[1]]["loss"][1]
     model_data.loss = get_loss(loss_name)
     inds_out = []

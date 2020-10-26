@@ -357,9 +357,55 @@ Component {
                         Layout.preferredWidth: buttonWidth
                         Layout.preferredHeight: buttonHeight
                         onClicked: {
-                            if (trainingplotLoader.sourceComponent === null) {
-                                trainingplotLoader.source = "TrainingPlot.qml"}
+                            if (text==="Start training") {
+                                text = "Stop training"
+                                Julia.get_urls_imgs_labels()
+                                dataprocessingTimer.running = true
+                                //Julia.prepare_training_data()
+                                /*if (trainingplotLoader.sourceComponent === null) {
+                                    trainingplotLoader.source = "TrainingPlot.qml"}
+                                }*/
                             }
+                            else {
+
+                            }
+                        }
+                        Timer {
+                            id: dataprocessingTimer
+                            interval: 250; running: false; repeat: true
+                            property double step: 0
+                            onTriggered: {
+                                if (step!==0) {
+                                    var state = observables.training_data_ready
+                                    var mean_val = mean(state)
+                                    var sum_val = sum(state)
+                                    if (mean_val>progressbar.value) {
+                                        progressbar.value = mean_val
+                                    }
+                                    else {
+                                        progressbar.value = progressbar.value +
+                                                (mean_val + step - progressbar.value)/10
+                                    }
+                                }
+                                else {
+                                    state = observables.training_data_ready
+                                    if (state.length!==0) {
+                                        state = observables.training_data_ready
+                                        step = 1/state.length
+                                    }
+                                    else {
+                                        running = false
+                                        starttrainingButton.text = "Start training"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ProgressBar {
+                        id: progressbar
+                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        value: 0
+                        Layout.preferredWidth: buttonWidth
                     }
                 }
             }

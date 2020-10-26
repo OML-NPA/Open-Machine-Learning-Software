@@ -159,6 +159,26 @@ ApplicationWindow {
 
 //--Functions---------------------------------------------------------
 
+    function abs(ar) {
+        return array.map(Math.abs);
+    }
+
+    function mean(array) {
+        var total = 0
+        for(var i = 0;i<array.length;i++) {
+            total += array[i]
+        }
+        return(total/array.length)
+    }
+
+    function sum(array) {
+        var total = 0
+        for(var i = 0;i<array.length;i++) {
+            total += array[i]
+        }
+        return(total)
+    }
+
     function rgbtohtml(colorRGB) {
         return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
     }

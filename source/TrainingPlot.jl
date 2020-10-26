@@ -60,23 +60,26 @@ function train!(loss, model, data, opt)
   return mean(training_loss)
 end
 
+function prepare_training_data_main(master)
+  if isempty(master.training.url_imgs) ||
+      isempty(master.training.url_labels) ||
+      isempty(model_data.features)
+      return false
+  end
+  try
+    process_images_labels()
+  catch
+    process_images_labels()
+  end
+end
+prepare_training_data() = prepare_training_data_main(master)
+
 function train_main(master,model_data)
     training = master.Training
     model = model_data.model
     loss = model_data.loss
     use_GPU = false && master.Options.Hardware_resources.allow_GPU && has_cuda()
-    get_urls_imgs_labels()
-    if isempty(training.url_imgs) ||
-        isempty(training.url_labels) ||
-        isempty(model_data.features)
-        return false
-    end
-    go = true
-    try
-      process_images_labels()
-    catch
-      process_images_labels()
-    end
+
     args = training.Options.Hyperparameters
     batch_size = args.batch_size
     learning_rate = args.learning_rate
@@ -116,8 +119,9 @@ function train_main(master,model_data)
             end
         end
         # Train neural network returning loss
-        training_loss = train!(loss, model, train_batches, opt)
+        push!(training.loss,train!(loss, model, train_batches, opt))
         # Calculate accuracy
-        acc = accuracy(train_batches, model)
+        push!(training.accuracy,accuracy(train_batches, model))
     end
 end
+train() = train_main(master,model_data)

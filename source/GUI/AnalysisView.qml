@@ -232,15 +232,6 @@ Component {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
             }
-            ProgressBar {
-                id: progressbar
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                Layout.row: 2
-                Layout.column: 2
-                value: 0
-                Layout.preferredWidth: buttonWidth
-                Layout.preferredHeight: buttonHeight/2
-            }
         }
     }
 }
