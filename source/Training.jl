@@ -122,6 +122,9 @@ function process_images_labels_main(master,model_data)
         labels_out = []
         num = length(angles)
         for g = 1:num
+            if master.Training.stop_training
+                return ([],[])
+            end
             img2 = rotate_img(img,angles[g])
             label2 = rotate_img(label,angles[g])
             num1 = Int64(floor(size(label2,1)/(pix_num[1]*0.9)))
@@ -203,8 +206,9 @@ function process_images_labels_main(master,model_data)
         imgs[i] = get_image(url_imgs[i])
         labels[i] = get_label(url_labels[i])
     end
-    Threads.@threads for k = 1:num #
+    Threads.@threads for k = 1:num
             if master.Training.stop_training
+                master.Training.task_done = true
                 return false
             end
             img = imgs[k]
