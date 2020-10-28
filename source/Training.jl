@@ -207,20 +207,20 @@ function process_images_labels_main(master,model_data)
         labels[i] = get_label(url_labels[i])
     end
     Threads.@threads for k = 1:num
-            if master.Training.stop_training
-                master.Training.task_done = true
-                return false
-            end
-            img = imgs[k]
-            label = labels[k]
-            if type=="segmentation"
-                img,label = correct_view(img,label)
-                label = correct_label(label,labels_color,labels_incl,border)
-                img,label = augment(master,k,img,label,num_angles,pix_num,min_fr_pix)
-            end
-            temp_imgs[k] = img
-            temp_labels[k] = label
-            master.Training.data_ready[k] = 1
+        if master.Training.stop_training
+            master.Training.task_done = true
+            return false
+        end
+        img = imgs[k]
+        label = labels[k]
+        if type=="segmentation"
+            img,label = correct_view(img,label)
+            label = correct_label(label,labels_color,labels_incl,border)
+            img,label = augment(master,k,img,label,num_angles,pix_num,min_fr_pix)
+        end
+        temp_imgs[k] = img
+        temp_labels[k] = label
+        master.Training.data_ready[k] = 1
     end
     if master.Training.stop_training
         master.Training.stop_training = false

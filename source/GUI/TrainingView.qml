@@ -368,7 +368,6 @@ Component {
                                 Julia.get_urls_imgs_labels()
                                 dataprocessingTimer.running = true
                                 Julia.prepare_training_data()
-                                Julia.yield()
                             }
                             else {
                                 if (dataprocessingTimer.running) {
@@ -398,8 +397,8 @@ Component {
                                     return
                                 }
                                 if (step!==0) {
+                                    Julia.yield()
                                     var state = Julia.get_data(["Training","data_ready"])
-                                    //Julia.info(["Training","data_ready"])
                                     var mean_val = mean(state)
                                     var sum_val = sum(state)
                                     if (mean_val===1) {

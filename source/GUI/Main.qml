@@ -46,7 +46,7 @@ ApplicationWindow {
     property string currentfolder: Qt.resolvedUrl(".")
 
     onClosing: {
-        Julia.stop_all()
+        //Julia.stop_all()
         //Julia.save_data()
     }
 

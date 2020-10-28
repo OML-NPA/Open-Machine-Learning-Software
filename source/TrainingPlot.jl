@@ -61,7 +61,7 @@ function train!(loss, model, data, opt)
 end
 
 function prepare_training_data_main(master)
-  master.Training.task = @async process_images_labels()
+  task = @async process_images_labels()
 end
 prepare_training_data() = prepare_training_data_main(master)
 

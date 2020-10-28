@@ -76,7 +76,6 @@ options_training = Options_training()
     accuracy::Array = []
     stop_training::Bool = false
     task_done::Bool = false
-    task::Task = Task(0)
 end
 training = Training()
 
