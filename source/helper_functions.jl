@@ -204,3 +204,10 @@ end
 function source_dir()
   return replace(pwd(), "\\" => "/")
 end
+
+function time()
+  date = string(now())
+  date = date[1:19]
+  date = replace(date,"T"=>" ")
+  return date
+end

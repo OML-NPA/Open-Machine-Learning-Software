@@ -11,7 +11,7 @@ import org.julialang 1.0
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("  Deep Data Analysis Software v.0.1")
+    title: qsTr("  Deep Data Analysis Software")
     minimumWidth: gridLayout.width
     minimumHeight: 800*pix
     maximumWidth: gridLayout.width
@@ -33,7 +33,9 @@ ApplicationWindow {
             }
     }
 
-    onClosing: { trainingoptionsLoader.sourceComponent = null }
+    onClosing: {
+        trainingoptionsLoader.sourceComponent = null
+        Julia.save_data()}
 
 
     GridLayout {
@@ -297,6 +299,34 @@ ApplicationWindow {
                                         Julia.set_data(
                                             ["Training","Options","General","test_data_fraction"],
                                             value/10)
+                                    }
+                                }
+                            }
+                        }
+                        RowLayout {
+                            spacing: 0.3*margin
+                            ColumnLayout {
+                                Layout.alignment : Qt.AlignHCenter
+                                spacing: 0.55*margin
+                                Label {
+                                    Layout.alignment : Qt.AlignLeft
+                                    Layout.row: 1
+                                    text: "Testing frequency (iterations):"
+                                }
+                            }
+                            Column {
+                                topPadding: 0*pix
+                                spacing: 0.50*margin
+                                SpinBox {
+                                    from: 0
+                                    value: Julia.get_data(
+                                               ["Training","Options","General","testing_frequency"])
+                                    to: 10000
+                                    stepSize: 1
+                                    editable: true
+                                    onValueModified: {
+                                        Julia.set_data(
+                                            ["Training","Options","General","testing_frequency"],value)
                                     }
                                 }
                             }

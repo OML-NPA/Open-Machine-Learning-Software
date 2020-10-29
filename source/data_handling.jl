@@ -35,7 +35,7 @@ options = Options()
 # Training
 @with_kw mutable struct Processing_training
     mirroring::Bool = true
-    num_angles::Int64 = 6
+    num_angles::Int64 = 2
     min_fr_pix::Float64 = 0.1
 end
 processing_training = Processing_training()
@@ -50,6 +50,7 @@ hyperparameters_training = Hyperparameters_training()
 
 @with_kw mutable struct General_training
     test_data_fraction::Float64 = 0.2
+    testing_frequency::Int64 = 5
 end
 general_training = General_training()
 
@@ -74,8 +75,16 @@ options_training = Options_training()
     data_ready::Array{Float64} = []
     loss::Array = []
     accuracy::Array = []
+    test_accuracy::Array = []
+    test_loss::Array = []
     stop_training::Bool = false
     task_done::Bool = false
+    iteration::Int64 = 0
+    epoch::Int64 = 0
+    iterations_per_epoch::Int64 = 0
+    starting_time::String = string(now())
+    max_iterations::Int64 = iterations_per_epoch*hyperparameters_training.epochs
+    training_started::Bool = false
 end
 training = Training()
 
@@ -148,7 +157,8 @@ function load_data!(master)
     dict_to_struct!(master,dict)
 end
 
-function reset(var)
+function reset(fields)
+  var = get_data(fields)
   if var isa Array
     var = similar(var,0)
   elseif var isa Number

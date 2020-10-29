@@ -127,6 +127,8 @@ function getactivation(type::AbstractString,d,in_size::Tuple)
         return Activation(elu)
     elseif type=="Tanh"
         return Activation(tanh)
+    elseif type=="Sigmoid"
+        return Activation(sigmoid)
     end
 end
 

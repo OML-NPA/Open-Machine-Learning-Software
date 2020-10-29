@@ -23,7 +23,7 @@ Component {
 
         function load_model_features() {
             var num_features = Julia.num_features()
-            if (num_features!==0) {
+            if (num_features!==0 && featureModel.count==0) {
                 updateButton.visible = false
                 updatemodelButton.visible = true
                 for (var i=0;i<num_features;i++) {
@@ -70,6 +70,7 @@ Component {
                     var url = file.toString().replace("file:///","")
                     neuralnetworkTextField.text = url
                     importmodel(model,url)
+                    featureModel.clear()
                     load_model_features()
                     nameTextField.text = Julia.get_data(["Training","name"])
                     Julia.save_data()
@@ -385,7 +386,9 @@ Component {
                             id: dataprocessingTimer
                             interval: 1000; running: false; repeat: true
                             property double step: 0
+                            property bool training_init: false
                             onTriggered: {
+                                Julia.yield()
                                 if (starttrainingButton.text==="Wait") {
                                     if (Julia.get_data(["Training","task_done"])) {
                                         starttrainingButton.text = "Start training"
@@ -396,17 +399,23 @@ Component {
                                     }
                                     return
                                 }
-                                if (step!==0) {
-                                    Julia.yield()
+                                if (step!==0 && !training_init) {
                                     var state = Julia.get_data(["Training","data_ready"])
                                     var mean_val = mean(state)
                                     var sum_val = sum(state)
                                     if (mean_val===1) {
-                                        running = false
-                                        starttrainingButton.text = "Stop training"
+                                        Julia.set_data(["Training","stop_training"],false)
+                                        training_init = true
+                                        Julia.train()
                                     }
                                     progressbar.value = mean_val
                                 }
+                                else if (training_init && Julia.get_data(["Training","training_started"])) {
+                                    running = false
+                                    starttrainingButton.text = "Stop training"
+                                    trainingplotLoader.source = "TrainingPlot.qml"
+                                }
+
                                 else {
                                     state = Julia.get_data(["Training","data_ready"])
                                     if (state.length!==0) {
@@ -416,7 +425,6 @@ Component {
                                     else {
                                         running = false
                                         starttrainingButton.text = "Start training"
-                                        //trainingplotLoader.source = "TrainingPlot.qml"}
                                     }
                                 }
                             }

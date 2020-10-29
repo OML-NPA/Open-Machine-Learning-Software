@@ -44,6 +44,9 @@ end
     get_data,
     set_data,
     save_data,
+    # Training
+    train,
+    training_elapsed_time,
     # Other
     isfile,
     isdir,
@@ -53,7 +56,7 @@ end
     yield,
     info,
     stop_all,
-    kill
+    time
 )
 load("GUI//Main.qml")
 exec()
