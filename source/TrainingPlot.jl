@@ -70,8 +70,8 @@ function get_optimiser(training)
   return optimiser(parameters...)
 end
 
-
-function train!(loss,model,train_batches,test_batches,opt,training)
+function train!(loss,model,train_batches::Array,
+    test_batches::Array,opt,training::Training,use_GPU)
   num = length(train_batches)
   num_test = length(test_batches)
   run_test = num_test!=0
@@ -79,6 +79,10 @@ function train!(loss,model,train_batches,test_batches,opt,training)
   last_test = 0
   for i=1:num
     local temp_loss, predicted
+    @info i
+    if training.learning_rate_changed
+      opt.eta = training.Options.Hyperparameters.learning_rate
+    end
     train_minibatch = train_batches[i]
     if use_GPU
       train_minibatch = gpu.(train_minibatch)
@@ -119,7 +123,6 @@ function train!(loss,model,train_batches,test_batches,opt,training)
     training.iteration = training.iteration + 1
     push!(training.loss,cpu(temp_loss))
     push!(training.accuracy,cpu(accuracy(predicted,actual)))
-    @info i
   end
   return nothing
 end
@@ -142,7 +145,7 @@ function reset_training_data(training::Training)
   return nothing
 end
 
-function train_main(master,model_data)
+function train_main(master::Master,model_data::Model_data)
   training = master.Training
   model = model_data.model
   loss = model_data.loss
@@ -181,7 +184,7 @@ function train_main(master,model_data)
     training.max_iterations = epochs*training.iterations_per_epoch
     training.training_started = true
     # Train neural network returning loss
-    train!(loss,model,train_batches,test_batches,opt,training)
+    train!(loss,model,train_batches,test_batches,opt,training,use_GPU)
   end
 end
 train() = @async train_main(master,model_data)

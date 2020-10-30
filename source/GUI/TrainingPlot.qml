@@ -53,15 +53,6 @@ ApplicationWindow {
                             losstestLine.append(i+1,test_loss[test_iter-1])
                             last_test_iter = test_iter
                         }
-                        //if (accuracy[i]<accuracyAxisY.min) {
-                          //  accuracyAxisY.min = accuracy[i]
-                        //}
-                        //if (accuracy[i]>accuracyAxisY.max) {
-                          //  accuracyAxisY.max = accuracy[i]
-                        //}
-                        //if (loss[i]<lossAxisY.min) {
-                        //    lossLine.lossAxisX.min = loss[i]
-                        //}
                         if (loss[i]>lossAxisY.max) {
                             lossLine.lossAxisY.max = loss[i]
                         }
@@ -73,6 +64,9 @@ ApplicationWindow {
                     }
                     currentiterationLabel.text = Julia.get_data(["Training","iteration"])
                 }
+                if (iter===Julia.get_data(["Training","max_iterations"]))
+                    running = false
+                end
                 elapsedtime.text = Julia.training_elapsed_time()
                 alliterationsLabel.text = Julia.get_data(["Training","max_iterations"])
                 epoch.text = Julia.get_data(["Training","epoch"])
@@ -258,83 +252,74 @@ ApplicationWindow {
                                 onClicked: Julia.set_data(["Training","stop_training"],true)
                             }
                         }
-                        RowLayout {
-                            ColumnLayout {
-                                Label {
-                                    Layout.topMargin: 0.5*margin
-                                    text: "Training time"
-                                    font.bold: true
-                                }
-                                Label {
-                                    Layout.topMargin: 0.2*margin
-                                    text: "Start time:"
-                                }
-                                Label {
-                                    Layout.topMargin: 0.2*margin
-                                    text: "Elapsed time:"
-                                }
-                                Label {
-                                    Layout.topMargin: 0.5*margin
-                                    text: "Training cycle"
-                                    font.bold: true
-                                }
-                                Label {
-                                    Layout.topMargin: 0.2*margin
-                                    text: "Epoch:"
-                                }
-                                Label {
-                                    Layout.topMargin: 0.2*margin
-                                    text: "Iterations per epoch:"
-                                }
-                                Label {
-                                    Layout.topMargin: 0.5*margin
-                                    text: "Other information:"
-                                    font.bold: true
-                                }
-                                Label {
-                                    Layout.topMargin: 0.2*margin
-                                    text: "Hardware resource:"
-                                }
-                                Label {
-                                    Layout.topMargin: 0.2*margin
-                                    text: "Learning rate:"
-                                }
+                        Column {
+                            spacing: 0.4*margin
+                            Label {
+                                topPadding: 0.5*margin
+                                text: "Training time"
+                                font.bold: true
                             }
-                            ColumnLayout {
+                            Row {
+                                spacing: 0.3*margin
                                 Label {
-                                    Layout.topMargin: 0.5*margin
-                                    text: ""
-                                    font.bold: true
+                                    text: "Start time:"
+                                    width: iterationsperepochLabel.width
                                 }
                                 Label {
                                     id: starttime
-                                    Layout.topMargin: 0.2*margin
                                     text: Julia.time()
+                                }
+                            }
+                            Row {
+                                spacing: 0.3*margin
+                                Label {
+                                    text: "Elapsed time:"
+                                    width: iterationsperepochLabel.width
                                 }
                                 Label {
                                     id: elapsedtime
                                     Layout.topMargin: 0.2*margin
                                     text: ""
                                 }
+                            }
+                            Label {
+                                topPadding: 0.5*margin
+                                text: "Training cycle"
+                                font.bold: true
+                            }
+                            Row {
+                                spacing: 0.3*margin
                                 Label {
-                                    Layout.topMargin: 0.5*margin
-                                    text: ""
-                                    font.bold: true
+                                    text: "Epoch:"
+                                    width: iterationsperepochLabel.width
                                 }
                                 Label {
                                     id: epoch
-                                    Layout.topMargin: 0.2*margin
                                     text: ""
+                                }
+                            }
+                            Row {
+                                spacing: 0.3*margin
+                                Label {
+                                    id: iterationsperepochLabel
+                                    text: "Iterations per epoch:"
                                 }
                                 Label {
                                     id: iterationsperepoch
                                     Layout.topMargin: 0.2*margin
                                     text: ""
                                 }
+                            }
+                            Label {
+                                topPadding: 0.5*margin
+                                text: "Other information:"
+                                font.bold: true
+                            }
+                            Row {
+                                spacing: 0.3*margin
                                 Label {
-                                    Layout.topMargin: 0.5*margin
-                                    text: ""
-                                    font.bold: true
+                                    text: "Hardware resource:"
+                                    width: iterationsperepochLabel.width
                                 }
                                 Label {
                                     id:hardwareresource
@@ -342,14 +327,45 @@ ApplicationWindow {
                                     text: Julia.get_data(["Options",
                                         "Hardware_resources","allow_GPU"]) ? "GPU" : "CPU"
                                 }
+                            }
+                            Row {
+                                spacing: 0.3*margin
                                 Label {
-                                    id: learningrate
-                                    Layout.topMargin: 0.2*margin
-                                    text: Julia.get_data(["Training","Options",
-                                        "Hyperparameters","learning_rate"])
+                                    text: "Learning rate:"
+                                    width: iterationsperepochLabel.width
+                                }
+                                SpinBox {
+                                    from: 1
+                                    value: 100000*Julia.get_data(
+                                               ["Training","Options","Hyperparameters","learning_rate"])
+                                    to: 1000
+                                    stepSize: 100
+                                    editable: true
+                                    property real realValue: value/100000
+                                    textFromValue: function(value, locale) {
+                                        return Number(value/100000).toLocaleString(locale,'e',0)
+                                    }
+                                    onValueModified: {
+                                        if (value>1000) {
+                                            stepSize = 1000
+                                        }
+                                        else if (value>100) {
+                                            stepSize = 100
+                                        }
+                                        else if (value>10) {
+                                            stepSize = 10
+                                        }
+                                        else {
+                                            stepSize = 1
+                                        }
+                                        Julia.set_data(
+                                            ["Training","Options","Hyperparameters","learning_rate"],
+                                            value/100000)
+                                        Julia.set_data(
+                                            ["Training","learning_rate_changed"],true)
+                                    }
                                 }
                             }
-
                         }
                     }
                 }

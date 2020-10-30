@@ -194,8 +194,7 @@ ApplicationWindow {
                             spacing: 0.3*margin
                             Label {
                                 text: "Optimiser:"
-                                topPadding: 0.2*margin
-                                bottomPadding: 0.1*margin
+                                topPadding: 10*pix
                                 width: numberofepochsLabel.width
                             }
                             ComboBox {

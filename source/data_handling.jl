@@ -97,6 +97,7 @@ options_training = Options_training()
     starting_time::String = string(now())
     max_iterations::Int64 = iterations_per_epoch*hyperparameters_training.epochs
     training_started::Bool = false
+    learning_rate_changed::Bool = false
 end
 training = Training()
 
