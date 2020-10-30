@@ -68,71 +68,69 @@ Component {
             }
         }
         Component {
-                id: hardwareView
-                Column {
-                    spacing: 0.2*margin
-                    RowLayout {
-                        spacing: 0.3*margin
-                        ColumnLayout {
-                            spacing: 0.55*margin
-                            Label {
-                                text: "Allow GPU:"
-                            }
-                            Label {
-                                text: "Allowed CPU cores:"
-                                bottomPadding: 0.05*margin
-                            }
-                        }
-                        Column {
-                            spacing: !Julia.has_cuda() ? 30*pix : 25*pix
-                            CheckBox {
-                                x: -35*pix
-                                visible: Julia.has_cuda()
-                                checkState: Julia.get_data(
-                                           ["Options","Hardware_resources","allow_GPU"]) ?
-                                           Qt.Checked : Qt.Unchecked
-                                onClicked: {
-                                    var value = checkState==Qt.Checked ? true : false
-                                    Julia.set_data(
-                                        ["Options","Hardware_resources","allow_GPU"],
-                                        value)
-                                }
-                            }
-                            Label {
-                                topPadding: 10*pix
-                                visible: !Julia.has_cuda()
-                                text: "No CUDA capable device found!"
-                            }
-                            ComboBox {
-                                editable: false
-                                model: ListModel {id: coresModel}
-                                onActivated: {
-                                    Julia.set_data(
-                                        ["Options","Hardware_resources","num_cores"],
-                                        parseInt(currentText,10))
-                                }
-                                Component.onCompleted: {
-                                    var val = Julia.get_data(
-                                        ["Options","Hardware_resources","num_cores"])
-                                    var num_cores = Julia.num_cores()
-                                    for (var i=0;i<num_cores;i++) {
-                                        coresModel.append({"text": i+1})
-                                        var num = parseInt(coresModel.get(i).text,10)
-                                        if (num===val) {
-                                            currentIndex = i
-                                        }
-                                    }
-                                    if (currentIndex===-1) {
-                                        currentIndex = num_cores-1
-                                    }
-                                }
-                            }
-                        }
-
+            id: hardwareView
+            Column {
+                spacing: 0.2*margin
+                Row {
+                    spacing: 0.55*margin
+                    Label {
+                        text: "Allow GPU:"
+                        width: allowedcpucoresLabel.width
                     }
-
-
+                    CheckBox {
+                        visible: Julia.has_cuda()
+                        padding: 0
+                        width: height-18*pix
+                        checkState: Julia.get_data(
+                                   ["Options","Hardware_resources","allow_GPU"]) ?
+                                   Qt.Checked : Qt.Unchecked
+                        onClicked: {
+                            var value = checkState==Qt.Checked ? true : false
+                            Julia.set_data(
+                                ["Options","Hardware_resources","allow_GPU"],
+                                value)
+                        }
+                    }
+                    Label {
+                        visible: !Julia.has_cuda()
+                        text: "No CUDA capable device found!"
+                        topPadding: 10*pix
+                    }
                 }
+                Row {
+                    spacing: 0.4*margin
+                    Label {
+                        id: allowedcpucoresLabel
+                        text: "Allowed CPU cores:"
+                        topPadding: 10*pix
+                    }
+                    ComboBox {
+                        editable: false
+                        width: 0.3*buttonWidth
+                        model: ListModel {id: coresModel}
+                        onActivated: {
+                            Julia.set_data(
+                                ["Options","Hardware_resources","num_cores"],
+                                parseInt(currentText,10))
+                        }
+                        Component.onCompleted: {
+                            var val = Julia.get_data(
+                                ["Options","Hardware_resources","num_cores"])
+                            var num_cores = Julia.num_cores()
+                            for (var i=0;i<num_cores;i++) {
+                                coresModel.append({"text": i+1})
+                                var num = parseInt(coresModel.get(i).text,10)
+                                if (num===val) {
+                                    currentIndex = i
+                                }
+                            }
+                            if (currentIndex===-1) {
+                                currentIndex = num_cores-1
+                            }
+                        }
+                    }
+                }
+            }
         }
         Component {
                 id: aboutView

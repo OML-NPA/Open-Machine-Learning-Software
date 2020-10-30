@@ -122,16 +122,24 @@ ApplicationWindow {
                                 text: "Augmentation"
                                 font.bold: true
                             }
-                            CheckBox {
-                                text: "Mirroring"
-                                checkState : Julia.get_data(
-                                           ["Training","Options","Processing","mirroring"]) ?
-                                           Qt.Checked : Qt.Unchecked
-                                onClicked: {
-                                    var value = checkState==Qt.Checked ? true : false
-                                    Julia.set_data(
-                                        ["Training","Options","Processing","mirroring"],
-                                        value)
+                            Row {
+                                spacing: 0.3*margin
+                                Label {
+                                    text: "Mirroring:"
+                                    width: minfrpixLabel.width
+                                }
+                                CheckBox {
+                                    padding: 0
+                                    width: height//-10*pix
+                                    checkState : Julia.get_data(
+                                               ["Training","Options","Processing","mirroring"]) ?
+                                               Qt.Checked : Qt.Unchecked
+                                    onClicked: {
+                                        var value = checkState==Qt.Checked ? true : false
+                                        Julia.set_data(
+                                            ["Training","Options","Processing","mirroring"],
+                                            value)
+                                    }
                                 }
                             }
                             Row {
