@@ -117,7 +117,7 @@ ApplicationWindow {
                 Component {
                         id: processingView
                         Column {
-                            spacing: 0.2*margin
+                            spacing: 0.4*margin
                             Label {
                                 text: "Augmentation"
                                 font.bold: true
@@ -135,9 +135,10 @@ ApplicationWindow {
                                 }
                             }
                             Row {
-                                spacing: 0.55*margin
+                                spacing: 0.3*margin
                                 Label {
                                     text: "Rotation (number of angles):"
+                                    width: minfrpixLabel.width
                                 }
                                 SpinBox {
                                     from: 1
@@ -152,8 +153,9 @@ ApplicationWindow {
                                 }
                             }
                             Row {
-                                spacing: 0.55*margin
+                                spacing: 0.3*margin
                                 Label {
+                                    id: minfrpixLabel
                                     text: "Minimum fraction of labeled pixels:"
                                 }
                                 SpinBox {
@@ -177,157 +179,268 @@ ApplicationWindow {
 
                 }
                 Component {
-                        id: hyperparametersView
-                        Column {
-                            spacing: 0.2*margin
-                            RowLayout {
-                                spacing: 0.3*margin
-                                ColumnLayout {
-                                    Layout.alignment : Qt.AlignHCenter
-                                    spacing: 0.55*margin
-                                    Label {
-                                        Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 1
-                                        text: "Batch size:"
-                                    }
-                                    Label {
-                                        Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 1
-                                        text: "Number of epochs:"
-                                        bottomPadding: 0.05*margin
-                                    }
-                                    Label {
-                                        Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 1
-                                        text: "Learning rate:"
-                                        bottomPadding: 0.05*margin
-                                    }
-
+                    id: hyperparametersView
+                    Column {
+                        spacing: 0.4*margin
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                text: "Optimiser:"
+                                topPadding: 0.2*margin
+                                bottomPadding: 0.1*margin
+                                width: numberofepochsLabel.width
+                            }
+                            ComboBox {
+                                id: optimisersComboBox
+                                editable: false
+                                width: 0.6*buttonWidth
+                                topPadding: -100
+                                bottomPadding: -100
+                                currentIndex: 4
+                                model: ListModel {
+                                    id: optimisersModel
                                 }
-                                Column {
-                                    topPadding: 0*pix
-                                    spacing: 0.50*margin
-                                    SpinBox {
-                                        from: 1
-                                        value: Julia.get_data(
-                                                   ["Training","Options","Hyperparameters","batch_size"])
-                                        to: 10000
-                                        stepSize: 1
-                                        editable: true
-                                        onValueModified: {
-                                            Julia.set_data(
-                                                ["Training","Options","Hyperparameters","batch_size"],
-                                                value)
-                                        }
+                                onActivated: {
+                                    Julia.set_data(
+                                        ["Training","Options","Hyperparameters","optimiser"],
+                                        [currentText,current_ind+1])
+                                    change_params()
+                                }
+                                Component.onCompleted: {
+                                    var optimisers = ["Stochastic","Momentum",
+                                         "Nesterov","RMSProp","ADAM","RADAM","AdaMax",
+                                         "ADAGrad","ADADelta","AMSGrad","NADAM","ADAMW"]
+                                     for (var i=0;i<optimisers.length;i++) {
+                                         optimisersModel.append({"name": optimisers[i]})
+                                     }
+                                     var name_ind = Julia.get_data(
+                                         ["Training","Options","Hyperparameters","optimiser"])
+                                     currentIndex = name_ind[1]-1
+                                     change_params()
+                                }
+                                function change_params() {
+                                    var values = Julia.get_data(
+                                        ["Training","Options","Hyperparameters","optimiser_params"])
+                                    values = values[currentIndex]
+                                    var names = Julia.get_data(
+                                        ["Training","Options","Hyperparameters","optimiser_params_names"])
+                                    names = names[currentIndex]
+                                    param1TextField.visible = false
+                                    param2TextField.visible = false
+                                    param3TextField.visible = false
+                                    param1Label.visible = false
+                                    param2Label.visible = false
+                                    param3Label.visible = false
+                                    if (names.length>0) {
+                                        param1Label.text = names[0]+":"
+                                        param1TextField.text = values[0]
+                                        param1Label.visible = true
+                                        param1TextField.visible = true
                                     }
-                                    SpinBox {
-                                        from: 1
-                                        value: Julia.get_data(
-                                                   ["Training","Options","Hyperparameters","epochs"])
-                                        to: 100000
-                                        stepSize: 1
-                                        editable: true
-                                        onValueModified: {
-                                            Julia.set_data(
-                                                ["Training","Options","Hyperparameters","epochs"],
-                                                value)
-                                        }
+                                    if (names.length>1) {
+                                        param2Label.text = names[1]+":"
+                                        param2TextField.text = values[1]
+                                        param2Label.visible = true
+                                        param2TextField.visible = true
                                     }
-                                    SpinBox {
-                                        from: 1
-                                        value: 100000*Julia.get_data(
-                                                   ["Training","Options","Hyperparameters","learning_rate"])
-                                        to: 1000
-                                        stepSize: 100
-                                        editable: true
-                                        property real realValue: value/100000
-                                        textFromValue: function(value, locale) {
-                                            return Number(value/100000).toLocaleString(locale,'e',0)
-                                        }
-                                        onValueModified: {
-                                            if (value>1000) {
-                                                stepSize = 1000
-                                            }
-                                            else if (value>100) {
-                                                stepSize = 100
-                                            }
-                                            else if (value>10) {
-                                                stepSize = 10
-                                            }
-                                            else {
-                                                stepSize = 1
-                                            }
-                                            Julia.set_data(
-                                                ["Training","Options","Hyperparameters","learning_rate"],
-                                                value/100000)
-                                        }
+                                    if (names.length>2) {
+                                        param3Label.text = names[2]+":"
+                                        param3TextField.text = values[2]
+                                        param3Label.visible = true
+                                        param3TextField.visible = true
                                     }
                                 }
                             }
                         }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                id: param1Label
+                                text: ""
+                                width: numberofepochsLabel.width
+                                topPadding: 10*pix
+                            }
+                            TextField {
+                                id: param1TextField
+                                width: 140*pix
+                                visible: false
+                                validator: RegExpValidator { regExp: /(0.\d{1,3}|0)/ }
+                                onEditingFinished: {
+                                    Julia.set_data(
+                                        ["Training","Options","Hyperparameters","optimiser_params"],
+                                        optimisersComboBox.currentIndex+1,1,parseFloat(text))
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                id: param2Label
+                                text: ""
+                                width: numberofepochsLabel.width
+                                topPadding: 10*pix
+                            }
+                            TextField {
+                                id: param2TextField
+                                width: 140*pix
+                                visible: false
+                                validator: RegExpValidator { regExp: /(0.\d{1,3}|0)/ }
+                                onEditingFinished: {
+                                    Julia.set_data(
+                                        ["Training","Options","Hyperparameters","optimiser_params"],
+                                        optimisersComboBox.currentIndex+1,2,parseFloat(text))
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                id: param3Label
+                                text: ""
+                                width: numberofepochsLabel.width
+                                topPadding: 10*pix
+                            }
+                            TextField {
+                                id: param3TextField
+                                width: 140*pix
+                                visible: false
+                                validator: RegExpValidator { regExp: /(0.\d{1,3}|0)/ }
+                                onEditingFinished: {
+                                    Julia.set_data(
+                                        ["Training","Options","Hyperparameters","optimiser_params"],
+                                        optimisersComboBox.currentIndex+1,3,parseFloat(text))
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                text: "Batch size:"
+                                bottomPadding: 0.05*margin
+                                width: numberofepochsLabel.width
+                            }
+                            SpinBox {
+                                from: 1
+                                value: Julia.get_data(
+                                           ["Training","Options","Hyperparameters","batch_size"])
+                                to: 10000
+                                stepSize: 1
+                                editable: true
+                                onValueModified: {
+                                    Julia.set_data(
+                                        ["Training","Options","Hyperparameters","batch_size"],
+                                        value)
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                id: numberofepochsLabel
+                                text: "Number of epochs:"
+                                bottomPadding: 0.05*margin
+                            }
+                            SpinBox {
+                                from: 1
+                                value: Julia.get_data(
+                                           ["Training","Options","Hyperparameters","epochs"])
+                                to: 100000
+                                stepSize: 1
+                                editable: true
+                                onValueModified: {
+                                    Julia.set_data(
+                                        ["Training","Options","Hyperparameters","epochs"],
+                                        value)
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                text: "Learning rate:"
+                                bottomPadding: 0.05*margin
+                                width: numberofepochsLabel.width
+                            }
+                            SpinBox {
+                                from: 1
+                                value: 100000*Julia.get_data(
+                                           ["Training","Options","Hyperparameters","learning_rate"])
+                                to: 1000
+                                stepSize: 100
+                                editable: true
+                                property real realValue: value/100000
+                                textFromValue: function(value, locale) {
+                                    return Number(value/100000).toLocaleString(locale,'e',0)
+                                }
+                                onValueModified: {
+                                    if (value>1000) {
+                                        stepSize = 1000
+                                    }
+                                    else if (value>100) {
+                                        stepSize = 100
+                                    }
+                                    else if (value>10) {
+                                        stepSize = 10
+                                    }
+                                    else {
+                                        stepSize = 1
+                                    }
+                                    Julia.set_data(
+                                        ["Training","Options","Hyperparameters","learning_rate"],
+                                        value/100000)
+                                }
+                            }
+                        }
+                    }
                 }
                 Component {
                     id: generalView
                     Column {
-                        spacing: 0.2*margin
-                        RowLayout {
+                        spacing: 0.4*margin
+                        Row {
                             spacing: 0.3*margin
-                            ColumnLayout {
-                                Layout.alignment : Qt.AlignHCenter
-                                spacing: 0.55*margin
-                                Label {
-                                    Layout.alignment : Qt.AlignLeft
-                                    Layout.row: 1
-                                    text: "Test data fraction:"
-                                }
+                            Label {
+                                Layout.alignment : Qt.AlignLeft
+                                Layout.row: 1
+                                text: "Test data fraction:"
+                                width: testingfrLabel.width
                             }
-                            Column {
-                                topPadding: 0*pix
-                                spacing: 0.50*margin
-                                SpinBox {
-                                    from: 0
-                                    value: 10*Julia.get_data(
-                                               ["Training","Options","General","test_data_fraction"])
-                                    to: 9
-                                    stepSize: 1
-                                    editable: true
-                                    property real realValue: value/10
-                                    textFromValue: function(value, locale) {
-                                        return Number(value/10).toLocaleString(locale,'f',1)
-                                    }
-                                    onValueModified: {
-                                        Julia.set_data(
-                                            ["Training","Options","General","test_data_fraction"],
-                                            value/10)
-                                    }
+                            SpinBox {
+                                from: 0
+                                value: 10*Julia.get_data(
+                                           ["Training","Options","General","test_data_fraction"])
+                                to: 9
+                                stepSize: 1
+                                editable: true
+                                property real realValue: value/10
+                                textFromValue: function(value, locale) {
+                                    return Number(value/10).toLocaleString(locale,'f',1)
+                                }
+                                onValueModified: {
+                                    Julia.set_data(
+                                        ["Training","Options","General","test_data_fraction"],
+                                        value/10)
                                 }
                             }
                         }
-                        RowLayout {
+                        Row {
                             spacing: 0.3*margin
-                            ColumnLayout {
-                                Layout.alignment : Qt.AlignHCenter
-                                spacing: 0.55*margin
-                                Label {
-                                    Layout.alignment : Qt.AlignLeft
-                                    Layout.row: 1
-                                    text: "Testing frequency (iterations):"
-                                }
+                            Label {
+                                id: testingfrLabel
+                                Layout.alignment : Qt.AlignLeft
+                                Layout.row: 1
+                                text: "Testing frequency (iterations):"
                             }
-                            Column {
-                                topPadding: 0*pix
-                                spacing: 0.50*margin
-                                SpinBox {
-                                    from: 0
-                                    value: Julia.get_data(
-                                               ["Training","Options","General","testing_frequency"])
-                                    to: 10000
-                                    stepSize: 1
-                                    editable: true
-                                    onValueModified: {
-                                        Julia.set_data(
-                                            ["Training","Options","General","testing_frequency"],value)
-                                    }
+                            SpinBox {
+                                from: 0
+                                value: Julia.get_data(
+                                           ["Training","Options","General","testing_frequency"])
+                                to: 10000
+                                stepSize: 1
+                                editable: true
+                                onValueModified: {
+                                    Julia.set_data(
+                                        ["Training","Options","General","testing_frequency"],value)
                                 }
                             }
                         }

@@ -379,7 +379,6 @@ Component {
                                     progressbar.value = 0
                                 }
                                 Julia.set_data(["Training","stop_training"],true)
-                                Julia.reset(Julia.get_data(["Training","data_ready"]))
                             }
                         }
                         Timer {

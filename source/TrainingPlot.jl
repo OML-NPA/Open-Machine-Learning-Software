@@ -52,6 +52,25 @@ function accuracy(predicted::Union{Array,CUDA.CuArray},
   return acc
 end
 
+function get_optimiser(training)
+  optimisers = [Descent,Momentum,Nesterov,RMSProp,ADAM,
+    RADAM,AdaMax,ADAGrad,ADADelta,AMSGrad,NADAM,ADAMW]
+  optimiser_ind = training.Options.Hyperparameters.optimiser[2]
+  parameters = training.Options.Hyperparameters.
+    optimiser_params[optimiser_ind]
+  learning_rate = training.Options.Hyperparameters.learning_rate
+  if length(parameters)==1
+    parameters = [learning_rate,parameters[1]]
+  elseif length(parameters)==2
+    parameters = [learning_rate,(parameters[1],parameters[2])]
+  elseif length(parameters)==3
+    parameters = [learning_rate,(parameters[1],parameters[2]),parameters[3]]
+  end
+  optimiser = optimisers[optimiser_ind]
+  return optimiser(parameters...)
+end
+
+
 function train!(loss,model,train_batches,test_batches,opt,training)
   num = length(train_batches)
   num_test = length(test_batches)
@@ -145,7 +164,7 @@ function train_main(master,model_data)
   # Precompile model
   model(precomp_data)
   # Use ADAM optimiser
-  opt = ADAM(args.learning_rate)
+  opt = get_optimiser(training)
   reset_training_data(training)
   # Training loop
   for epoch_idx = 1:epochs

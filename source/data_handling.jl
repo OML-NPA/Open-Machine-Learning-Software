@@ -41,6 +41,18 @@ end
 processing_training = Processing_training()
 
 @with_kw mutable struct Hyperparameters_training
+    optimiser::Array = ["ADAM",5]
+    optimiser_params::Array = [[],[0.9],[0.9],[0.9],
+      [0.9,0.999],[0.9,0.999],[0.9,0.999],[],[0.9],[0.9,0.999],
+      [0.9,0.999],[0.9,0.999,0]]
+    optimiser_params_names::Array = [[],["ρ"],
+      ["ρ"],["ρ"],
+      ["β1","β2"],
+      ["β1","β2"],
+      ["β1","β2"],[],
+      ["ρ"],["β1","β2"],
+      ["β1","β2"],
+      ["β1","β2","Weight decay"]]
     learning_rate::Float64 = 1e-3
     epochs::Int = 1
     batch_size::Int = 10
@@ -121,24 +133,38 @@ function get_data_main(master::Master,fields::QML.QListAllocated)
 end
 get_data(fields) = get_data_main(master,fields)
 
-function set_data_main(master::Master,fields::QML.QListAllocated,value)
+function set_data_main(master::Master,fields::QML.QListAllocated,args...)
     data = master
     fields = String.(QML.value.(fields))
-    if value isa AbstractString
-        value = String(value)
-    elseif value isa Integer
-        value = Int64(value)
-    elseif values isa AbstractFloat
-        value = Float64(value)
-    end
     for i = 1:length(fields)-1
         field = Symbol(fields[i])
         data = getproperty(data,field)
     end
+    values = Array{Any}(undef,length(args))
+    for i=1:length(args)
+      value = args[i]
+      if value isa AbstractString
+          value = String(value)
+      elseif value isa Integer
+          value = Int64(value)
+      elseif values isa AbstractFloat
+          value = Float64(value)
+      end
+      values[i] = value
+    end
+    if length(args)==1
+      value = args[1]
+    elseif length(args)==2
+      value = getproperty(data,Symbol(fields[end]))
+      value[args[1]] = args[2]
+    elseif length(args)==3
+      value = getproperty(data,Symbol(fields[end]))
+      value[args[1]][args[2]] = args[3]
+    end
     setproperty!(data, Symbol(fields[end]), value)
     return nothing
 end
-set_data(fields,value) = set_data_main(master,fields,value)
+set_data(fields,value,args...) = set_data_main(master,fields,value,args...)
 
 function save_data_main(master::Master)
     open("config.json","w") do f
