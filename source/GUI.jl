@@ -7,15 +7,15 @@ include("Customization.jl")
 include("TrainingPlot.jl")
 
 if !isfile("config.json")
-  save_data()
+    save_data()
 else
-  load_data!(master)
+    load_data!(master)
 end
 
 if !isfile("config.json")
-  save_data()
+    save_data()
 else
-  load_data!(master)
+    load_data!(master)
 end
 
 @qmlfunction(

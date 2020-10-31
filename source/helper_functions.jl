@@ -198,16 +198,16 @@ function intersect_inds(ar1,ar2)
 end
 
 function num_cores()
-  return Threads.nthreads()
+    return Threads.nthreads()
 end
 
 function source_dir()
-  return replace(pwd(), "\\" => "/")
+    return replace(pwd(), "\\" => "/")
 end
 
 function time()
-  date = string(now())
-  date = date[1:19]
-  date = replace(date,"T"=>" ")
-  return date
+      date = string(now())
+      date = date[1:19]
+      date = replace(date,"T"=>" ")
+      return date
 end

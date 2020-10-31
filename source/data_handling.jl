@@ -143,24 +143,16 @@ function set_data_main(master::Master,fields::QML.QListAllocated,args...)
     end
     values = Array{Any}(undef,length(args))
     for i=1:length(args)
-      value = args[i]
-      if value isa AbstractString
-          value = String(value)
-      elseif value isa Integer
-          value = Int64(value)
-      elseif values isa AbstractFloat
-          value = Float64(value)
-      end
-      values[i] = value
+        values[i] = fix_QML_types(args[i])
     end
     if length(args)==1
-      value = args[1]
+        value = args[1]
     elseif length(args)==2
-      value = getproperty(data,Symbol(fields[end]))
-      value[args[1]] = args[2]
+        value = getproperty(data,Symbol(fields[end]))
+        value[args[1]] = args[2]
     elseif length(args)==3
-      value = getproperty(data,Symbol(fields[end]))
-      value[args[1]][args[2]] = args[3]
+        value = getproperty(data,Symbol(fields[end]))
+        value[args[1]][args[2]] = args[3]
     end
     setproperty!(data, Symbol(fields[end]), value)
     return nothing
@@ -185,21 +177,21 @@ function load_data!(master)
 end
 
 function reset(fields)
-  var = get_data(fields)
-  if var isa Array
-    var = similar(var,0)
-  elseif var isa Number
-    var = zero(typeof(var))
-  elseif var isa String
-    var = ""
-  end
+    var = get_data(fields)
+    if var isa Array
+        var = similar(var,0)
+    elseif var isa Number
+        var = zero(typeof(var))
+    elseif var isa String
+        var = ""
+    end
 end
 
 function info(fields)
-  @info get_data(fields)
+    @info get_data(fields)
 end
 
 function stop_all_main(master)
-  master.Training.stop_training = true
+    master.Training.stop_training = true
 end
 stop_all() = stop_all_main(master)
