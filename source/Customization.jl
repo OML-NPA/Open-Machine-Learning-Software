@@ -141,7 +141,10 @@ function getpooling(type::AbstractString,d,in_size::Tuple)
 end
 
 function getresizing(type::AbstractString,d,in_size)
-    if type=="Catenation"
+    if type=="Addition"
+        out = (in_size[1][1],in_size[1][2],in_size[1][3])
+        return (Addition(), out)
+    elseif type=="Catenation"
         new_size = Array{Int64}(undef,length(in_size))
         dim = d["dimension"]
         for i = 1:length(in_size)

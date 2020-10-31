@@ -56,7 +56,8 @@ end
     yield,
     info,
     stop_all,
-    time
+    time,
+    arrange
 )
 load("GUI//Main.qml")
 exec()

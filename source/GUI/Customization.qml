@@ -146,7 +146,7 @@ ApplicationWindow {
                                 "outputnum": unit.outputnum,
                                 "x": unit.x,
                                 "y": unit.y,
-                                "datastore": unit.datastore}
+                                "datastore": copy(unit.datastore)}
                     copycache.objectsdata.push(data)
                     copycache.ids.push(ind)
                     copycache.connections.push(getconnections(unit,0))
@@ -889,6 +889,7 @@ ApplicationWindow {
                     }
                     onPressed: {opacity = 0.5}
                     onClicked: {
+                        getarchitecture()
                         if (layers.children.length===0) {
                             return
                         }
@@ -1492,8 +1493,6 @@ ApplicationWindow {
             return pushstack(poolpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Average pooling":
             return pushstack(poolpropertiesComponent,labelColor,group,type,name,unit,datastore)
-        case "Addition":
-            return pushstack(catpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Catenation":
             return pushstack(catpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Decatenation":
