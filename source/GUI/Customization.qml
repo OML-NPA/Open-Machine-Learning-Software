@@ -108,18 +108,23 @@ ApplicationWindow {
                     var upNodes = unit.children[2].children[0]
                     var downNodes = unit.children[2].children[1]
                     for (var i=0;i<upNodes.children.length;i++) {
-                        if (upNodes.children[i].children[0].connectedNode!==null) {
-                            upNodes.children[i].children[0].connectedItem.connectedNode = null
-                            upNodes.children[i].children[0].connectedItem.connection.destroy()
+                        var upNode = upNodes.children[i].children[0]
+                        if (upNode.connectedNode!==null) {
+                            upNode.connectedNode.visible = false
+                            upNode.connectedItem.connectedNode = null
+                            upNode.connectedItem.connection.destroy()
+                            upNode.connectedItem.destroy()
                             connections.num = connections.num - 1
                         }
                     }
                     for (i=0;i<downNodes.children.length;i++) {
                         for (var j=1;j<downNodes.children[i].children.length;j++) {
-                            if (downNodes.children[i].children[j].connectedNode!==null) {
-                                downNodes.children[i].children[j].connectedNode.connectedNode = null
-                                downNodes.children[i].children[j].connectedNode.connectedItem = null
-                                downNodes.children[i].children[j].connection.destroy()
+                            var downNode = downNodes.children[i].children[j]
+                            if (downNode.connectedNode!==null) {
+                                downNode.connectedNode.visible = false
+                                downNode.connectedNode.connectedNode = null
+                                downNode.connectedNode.connectedItem = null
+                                downNode.connection.destroy()
                                 connections.num = connections.num - 1
                             }
                         }
@@ -178,27 +183,33 @@ ApplicationWindow {
                         var conns = connections_down[j]
                         for (var l=0;l<conns.length;l++) {
                             var conn = conns[l]
-                            var conn_real = conn+startInd
                             if (copycache.ids.includes(conn)) {
+                                var conn_real = startInd + copycache.ids.indexOf(conn)
                                 unit = layers.children[startInd+i]
-                                var unit_connected = layers.children[conn_real]
-                                var downNode = getDownNode(unit,j)
+
+                                var unit_connected = layers.children[conn]
+                                var new_unit_connected = layers.children[conn_real]
+
+                                downNode = getDownNode(unit,j)
                                 var downNodeRectangle = getDownNodeRec(unit,j,l+1)
                                 ind = -1
-                                var connections_up = copycache.connections[conn].up
+                                var connections_up = getconnections(unit_connected,0).up
                                 for (var a=0;a<connections_up.length;a++) {
-                                    if ((connections_up[a])===i) {
+                                    if ((connections_up[a])===copycache.ids[i]) {
                                         ind = a
                                     }
                                 }
-                                var upNode = getUpNode(unit_connected,ind)
+                                if (ind===-1) {
+                                    continue
+                                }
+                                upNode = getUpNode(new_unit_connected,ind)
                                 makeConnection(unit,downNode,downNodeRectangle,upNode)
                             }
                         }
                     }
                 }
                 propertiesStackView.push(generalpropertiesComponent)
-                mainPane.selectioninds = add(selectioninds,startInd)
+                mainPane.selectioninds = range(startInd, layers.children.length-1, 1)
                 for (i=0;i<mainPane.selectioninds.length;i++) {
                     unit = layers.children[mainPane.selectioninds[i]]
                     if (unit!==undefined) {
@@ -1493,6 +1504,8 @@ ApplicationWindow {
             return pushstack(poolpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Average pooling":
             return pushstack(poolpropertiesComponent,labelColor,group,type,name,unit,datastore)
+        case "Addition":
+            return pushstack(additionpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Catenation":
             return pushstack(catpropertiesComponent,labelColor,group,type,name,unit,datastore)
         case "Decatenation":
@@ -3283,6 +3296,121 @@ ApplicationWindow {
                         validator: RegExpValidator { regExp: /(([1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1})|([1-9]\d{0,1},[1-9]\d{0,1},[1-9]\d{0,1}))/ }
                         onEditingFinished: {
                             unit.datastore.stride = displayText
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: additionpropertiesComponent
+        Column {
+            property var unit
+            property var name
+            property string type
+            property var group
+            property var labelColor
+            property var datastore: { "name": name, "type": type, "group": group,"inputs": "2"}
+            Component.onCompleted: {
+                if (unit.datastore===undefined) {
+                    unit.datastore = datastore
+                }
+            }
+            Row {
+                leftPadding: 20*pix
+                bottomPadding: 20*pix
+                ColorBox {
+                    topPadding: 0.39*margin
+                    leftPadding: 0.1*margin
+                    rightPadding: 0.2*margin
+                    colorRGB: labelColor
+                }
+                Label {
+                    id: typeLabel
+                    topPadding: 0.28*margin
+                    leftPadding: 0.10*margin
+                    text: type
+                    font.pointSize: 12
+                    color: "#777777"
+                    wrapMode: Text.NoWrap
+                }
+            }
+            RowLayout {
+                ColumnLayout {
+                    id: labelColumnLayout
+                    Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 0.4*margin
+                    Layout.topMargin: 0.22*margin
+                    spacing: 0.24*margin
+                    Repeater {
+                        model: ["Name","Inputs"]
+                        Label {
+                            text: modelData+": "
+                            topPadding: 4*pix
+                            bottomPadding: topPadding
+                        }
+                    }
+                }
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignTop
+                    Layout.topMargin: 0.2*margin
+                    TextField {
+                        text: datastore.name
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        onEditingFinished: {
+                            unit.datastore.name = displayText
+                            unit.children[0].children[0].text = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.inputs
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /[1-9]\d{0,1}/ }
+                        onEditingFinished: {
+                            var inputnum = parseFloat(unit.datastore.inputs)
+                            var newinputnum = parseFloat(displayText)
+                            if (inputnum===newinputnum) {return}
+                            if (inputnum<newinputnum) {
+                                for (var i=0;i<inputnum;i++) {
+                                    unit.children[2].children[0].children[i].inputnum = newinputnum
+                                    unit.children[2].children[0].children[i].children[0].x = unit.width*
+                                            unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
+                                    unit.children[2].children[0].children[i].children[1].x = unit.width*
+                                            unit.children[2].children[0].children[i].index/(newinputnum+1)-20*pix
+                                }
+                                for (i=0;i<(newinputnum-inputnum);i++) {
+                                    upNodeComponent.createObject(unit.children[2].children[0], {
+                                        "unit": unit,
+                                        "upNodes": unit.children[2].children[0],
+                                        "downNodes": unit.children[2].children[1],
+                                        "inputnum": newinputnum,
+                                        "index": inputnum+i+1})
+                                }
+                            }
+                            else {
+                                for (i=inputnum-1;i>=0;i--) {
+                                    if (i<newinputnum) {
+                                        unit.children[2].children[0].children[i].inputnum = newinputnum
+                                        unit.children[2].children[0].children[i].children[0].x = unit.width*
+                                                unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
+                                        unit.children[2].children[0].children[i].children[1].x = unit.width*
+                                                unit.children[2].children[0].children[i].index/(newinputnum+1)-20*pix
+                                    }
+                                    else {
+                                        if (unit.children[2].children[0].children[i].children[0].connectedItem!==null) {
+                                            unit.children[2].children[0].children[i].children[0].connection.destroy()
+                                            unit.children[2].children[0].children[i].children[0].connectedItem = null
+                                            unit.children[2].children[0].children[i].children[0].connectedNode = null
+                                        }
+                                        unit.children[2].children[0].children[i].destroy()
+                                    }
+                                }
+                            }
+                            unit.inputnum = newinputnum
+                            unit.datastore.inputs = displayText
                         }
                     }
                 }
