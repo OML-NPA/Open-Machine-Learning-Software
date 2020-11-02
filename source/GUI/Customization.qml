@@ -860,7 +860,7 @@ ApplicationWindow {
                        var name = Julia.get_data(["Training","name"])
                        var url = Julia.source_dir()+"/models/"+name+".model"
                        neuralnetworkTextField.text = url
-                       Julia.make_model()
+                       //Julia.make_model()
                        Julia.save_model(url)
                        opacity = 1
                     }
@@ -3426,7 +3426,8 @@ ApplicationWindow {
             property string type
             property var group
             property var labelColor
-            property var datastore: { "name": name, "type": type, "group": group,"inputs": "2", "dimension": "1"}
+            property var datastore: { "name": name, "type": type, "group": group,
+                "inputs": "2", "dimension": "3"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
                     unit.datastore = datastore
@@ -3550,7 +3551,8 @@ ApplicationWindow {
             property string type
             property var group
             property var labelColor
-            property var datastore: { "name": name, "type": type, "group": group,"outputs": "2"}
+            property var datastore: { "name": name, "type": type, "group": group,
+                "outputs": "2","dimension":"3"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
                     unit.datastore = datastore
@@ -3583,7 +3585,7 @@ ApplicationWindow {
                     Layout.topMargin: 0.22*margin
                     spacing: 0.24*margin
                     Repeater {
-                        model: ["Name","Outputs"]
+                        model: ["Name","Outputs","Dimension"]
                         Label {
                             text: modelData+": "
                             topPadding: 4*pix
@@ -3653,6 +3655,15 @@ ApplicationWindow {
                             }
                             unit.outputnum = newoutputnum
                             unit.datastore.outputs = displayText
+                        }
+                    }
+                    TextField {
+                        text: datastore.dimension
+                        defaultHeight: 0.75*buttonHeight
+                        defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
+                        validator: RegExpValidator { regExp: /[1-3]/ }
+                        onEditingFinished: {
+                            unit.datastore.dimension = displayText
                         }
                     }
                 }
