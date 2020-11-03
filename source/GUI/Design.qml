@@ -35,6 +35,7 @@ ApplicationWindow {
     property var architecture
     property double iconSize: 70*pix
 
+    Loader { id: designoptionsLoader}
 
     onClosing: { customizationLoader.sourceComponent = undefined }
 
@@ -860,7 +861,7 @@ ApplicationWindow {
                        var name = Julia.get_data(["Training","name"])
                        var url = Julia.source_dir()+"/models/"+name+".model"
                        neuralnetworkTextField.text = url
-                       //Julia.make_model()
+                       Julia.make_model()
                        Julia.save_model(url)
                        opacity = 1
                     }
@@ -881,7 +882,12 @@ ApplicationWindow {
                         fillMode: Image.PreserveAspectFit
                     }
                     onPressed: {opacity = 0.5}
-                    onClicked: {opacity = 1}
+                    onClicked: {
+                        opacity = 1
+                        if (designoptionsLoader.sourceComponent === null) {
+                            designoptionsLoader.source = "DesignOptions.qml"
+                        }
+                    }
                 }
                 Button {
                     id: arrangeButton
@@ -901,96 +907,13 @@ ApplicationWindow {
                     onPressed: {opacity = 0.5}
                     onClicked: {
                         getarchitecture()
-                        if (layers.children.length===0) {
-                            return
-                        }
-                        function getpositions() {
-                            var x = []
-                            var y = []
-                            for (var i=0;i<layers.children.length;i++) {
-                                x[i] = layers.children[i].x - width/2
-                                y[i] = layers.children[i].y - height/2
-                            }
-                            return({"x": x,"y": y})
-                        }
-                        var height = layers.children[0].height
-                        var width = layers.children[0].width
-                        var marginy = 40*pix + height
-                        var marginx = 40*pix + 1.5*width
-                        // Arrange into y groups
-                        var skipinds = []
-                        var positions_orig = getpositions()
-                        for(var k=0;k<layers.children.length-1;k++) {
-                            var positions = getpositions()
-                            for (var i=0;i<skipinds.length;i++) {
-                                positions.y[skipinds[i]] = Infinity
-                            }
-                            var minind = indexofmin(positions.y)
-                            var minval = Math.min(...positions.y)
-                            var dist = dif(positions.y,minval)
-                            for (i=0;i<dist.length;i++) {
-                                if ( i===minind || skipinds.includes(i)) {
-                                    continue
-                                }
-                                if (dist[i]>0) {
-                                    if (dist[i]<marginy) {
-                                        if (Math.abs(positions_orig.y[minind]-positions_orig.y[i])>height) {
-                                            layers.children[i].y = layers.children[i].y + (marginy - dist[i])
-                                        }
-                                        else {
-                                            layers.children[i].y = layers.children[minind].y
-                                        }
-                                    }
-                                }
-                            }
-                            skipinds.push(minind)
-                        }
-                        // Arrange x margins for y groups
-                        skipinds = []
-                        positions_orig = getpositions()
-                        for(k=0;k<layers.children.length-1;k++) {
-                            positions = getpositions()
-                            for (i=0;i<skipinds.length;i++) {
-                                positions.x[skipinds[i]] = Infinity
-                            }
-                            minind = indexofmin(positions.x)
-                            minval = Math.min(...positions.x)
-                            dist = dif(positions.x,minval)
-
-                            for (i=0;i<dist.length;i++) {
-                                if ( i===minind || skipinds.includes(i)) {
-                                    continue
-                                }
-                                if (dist[i]>=0 && positions.y[minind]===positions.y[i]) {
-                                    layers.children[i].x = minval + marginx
-                                }
-                            }
-                            skipinds.push(minind)
-                        }
-                        var unique_y = getpositions().y.filter((x,i,a)=>a.indexOf(x)===i)
-                        positions = getpositions()
-                        var ind = indexOfMin(positions.y)
-                        var min_x = positions.x[ind]
-                        var buffer = 0
-                        unique_y = unique_y.sort((a,b)=>a-b)
-                        for (i=0;i<(unique_y.length-1);i++) {
-                            var value = unique_y[i+1]-unique_y[i]
-                            positions = getpositions()
-                            var inds = findindex(positions.y,unique_y[i+1])
-                            var array = []
-                            for (var j=0;j<inds.length;j++) {
-                                array.push(layers.children[inds[j]].x)
-                            }
-                            var dev = mean(array) - min_x
-                            for (j=0;j<inds.length;j++) {
-                                layers.children[inds[j]].x = layers.children[inds[j]].x - dev + width/2
-                            }
-                            if (value!==marginy){
-                                buffer = buffer + (marginy - value)
-                                for (j=0;j<inds.length;j++) {
-                                    layers.children[inds[j]].y = layers.children[inds[j]].y + buffer
-                                }
-                            }
+                        var data = Julia.arrange()
+                        var coordinates = data[0]
+                        var inds = data[1]
+                        for (var i=0;i<inds.length;i++) {
+                            var layer = layers.children[inds[i]]
+                            layer.x = coordinates[i][0]
+                            layer.y = coordinates[i][1]
                         }
                         updateMainPane(layers.children[0])
                         updateConnections()
@@ -1763,8 +1686,8 @@ ApplicationWindow {
         id: layerComponent
         Rectangle {
             id: unit
-            height: 1.5*buttonHeight
-            width: 0.9*buttonWidth
+            height: 95*pix
+            width: 340*pix
             radius: 8*pix
             border.color: defaultpalette.controlborder
             border.width: 3*pix

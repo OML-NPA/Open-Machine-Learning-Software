@@ -44,7 +44,7 @@ DISTFILES += \
     Controls/ScrollView.qml \
     Controls/TextField.qml \
     Controls/TreeButton.qml \
-    Customization.qml \
+    Design.qml \
     FeatureDialog.qml \
     LocalTraining.qml \
     Main.qml \

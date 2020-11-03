@@ -3,7 +3,7 @@ include("packages.jl")
 include("helper_functions.jl")
 include("data_handling.jl")
 include("Training.jl")
-include("Customization.jl")
+include("Design.jl")
 include("TrainingPlot.jl")
 
 if !isfile("config.json")
@@ -30,6 +30,8 @@ end
     append_features,
     update_features,
     get_feature_field,
+    # Model design
+    arrange,
     # Model loading
     load_model,
     model_count,

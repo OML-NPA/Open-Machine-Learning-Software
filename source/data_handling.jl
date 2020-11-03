@@ -73,7 +73,17 @@ general_training = General_training()
 end
 options_training = Options_training()
 
+@with_kw mutable struct Design
+    width::Float64 = 340
+    height::Float64 = 95
+    min_dist_x::Float64 = 40
+    min_dist_y::Float64 = 40
+end
+design = Design()
+
 @with_kw mutable struct Training
+    Options = options_training
+    Design = design
     template::String = ""
     images::String = ""
     labels::String = ""
@@ -83,7 +93,6 @@ options_training = Options_training()
     url_labels::Array = []
     data_input::Array{Array} = []
     data_labels::Array{Array} = []
-    Options = options_training
     data_ready::Array{Float64} = []
     loss::Array = []
     accuracy::Array = []

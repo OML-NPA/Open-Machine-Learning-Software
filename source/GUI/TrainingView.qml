@@ -275,7 +275,6 @@ Component {
                                             text: "Update model"
                                         }
                                         onClicked: {
-
                                             Julia.save_model(nameTextField.text)
                                         }
                                     }
@@ -338,13 +337,13 @@ Component {
                         }
                     }
                     Button {
-                        id: customizeButton
-                        text: "Customize"
+                        id: designButton
+                        text: "Design"
                         Layout.preferredWidth: buttonWidth
                         Layout.preferredHeight: buttonHeight
                         onClicked: {
                             if (customizationLoader.sourceComponent === null) {
-                                customizationLoader.source = "Customization.qml"
+                                customizationLoader.source = "Design.qml"
                             }
                         }
                     }

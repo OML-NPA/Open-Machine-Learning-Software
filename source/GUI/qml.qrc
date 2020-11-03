@@ -34,5 +34,6 @@
         <file>MainView.qml</file>
         <file>MenuButtonH.qml</file>
         <file>Templates/NewsPanel.qml</file>
+        <file>DesignOptions.qml</file>
     </qresource>
 </RCC>
