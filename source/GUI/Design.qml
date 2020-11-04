@@ -3289,18 +3289,19 @@ ApplicationWindow {
                         text: datastore.inputs
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{0,1}/ }
+                        validator: RegExpValidator { regExp: /[1-9]|10/ }
                         onEditingFinished: {
                             var inputnum = parseFloat(unit.datastore.inputs)
                             var newinputnum = parseFloat(displayText)
                             if (inputnum===newinputnum) {return}
                             if (inputnum<newinputnum) {
                                 for (var i=0;i<inputnum;i++) {
-                                    unit.children[2].children[0].children[i].inputnum = newinputnum
-                                    unit.children[2].children[0].children[i].children[0].x = unit.width*
-                                            unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
-                                    unit.children[2].children[0].children[i].children[1].x = unit.width*
-                                            unit.children[2].children[0].children[i].index/(newinputnum+1)-20*pix
+                                    var upNodeItem = unit.children[2].children[0].children[i]
+                                    upNodeItem.inputnum = newinputnum
+                                    upNodeItem.children[0].x = unit.width*
+                                        upNodeItem.index/(newinputnum+1)-10*pix
+                                    upNodeItem.children[1].x = unit.width*
+                                        upNodeItem.index/(newinputnum+1)-20*pix
                                 }
                                 for (i=0;i<(newinputnum-inputnum);i++) {
                                     upNodeComponent.createObject(unit.children[2].children[0], {
@@ -3313,20 +3314,22 @@ ApplicationWindow {
                             }
                             else {
                                 for (i=inputnum-1;i>=0;i--) {
+                                    upNodeItem = unit.children[2].children[0].children[i]
                                     if (i<newinputnum) {
-                                        unit.children[2].children[0].children[i].inputnum = newinputnum
-                                        unit.children[2].children[0].children[i].children[0].x = unit.width*
-                                                unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
-                                        unit.children[2].children[0].children[i].children[1].x = unit.width*
-                                                unit.children[2].children[0].children[i].index/(newinputnum+1)-20*pix
+                                        upNodeItem.inputnum = newinputnum
+                                        upNodeItem.children[0].x = unit.width*
+                                                upNodeItem.index/(newinputnum+1)-10*pix
+                                        upNodeItem.children[1].x = unit.width*
+                                                upNodeItem.index/(newinputnum+1)-20*pix
                                     }
                                     else {
-                                        if (unit.children[2].children[0].children[i].children[0].connectedItem!==null) {
-                                            unit.children[2].children[0].children[i].children[0].connection.destroy()
-                                            unit.children[2].children[0].children[i].children[0].connectedItem = null
-                                            unit.children[2].children[0].children[i].children[0].connectedNode = null
+                                        var upNode = upNodeItem.children[0]
+                                        if (upNode.connectedItem!==null) {
+                                            upNode.connection.destroy()
+                                            upNode.connectedItem = null
+                                            upNode.connectedNode = null
                                         }
-                                        unit.children[2].children[0].children[i].destroy()
+                                        upNodeItem.destroy()
                                     }
                                 }
                             }
@@ -3405,18 +3408,19 @@ ApplicationWindow {
                         text: datastore.inputs
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{0,1}/ }
+                        validator: RegExpValidator { regExp: /[1-9]|10/ }
                         onEditingFinished: {
                             var inputnum = parseFloat(unit.datastore.inputs)
                             var newinputnum = parseFloat(displayText)
                             if (inputnum===newinputnum) {return}
                             if (inputnum<newinputnum) {
                                 for (var i=0;i<inputnum;i++) {
-                                    unit.children[2].children[0].children[i].inputnum = newinputnum
-                                    unit.children[2].children[0].children[i].children[0].x = unit.width*
-                                            unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
-                                    unit.children[2].children[0].children[i].children[1].x = unit.width*
-                                            unit.children[2].children[0].children[i].index/(newinputnum+1)-20*pix
+                                    var upNodeItem = unit.children[2].children[0].children[i]
+                                    upNodeItem.inputnum = newinputnum
+                                    upNodeItem.children[0].x = unit.width*
+                                            upNodeItem.index/(newinputnum+1)-10*pix
+                                    upNodeItem.children[1].x = unit.width*
+                                            upNodeItem.index/(newinputnum+1)-20*pix
                                 }
                                 for (i=0;i<(newinputnum-inputnum);i++) {
                                     upNodeComponent.createObject(unit.children[2].children[0], {
@@ -3429,20 +3433,22 @@ ApplicationWindow {
                             }
                             else {
                                 for (i=inputnum-1;i>=0;i--) {
+                                    upNodeItem = unit.children[2].children[0].children[i]
                                     if (i<newinputnum) {
-                                        unit.children[2].children[0].children[i].inputnum = newinputnum
-                                        unit.children[2].children[0].children[i].children[0].x = unit.width*
-                                                unit.children[2].children[0].children[i].index/(newinputnum+1)-10*pix
-                                        unit.children[2].children[0].children[i].children[1].x = unit.width*
-                                                unit.children[2].children[0].children[i].index/(newinputnum+1)-20*pix
+                                        upNodeItem.inputnum = newinputnum
+                                        upNodeItem.children[0].x = unit.width*
+                                                upNodeItem.index/(newinputnum+1)-10*pix
+                                        upNodeItem.children[1].x = unit.width*
+                                                upNodeItem.index/(newinputnum+1)-20*pix
                                     }
                                     else {
-                                        if (unit.children[2].children[0].children[i].children[0].connectedItem!==null) {
-                                            unit.children[2].children[0].children[i].children[0].connection.destroy()
-                                            unit.children[2].children[0].children[i].children[0].connectedItem = null
-                                            unit.children[2].children[0].children[i].children[0].connectedNode = null
+                                        var upNode = upNodeItem.children[0]
+                                        if (upNode.connectedItem!==null) {
+                                            upNode.connection.destroy()
+                                            upNode.connectedItem = null
+                                            upNode.connectedNode = null
                                         }
-                                        unit.children[2].children[0].children[i].destroy()
+                                        upNodeItem.destroy()
                                     }
                                 }
                             }
@@ -3530,19 +3536,20 @@ ApplicationWindow {
                         text: datastore.outputs
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        validator: RegExpValidator { regExp: /[1-9]\d{0,1}/ }
+                        validator: RegExpValidator { regExp: /[1-9]|10/ }
                         onEditingFinished: {
                             var outputnum = parseFloat(unit.datastore.outputs)
                             var newoutputnum = parseFloat(displayText)
                             if (outputnum===newoutputnum) {return}
                             if (outputnum<newoutputnum) {
                                 for (var i=0;i<outputnum;i++) {
-                                    unit.children[2].children[1].children[i].outputnum = newoutputnum
-                                    unit.children[2].children[1].children[i].children[1].outputnum = newoutputnum
-                                    unit.children[2].children[1].children[i].children[0].x = unit.width*
-                                            unit.children[2].children[1].children[i].index/(newoutputnum+1)-10*pix
-                                    unit.children[2].children[1].children[i].children[1].x = unit.width*
-                                            unit.children[2].children[1].children[i].index/(newoutputnum+1)-20*pix
+                                    var downNodeItem = unit.children[2].children[1].children[i]
+                                    downNodeItem.outputnum = newoutputnum
+                                    downNodeItem.children[1].outputnum = newoutputnum
+                                    downNodeItem.children[0].x = unit.width*
+                                        downNodeItem.index/(newoutputnum+1)-10*pix
+                                    downNodeItem.children[1].x = unit.width*
+                                        downNodeItem.index/(newoutputnum+1)-20*pix
                                 }
                                 for (i=0;i<(newoutputnum-outputnum);i++) {
                                     downNodeComponent.createObject(unit.children[2].children[1], {
@@ -3555,21 +3562,22 @@ ApplicationWindow {
                             }
                             else {
                                 for (i=outputnum-1;i>=0;i--) {
+                                    downNodeItem = unit.children[2].children[1].children[i]
                                     if (i<newoutputnum) {
-                                        unit.children[2].children[1].children[i].outputnum = newoutputnum
-                                        unit.children[2].children[1].children[i].children[1].outputnum = newoutputnum
-                                        unit.children[2].children[1].children[i].children[0].x = unit.width*
-                                                unit.children[2].children[1].children[i].index/(newoutputnum+1)-10*pix
-                                        unit.children[2].children[1].children[i].children[1].x = unit.width*
-                                                unit.children[2].children[1].children[i].index/(newoutputnum+1)-20*pix
+                                        downNodeItem.outputnum = newoutputnum
+                                        downNodeItem.children[1].outputnum = newoutputnum
+                                        downNodeItem.children[0].x = unit.width*
+                                            downNodeItem.index/(newoutputnum+1)-10*pix
+                                        downNodeItem.children[1].x = unit.width*
+                                            downNodeItem.index/(newoutputnum+1)-20*pix
                                     }
                                     else {
-                                        if (unit.children[2].children[1].children[i].children[1].connectedItem!==null) {
-                                            unit.children[2].children[1].children[i].children[1].connection.destroy()
-                                            unit.children[2].children[1].children[i].children[1].connectedItem = null
-                                            unit.children[2].children[1].children[i].children[1].connectedNode = null
+                                        if (downNodeItem.children[1].connectedItem!==null) {
+                                            downNodeItem.children[1].connection.destroy()
+                                            downNodeItem.children[1].connectedItem = null
+                                            downNodeItem.children[1].connectedNode = null
                                         }
-                                        unit.children[2].children[1].children[i].destroy()
+                                        downNodeItem.destroy()
                                     }
                                 }
 
