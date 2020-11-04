@@ -75,9 +75,10 @@ options_training = Options_training()
 
 @with_kw mutable struct Design
     width::Float64 = 340
-    height::Float64 = 95
+    height::Float64 = 100
     min_dist_x::Float64 = 40
     min_dist_y::Float64 = 40
+    hide_name::Bool = false
 end
 design = Design()
 

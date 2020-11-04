@@ -441,9 +441,9 @@ function arrange_branches(coordinates,coordinate,parameters,layers_arranged)
         push!(x_coordinates,coordinate[1])
         num2 = num-1
         for i=1:num2
-            push!(x_coordinates,coordinate[1].+i*parameters.min_dist_x+i*parameters.width)
+            push!(x_coordinates,coordinate[1].+(i+1)*parameters.min_dist_x+i*parameters.width)
         end
-        x_coordinates = x_coordinates .- 0.5*(num2*parameters.width+num2*parameters.min_dist_x)
+        x_coordinates = x_coordinates .- 0.5*(num2*parameters.width+num*parameters.min_dist_x)
         for i = 1:num
             temp_coordinates = []
             temp_coordinate = [x_coordinates[i],coordinate[2]]

@@ -1700,8 +1700,7 @@ ApplicationWindow {
             property var datastore
             property var oldpos: [x,y]
             Column {
-                anchors.fill: parent.fill
-                topPadding: 8*pix
+                anchors.verticalCenter: parent.verticalCenter
                 leftPadding: 14*pix
                 spacing: 5*pix
                 Label {
@@ -1716,7 +1715,6 @@ ApplicationWindow {
                     color: "#777777"
                 }
             }
-
             MouseArea {
                 id: unitMouseArea
                 anchors.fill: parent
