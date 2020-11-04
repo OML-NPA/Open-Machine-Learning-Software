@@ -441,9 +441,11 @@ function arrange_branches(coordinates,coordinate,parameters,layers_arranged)
         push!(x_coordinates,coordinate[1])
         num2 = num-1
         for i=1:num2
-            push!(x_coordinates,coordinate[1].+(i+1)*parameters.min_dist_x+i*parameters.width)
+            push!(x_coordinates,coordinate[1].+
+                (i+1+(i-1))*parameters.min_dist_x+i*parameters.width)
         end
-        x_coordinates = x_coordinates .- 0.5*(num2*parameters.width+num*parameters.min_dist_x)
+        x_coordinates = x_coordinates .-
+            (mean([x_coordinates[1],x_coordinates[end]])-coordinate[1])
         for i = 1:num
             temp_coordinates = []
             temp_coordinate = [x_coordinates[i],coordinate[2]]
@@ -478,10 +480,12 @@ function arrange_main(design)
     coordinate = [layers_arranged[1]["x"],layers_arranged[1]["y"]-
         (design.height+design.min_dist_y)]
     for i = 1:length(inds_arranged)
-        coordinate = arrange_branches(coordinates,coordinate,parameters,layers_arranged[i])
+        coordinate = arrange_branches(coordinates,
+            coordinate,parameters,layers_arranged[i])
     end
     coordinates_flattened = []
-    get_values!(coordinates_flattened,coordinates,x-> x isa Array && x[1] isa Array)
+    get_values!(coordinates_flattened,coordinates,
+        x-> x isa Array && x[1] isa Array)
     inds_flattened = []
     get_values!(inds_flattened,inds_arranged,x-> x isa Array)
     return [coordinates_flattened,inds_flattened.-1]
