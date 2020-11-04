@@ -1486,6 +1486,14 @@ ApplicationWindow {
     }
 
     function makeConnection(unit,downNode,downNodeRectangle,upNode) {
+        var existedCon = false
+        if (downNodeRectangle.connection!==null) {
+            downNodeRectangle.connection.destroy()
+            existedCon = true
+        }
+        else {
+            connections.num = connections.num + 1
+        }
         downNodeRectangle.connectedNode = upNode
         upNode.connectedNode = downNode
         upNode.connectedItem = downNodeRectangle
@@ -1496,24 +1504,24 @@ ApplicationWindow {
             (upNodePoint.x - downNodeRectangle.mapToItem(layers,0,0).x)
         downNodeRectangle.y = downNodeRectangle.y - 10*pix +
                 (upNodePoint.y - downNodeRectangle.mapToItem(layers,0,0).y)
-        if (downNodeRectangle.connection!==null) {
-            downNodeRectangle.connection.destroy()
-        }
         downNodeRectangle.connection = shapeComponent.createObject(connections, {
              "beginX": unit.x + unit.width*downNode.parent.index/(unit.outputnum+1),
              "beginY": unit.y + unit.height - 2*pix,
              "finishX": upNodePoint.x + downNode.radius/2,
              "finishY": upNodePoint.y + downNode.radius/2,
              "origin": downNodeRectangle});
-        downNodeRectangleComponent.createObject(downNode.parent, {
-                        "unit": unit,
-                        "upNodes": getUpNodes(unit),
-                        "downNodes": getDownNodes(unit),
-                        "downNodeItem": downNode.parent,
-                        "downNode": downNode,
-                        "outputnum": unit.outputnum,
-                        "index": downNode.parent.index});
-        connections.num = connections.num + 1
+        var downNodeItem = downNode.parent
+        var num = downNodeItem.children.length
+        if (downNodeItem.children[num-1].connection!==null) {
+            downNodeRectangleComponent.createObject(downNode.parent, {
+                            "unit": unit,
+                            "upNodes": getUpNodes(unit),
+                            "downNodes": getDownNodes(unit),
+                            "downNodeItem": downNode.parent,
+                            "downNode": downNode,
+                            "outputnum": unit.outputnum,
+                            "index": downNode.parent.index});
+        }
         downNode.visible = true
     }
 
@@ -1694,7 +1702,7 @@ ApplicationWindow {
             property string name
             property string type
             property string group
-            property var labelColor
+            property var labelColor: null
             property double inputnum
             property double outputnum
             property var datastore
@@ -1880,9 +1888,9 @@ ApplicationWindow {
         id: downNodeComponent
         Item {
             id: downNodeItem
-            property var unit
-            property var upNodes
-            property var downNodes
+            property var unit: null
+            property var upNodes: null
+            property var downNodes: null
             property double outputnum
             property double index
             Rectangle {
@@ -1911,19 +1919,19 @@ ApplicationWindow {
         id: downNodeRectangleComponent
         Rectangle {
             id: downNodeRectangle
-            property var unit
-            property var upNodes
-            property var downNodes
-            property var downNode
-            property var downNodeItem
+            property var unit: null
+            property var upNodes: null
+            property var downNodes: null
+            property var downNode: null
+            property var downNodeItem: null
             property var connectedNode: null
             property var connection: null
             property double outputnum
             property double index
             width: 2*downNode.radius
             height: 2*downNode.radius
-            //opacity: 0.2
-            color: "transparent"
+            opacity: 0.2
+            color: "red"
             x: unit.width*index/(outputnum+1) - downNode.radius
             y: unit.height - downNode.radius - 2*pix
             MouseArea {
@@ -2042,9 +2050,9 @@ ApplicationWindow {
         id: upNodeComponent
         Item {
             id: upNodeItem
-            property var unit
-            property var upNodes
-            property var downNodes
+            property var unit: null
+            property var upNodes: null
+            property var downNodes: null
             property double inputnum
             property double index
             Rectangle {
@@ -2384,11 +2392,11 @@ ApplicationWindow {
 
         Column {
             id: column
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: {"name": name, "type": type, "group": group,"size": "160,160",
                 "normalisation": {"text": "[0,1]", "ind": 0}}
             Component.onCompleted: {
@@ -2476,11 +2484,11 @@ ApplicationWindow {
     Component {
         id: outputpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"loss": {"text": "Dice coefficient", "ind": 12}}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
@@ -2568,11 +2576,11 @@ ApplicationWindow {
     Component {
         id: convpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"filters": "32", "filtersize": "3",
                 "stride": "1", "dilationfactor": "1"}
             Component.onCompleted: {
@@ -2672,11 +2680,11 @@ ApplicationWindow {
     Component {
         id: tconvpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"filters": "32", "filtersize": "3",
                 "stride": "1"}
             Component.onCompleted: {
@@ -2767,11 +2775,11 @@ ApplicationWindow {
     Component {
         id: densepropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"neurons": "32"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
@@ -2842,11 +2850,11 @@ ApplicationWindow {
     Component {
         id: batchnormpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"epsilon": "0.00001"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
@@ -2917,11 +2925,11 @@ ApplicationWindow {
     Component {
         id: dropoutpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"probability": "0.5"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
@@ -2992,11 +3000,11 @@ ApplicationWindow {
     Component {
         id: leakyrelupropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"scale": "0.01"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
@@ -3067,11 +3075,11 @@ ApplicationWindow {
     Component {
         id: elupropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"alpha": "1"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
@@ -3142,11 +3150,11 @@ ApplicationWindow {
     Component {
         id: poolpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,
                 "poolsize": "2", "stride": "2"}
             Component.onCompleted: {
@@ -3227,11 +3235,11 @@ ApplicationWindow {
     Component {
         id: additionpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"inputs": "2"}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
@@ -3297,11 +3305,18 @@ ApplicationWindow {
                             if (inputnum<newinputnum) {
                                 for (var i=0;i<inputnum;i++) {
                                     var upNodeItem = unit.children[2].children[0].children[i]
+                                    var upNode = upNodeItem.children[0]
+                                    var upRec = upNodeItem.children[1]
                                     upNodeItem.inputnum = newinputnum
-                                    upNodeItem.children[0].x = unit.width*
-                                        upNodeItem.index/(newinputnum+1)-10*pix
-                                    upNodeItem.children[1].x = unit.width*
-                                        upNodeItem.index/(newinputnum+1)-20*pix
+                                    upNode.x = unit.width*upNodeItem.index/(newinputnum+1)-10*pix
+                                    upRec.x = unit.width*upNodeItem.index/(newinputnum+1)-20*pix
+                                    var downRecCon = upNode.connectedItem
+                                    if (downRecCon!==null) {
+                                        var downNodeCon = upNode.connectedNode
+                                        downRecCon.x = upRec.x
+                                        downRecCon.connection.destroy()
+                                        makeConnection(downNodeCon.parent.unit,downNodeCon,downRecCon,upNode)
+                                    }
                                 }
                                 for (i=0;i<(newinputnum-inputnum);i++) {
                                     upNodeComponent.createObject(unit.children[2].children[0], {
@@ -3316,18 +3331,26 @@ ApplicationWindow {
                                 for (i=inputnum-1;i>=0;i--) {
                                     upNodeItem = unit.children[2].children[0].children[i]
                                     if (i<newinputnum) {
+                                        upNode = upNodeItem.children[0]
+                                        upRec = upNodeItem.children[1]
                                         upNodeItem.inputnum = newinputnum
-                                        upNodeItem.children[0].x = unit.width*
-                                                upNodeItem.index/(newinputnum+1)-10*pix
-                                        upNodeItem.children[1].x = unit.width*
-                                                upNodeItem.index/(newinputnum+1)-20*pix
+                                        var new_x = unit.width*upNodeItem.index/(newinputnum+1)
+                                        var oldRec_x = upRec.x
+                                        upNode.x = new_x - 10*pix
+                                        upRec.x = new_x - 20*pix
+                                        downRecCon = upNodeItem.children[0].connectedItem
+                                        if (downRecCon!==null) {
+                                            downNodeCon = upNode.connectedNode
+                                            downRecCon.x = downRecCon.x + (oldRec_x - (new_x - 20*pix))
+                                            downRecCon.connection.destroy()
+                                            makeConnection(downNodeCon.parent.unit,downNodeCon,downRecCon,upNode)
+                                        }
                                     }
                                     else {
-                                        var upNode = upNodeItem.children[0]
-                                        if (upNode.connectedItem!==null) {
-                                            upNode.connection.destroy()
-                                            upNode.connectedItem = null
-                                            upNode.connectedNode = null
+                                        upNode = upNodeItem.children[0]
+                                        if (upNode.connectedNode!==null) {
+                                            upNode.connectedItem.connection.destroy()
+                                            upNode.connectedItem.destroy()
                                         }
                                         upNodeItem.destroy()
                                     }
@@ -3345,11 +3368,11 @@ ApplicationWindow {
     Component {
         id: catpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,
                 "inputs": "2", "dimension": "3"}
             Component.onCompleted: {
@@ -3408,7 +3431,7 @@ ApplicationWindow {
                         text: datastore.inputs
                         defaultHeight: 0.75*buttonHeight
                         defaultWidth: rightFrame.width - labelColumnLayout.width - 70*pix
-                        validator: RegExpValidator { regExp: /[1-9]|10/ }
+                        validator: RegExpValidator { regExp: /[2-9]|10/ }
                         onEditingFinished: {
                             var inputnum = parseFloat(unit.datastore.inputs)
                             var newinputnum = parseFloat(displayText)
@@ -3416,11 +3439,18 @@ ApplicationWindow {
                             if (inputnum<newinputnum) {
                                 for (var i=0;i<inputnum;i++) {
                                     var upNodeItem = unit.children[2].children[0].children[i]
+                                    var upNode = upNodeItem.children[0]
+                                    var upRec = upNodeItem.children[1]
                                     upNodeItem.inputnum = newinputnum
-                                    upNodeItem.children[0].x = unit.width*
-                                            upNodeItem.index/(newinputnum+1)-10*pix
-                                    upNodeItem.children[1].x = unit.width*
-                                            upNodeItem.index/(newinputnum+1)-20*pix
+                                    unit.inputnum = newinputnum
+                                    upNode.x = unit.width*upNodeItem.index/(newinputnum+1)-10*pix
+                                    upRec.x = unit.width*upNodeItem.index/(newinputnum+1)-20*pix
+                                    var downRecCon = upNode.connectedItem
+                                    if (downRecCon!==null) {
+                                        var downNodeCon = upNode.connectedNode
+                                        downRecCon.x = upRec.x
+                                        makeConnection(downNodeCon.parent.unit,downNodeCon,downRecCon,upNode)
+                                    }
                                 }
                                 for (i=0;i<(newinputnum-inputnum);i++) {
                                     upNodeComponent.createObject(unit.children[2].children[0], {
@@ -3435,18 +3465,25 @@ ApplicationWindow {
                                 for (i=inputnum-1;i>=0;i--) {
                                     upNodeItem = unit.children[2].children[0].children[i]
                                     if (i<newinputnum) {
+                                        upNode = upNodeItem.children[0]
+                                        upRec = upNodeItem.children[1]
                                         upNodeItem.inputnum = newinputnum
-                                        upNodeItem.children[0].x = unit.width*
-                                                upNodeItem.index/(newinputnum+1)-10*pix
-                                        upNodeItem.children[1].x = unit.width*
-                                                upNodeItem.index/(newinputnum+1)-20*pix
+                                        var new_x = unit.width*upNodeItem.index/(newinputnum+1)
+                                        var oldRec_x = upRec.x
+                                        upNode.x = new_x - 10*pix
+                                        upRec.x = new_x - 20*pix
+                                        downRecCon = upNodeItem.children[0].connectedItem
+                                        if (downRecCon!==null) {
+                                            downNodeCon = upNode.connectedNode
+                                            downRecCon.x = downRecCon.x + (oldRec_x - (new_x - 20*pix))
+                                            makeConnection(downNodeCon.parent.unit,downNodeCon,downRecCon,upNode)
+                                        }
                                     }
                                     else {
-                                        var upNode = upNodeItem.children[0]
-                                        if (upNode.connectedItem!==null) {
-                                            upNode.connection.destroy()
-                                            upNode.connectedItem = null
-                                            upNode.connectedNode = null
+                                        upNode = upNodeItem.children[0]
+                                        if (upNode.connectedNode!==null) {
+                                            upNode.connectedItem.connection.destroy()
+                                            upNode.connectedItem.destroy()
                                         }
                                         upNodeItem.destroy()
                                     }
@@ -3473,11 +3510,11 @@ ApplicationWindow {
     Component {
         id: decatpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,
                 "outputs": "2","dimension":"3"}
             Component.onCompleted: {
@@ -3544,12 +3581,21 @@ ApplicationWindow {
                             if (outputnum<newoutputnum) {
                                 for (var i=0;i<outputnum;i++) {
                                     var downNodeItem = unit.children[2].children[1].children[i]
+                                    var downNode = downNodeItem.children[0]
+                                    unit.outputnum = newoutputnum
                                     downNodeItem.outputnum = newoutputnum
-                                    downNodeItem.children[1].outputnum = newoutputnum
-                                    downNodeItem.children[0].x = unit.width*
+                                    downNode.x = unit.width*
                                         downNodeItem.index/(newoutputnum+1)-10*pix
-                                    downNodeItem.children[1].x = unit.width*
-                                        downNodeItem.index/(newoutputnum+1)-20*pix
+                                    for (var j=1;j<downNodeItem.children.length;j++) {
+                                        var downRecN = downNodeItem.children[j]
+                                        downRecN.outputnum = newoutputnum
+                                        downRecN.x = unit.width*
+                                            downNodeItem.index/(newoutputnum+1)-20*pix
+                                        var upNodeCon = downRecN.connectedNode
+                                        if (upNodeCon!==null) {
+                                            makeConnection(downNode.parent.unit,downNode,downRecN,upNodeCon)
+                                        }
+                                    }
                                 }
                                 for (i=0;i<(newoutputnum-outputnum);i++) {
                                     downNodeComponent.createObject(unit.children[2].children[1], {
@@ -3564,18 +3610,29 @@ ApplicationWindow {
                                 for (i=outputnum-1;i>=0;i--) {
                                     downNodeItem = unit.children[2].children[1].children[i]
                                     if (i<newoutputnum) {
+                                        downNode = downNodeItem.children[0]
+                                        unit.outputnum = newoutputnum
                                         downNodeItem.outputnum = newoutputnum
-                                        downNodeItem.children[1].outputnum = newoutputnum
-                                        downNodeItem.children[0].x = unit.width*
+                                        downNode.x = unit.width*
                                             downNodeItem.index/(newoutputnum+1)-10*pix
-                                        downNodeItem.children[1].x = unit.width*
-                                            downNodeItem.index/(newoutputnum+1)-20*pix
+                                        for (j=1;j<downNodeItem.children.length;j++) {
+                                            downRecN = downNodeItem.children[j]
+                                            downRecN.outputnum = newoutputnum
+                                            downRecN.x = unit.width*
+                                                downNodeItem.index/(newoutputnum+1)-20*pix
+                                            upNodeCon = downRecN.connectedNode
+                                            if (upNodeCon!==null) {
+                                                makeConnection(downNode.parent.unit,downNode,downRecN,upNodeCon)
+                                            }
+                                        }
                                     }
                                     else {
-                                        if (downNodeItem.children[1].connectedItem!==null) {
-                                            downNodeItem.children[1].connection.destroy()
-                                            downNodeItem.children[1].connectedItem = null
-                                            downNodeItem.children[1].connectedNode = null
+                                        downNode = downNodeItem.children[1]
+                                        if (downNode.connectedNode!==null) {
+                                            upNodeCon = downNode.connectedNode
+                                            upNodeCon.connectedItem = null
+                                            upNodeCon.connectedNode = null
+                                            downNode.connection.destroy()
                                         }
                                         downNodeItem.destroy()
                                     }
@@ -3603,11 +3660,11 @@ ApplicationWindow {
     Component {
         id: upscalingpropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
-            property var group
-            property var labelColor
+            property var group: null
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group,"multiplier": "2",
                 "dimensions": "1,2"}
             Component.onCompleted: {
@@ -3689,11 +3746,11 @@ ApplicationWindow {
     Component {
         id: emptypropertiesComponent
         Column {
-            property var unit
-            property var name
+            property var unit: null
+            property var name: null
             property string type
             property string group
-            property var labelColor
+            property var labelColor: null
             property var datastore: { "name": name, "type": type, "group": group}
             Component.onCompleted: {
                 if (unit.datastore===undefined) {
