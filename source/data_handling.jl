@@ -85,6 +85,8 @@ design = Design()
 @with_kw mutable struct Training
     Options = options_training
     Design = design
+    problem_type::Array{Union{String,Int64}} = ["Classification",0]
+    input_type::Array{Union{String,Int64}} = ["Image",0]
     template::String = ""
     images::String = ""
     labels::String = ""
@@ -156,7 +158,7 @@ function set_data_main(master::Master,fields::QML.QListAllocated,args...)
         values[i] = fix_QML_types(args[i])
     end
     if length(args)==1
-        value = args[1]
+        value = fix_QML_types(args[1])
     elseif length(args)==2
         value = getproperty(data,Symbol(fields[end]))
         value[args[1]] = args[2]

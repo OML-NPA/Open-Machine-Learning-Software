@@ -130,7 +130,7 @@ ApplicationWindow {
                                 }
                                 CheckBox {
                                     padding: 0
-                                    width: height//-10*pix
+                                    width: height
                                     checkState : Julia.get_data(
                                                ["Training","Options","Processing","mirroring"]) ?
                                                Qt.Checked : Qt.Unchecked
@@ -149,6 +149,7 @@ ApplicationWindow {
                                     width: minfrpixLabel.width
                                 }
                                 SpinBox {
+                                    id: numanglesSpinBox
                                     from: 1
                                     value: Julia.get_data(
                                                ["Training","Options","Processing","num_angles"])
@@ -167,6 +168,7 @@ ApplicationWindow {
                                     text: "Minimum fraction of labeled pixels:"
                                 }
                                 SpinBox {
+                                    id: minfrpixSpinBox
                                     from: 0
                                     value: 100*Julia.get_data(
                                                ["Training","Options","Processing","min_fr_pix"])
@@ -210,7 +212,7 @@ ApplicationWindow {
                                 onActivated: {
                                     Julia.set_data(
                                         ["Training","Options","Hyperparameters","optimiser"],
-                                        [currentText,current_ind+1])
+                                        [currentText,currentIndex+1])
                                     change_params()
                                 }
                                 Component.onCompleted: {

@@ -13,8 +13,8 @@ ApplicationWindow {
     id: window
     visible: true
     title: qsTr("  Deep Data Analysis Software")
-    minimumWidth: 1670*pix
-    minimumHeight: 1200*pix
+    minimumWidth: 1650*pix
+    minimumHeight: 1240*pix
 
     property double panel_width: window.width - menuPane.width - 2*margin
     color: defaultpalette.window
@@ -161,6 +161,11 @@ ApplicationWindow {
     }
 
 //--Functions---------------------------------------------------------
+
+    function debug(x) {
+        console.log(x)
+        return(x)
+    }
 
     function abs(ar) {
         return array.map(Math.abs);

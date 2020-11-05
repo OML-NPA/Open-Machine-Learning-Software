@@ -1216,10 +1216,6 @@ ApplicationWindow {
     }
 
 
-    function debug(x) {
-        console.log(x)
-        return(x)
-    }
 
     function comparelocations(item1,mouseX,mouseY,item2,item) {
         var coor1 = item1.mapToItem(item, mouseX, mouseY)
@@ -1930,8 +1926,8 @@ ApplicationWindow {
             property double index
             width: 2*downNode.radius
             height: 2*downNode.radius
-            opacity: 0.2
-            color: "red"
+            //opacity: 0.2
+            color: "transparent"
             x: unit.width*index/(outputnum+1) - downNode.radius
             y: unit.height - downNode.radius - 2*pix
             MouseArea {

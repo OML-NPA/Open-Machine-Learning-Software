@@ -77,15 +77,92 @@ Component {
                 }
         }
         Column {
+            id: mainColumn
             spacing: 0.7*margin
-            ColumnLayout {
+            Column {
+                id: dataColumn
                 spacing: 0.5*margin
+                Row {
+                    spacing: margin
+                    Row {
+                        spacing: 0.3*margin
+                        Label {
+                            id: problemtypeLabel
+                            text: "Problem type:"
+                            topPadding: 10*pix
+                        }
+                        ComboBox {
+                            function changeLabels() {
+                                if (currentIndex===0) {
+                                    outputLabel.text = "Labels:"
+                                }
+                                else {
+                                    outputLabel.text = "Targets:"
+                                }
+                            }
+                            editable: false
+                            width: 0.64*buttonWidth-1*pix
+                            model: ListModel {
+                                id: problemtypeModel
+                                ListElement {text: "Classification"}
+                                ListElement {text: "Regression"}
+                            }
+                            onActivated: {
+                                Julia.set_data(["Training","problem_type"],
+                                    [currentText,currentIndex])
+                                changeLabels()
+                            }
+                            Component.onCompleted: {
+                                var val = Julia.get_data(["Training","problem_type"])
+                                currentIndex = val[1]
+                                changeLabels()
+                            }
+                        }
+                    }
+                    Row {
+                        spacing: 0.3*margin
+                        Label {
+                            text: "Input type:"
+                            topPadding: 10*pix
+                        }
+                        ComboBox {
+                            function changeLabels() {
+                                if (currentIndex===0) {
+                                    inputLabel.text = "Images:"
+                                    previewdataButton.visible = false
+                                }
+                                else {
+                                    inputLabel.text = "Data:"
+                                    previewdataButton.visible = true
+                                }
+                            }
+
+                            editable: false
+                            width: 0.64*buttonWidth-1*pix
+                            model: ListModel {
+                                id: inputtypeModel
+                                ListElement {text: "Image"}
+                                ListElement {text: "Data series"}
+                            }
+                            onActivated: {
+                                Julia.set_data(["Training","input_type"],
+                                    [currentText,currentIndex])
+                                changeLabels()
+                            }
+                            Component.onCompleted: {
+                                var val = Julia.get_data(["Training","input_type"])
+                                currentIndex = val[1]
+                                changeLabels()
+                            }
+                        }
+                    }
+                }
                 Row {
                     spacing: 0.3*margin
                     Label {
                         text: "Network:"
-                        bottomPadding: 0.05*margin
-                        width: 0.38*buttonWidth
+                        topPadding: 10*pix
+                        width: 0.34*buttonWidth
                     }
                     TextField {
                         id: neuralnetworkTextField
@@ -114,9 +191,10 @@ Component {
                 Row {
                     spacing: 0.3*margin
                     Label {
+                        id: inputLabel
                         text: "Images:"
-                        bottomPadding: 0.05*margin
-                        width: 0.38*buttonWidth
+                        topPadding: 10*pix
+                        width: 0.34*buttonWidth
                     }
                     TextField {
                         id: imagesTextField
@@ -143,9 +221,10 @@ Component {
                 Row {
                     spacing: 0.3*margin
                     Label {
+                        id: outputLabel
                         text: "Labels:"
-                        bottomPadding: 0.05*margin
-                        width: 0.38*buttonWidth
+                        topPadding: 10*pix
+                        width: 0.34*buttonWidth
                     }
                     TextField {
                         id: labelsTextField
@@ -173,8 +252,8 @@ Component {
                     spacing: 0.3*margin
                     Label {
                         text: "Name:"
-                        bottomPadding: 0.05*margin
-                        width: 0.38*buttonWidth
+                        topPadding: 10*pix
+                        width: 0.34*buttonWidth
                     }
                     TextField {
                         id: nameTextField
@@ -187,10 +266,9 @@ Component {
                     }
                 }
             }
-            RowLayout {
-                Layout.alignment: Qt.AlignHCenter
-                spacing:1.75*margin
+            Row {
                 Column {
+                    id: featuresColumn
                     spacing: -2
                     Label {
                         width: buttonWidth + 0.5*margin
@@ -323,13 +401,25 @@ Component {
                         }
                     }
                 }
-                ColumnLayout {
+                Column {
+                    id: buttonsColumn
                     spacing: 0.3*margin
+                    topPadding: (featuresColumn.height - buttonsColumn.height)/2
+                    leftPadding: (dataColumn.width - featuresColumn.width -
+                        buttonWidth)/2
+                    Button {
+                        id: previewdataButton
+                        text: "Preview imported data"
+                        width: buttonWidth
+                        height: buttonHeight
+                        onClicked: {
+                        }
+                    }
                     Button {
                         id: optionsButton
                         text: "Options"
-                        Layout.preferredWidth: buttonWidth
-                        Layout.preferredHeight: buttonHeight
+                        width: buttonWidth
+                        height: buttonHeight
                         onClicked: {
                             if (trainingoptionsLoader.sourceComponent === null) {
                                 trainingoptionsLoader.source = "TrainingOptions.qml"
@@ -339,8 +429,8 @@ Component {
                     Button {
                         id: designButton
                         text: "Design"
-                        Layout.preferredWidth: buttonWidth
-                        Layout.preferredHeight: buttonHeight
+                        width: buttonWidth
+                        height: buttonHeight
                         onClicked: {
                             if (customizationLoader.sourceComponent === null) {
                                 customizationLoader.source = "Design.qml"
@@ -350,14 +440,14 @@ Component {
                     Button {
                         id: validateButton
                         text: "Validate"
-                        Layout.preferredWidth: buttonWidth
-                        Layout.preferredHeight: buttonHeight
+                        width: buttonWidth
+                        height: buttonHeight
                     }
                     Button {
                         id: starttrainingButton
                         text: "Start training"
-                        Layout.preferredWidth: buttonWidth
-                        Layout.preferredHeight: buttonHeight
+                        width: buttonWidth
+                        height: buttonHeight
                         onClicked: {
                             if (imagesTextField.length===0 || labelsTextField.length===0) {
                                 return
@@ -432,7 +522,7 @@ Component {
                         id: progressbar
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                         value: 0
-                        Layout.preferredWidth: buttonWidth
+                        width: buttonWidth
                     }
                 }
             }
