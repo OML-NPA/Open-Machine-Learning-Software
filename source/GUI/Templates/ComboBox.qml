@@ -16,10 +16,10 @@ T.ComboBox {
     rightPadding: padding + (control.mirrored || !indicator || !indicator.visible ? 0 : indicator.width + spacing)
 
     delegate: ItemDelegate {
-        width: parent.width
+        width: control.width
         text: control.textRole ? (Array.isArray(control.model) ? modelData[control.textRole] : model[control.textRole]) : modelData
         palette.text: control.palette.text
-        palette.highlightedText: control.palette.text//control.palette.highlightedText
+        palette.highlightedText: control.palette.text
         font.weight: control.currentIndex === index ? Font.DemiBold : Font.Normal
         highlighted: control.highlightedIndex === index
         hoverEnabled: control.hoverEnabled

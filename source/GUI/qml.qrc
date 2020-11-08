@@ -35,5 +35,6 @@
         <file>MenuButtonH.qml</file>
         <file>Templates/NewsPanel.qml</file>
         <file>DesignOptions.qml</file>
+        <file>ValidationPlot.qml</file>
     </qresource>
 </RCC>

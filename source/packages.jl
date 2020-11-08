@@ -1,7 +1,8 @@
 
-using QML, JSON, BSON, Printf, Parameters, Distributed, Dates
+using QML, JSON, BSON, Printf, Parameters, Distributed, Dates, FileIO
 using Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP
-using Flux,Flux.Losses, Random, CUDAapi, Statistics, Plots
+using Flux, Flux.Losses, Random, CUDAapi, Statistics, Plots
+using  ImageSegmentation, TestImages
 import Base.string, Base.any, Base.copy!, ImageSegmentation.label_components
-import CUDA, Base.kill
-CUDA.allowscalar(true)
+import CUDA, CUDA.CuArray, Flux.outdims
+CUDA.allowscalar(false)

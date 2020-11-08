@@ -26,7 +26,10 @@ ApplicationWindow {
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
 
-    onClosing: { trainingplotLoader.sourceComponent = undefined }
+    onClosing: {
+        trainingplotLoader.sourceComponent = undefined
+        starttrainingButton.text = "Train"
+        progressbar.value = 0}
 
     Item {
         Timer {
@@ -38,10 +41,10 @@ ApplicationWindow {
             repeat: true
             onTriggered: {
                 Julia.yield()
-                var loss = Julia.get_data(["Training","loss"])
-                var accuracy = Julia.get_data(["Training","accuracy"])
-                var test_loss = Julia.get_data(["Training","test_loss"])
-                var test_accuracy = Julia.get_data(["Training","test_accuracy"])
+                var loss = Julia.get_data(["Training","Training_plot","loss"])
+                var accuracy = Julia.get_data(["Training","Training_plot","accuracy"])
+                var test_loss = Julia.get_data(["Training","Training_plot","test_loss"])
+                var test_accuracy = Julia.get_data(["Training","Training_plot","test_accuracy"])
                 var iter = loss.length
                 var test_iter = test_loss.length
                 if (iter>last_iter) {
@@ -53,8 +56,8 @@ ApplicationWindow {
                             losstestLine.append(i+1,test_loss[test_iter-1])
                             last_test_iter = test_iter
                         }
-                        if (loss[i]>lossAxisY.max) {
-                            lossLine.lossAxisY.max = loss[i]
+                        if (loss[i]>lossLine.axisY.max) {
+                            lossLine.axisY.max = loss[i]
                         }
                         accuracyAxisX.max = iter + 1
                         accuracyAxisX.tickInterval = Math.round(iter/10)+1
@@ -62,15 +65,18 @@ ApplicationWindow {
                         lossAxisX.tickInterval = Math.round(iter/10)+1
                         last_iter = iter
                     }
-                    currentiterationLabel.text = Julia.get_data(["Training","iteration"])
+                    var max_iterations = Julia.get_data(["Training","Training_plot","max_iterations"])
+                    trainingProgressbar.value = iter/max_iterations
+                    alliterationsLabel.text = max_iterations
+                    currentiterationLabel.text = Julia.get_data(["Training","Training_plot","iteration"])
+                    epoch.text = Julia.get_data(["Training","Training_plot","epoch"])
+                    iterationsperepoch.text =
+                            Julia.get_data(["Training","Training_plot","iterations_per_epoch"])
                 }
-                if (iter===Julia.get_data(["Training","max_iterations"]))
+                if (iter===Julia.get_data(["Training","Training_plot","max_iterations"])) {
                     running = false
-                end
+                }
                 elapsedtime.text = Julia.training_elapsed_time()
-                alliterationsLabel.text = Julia.get_data(["Training","max_iterations"])
-                epoch.text = Julia.get_data(["Training","epoch"])
-                iterationsperepoch.text = Julia.get_data(["Training","iterations_per_epoch"])
             }
         }
     }
@@ -221,6 +227,7 @@ ApplicationWindow {
                         Layout.margins: 0.5*margin
                         Row {
                             id: progressbarheader
+                            spacing: 0
                             Label {
                                 text: "Training iteration  "
                             }
@@ -238,11 +245,10 @@ ApplicationWindow {
                         }
                         RowLayout {
                             ProgressBar {
-                                id: progressbar
-                                Layout.preferredWidth: 1.2*buttonWidth
+                                id: trainingProgressbar
+                                Layout.preferredWidth: 1.34*buttonWidth
                                 Layout.preferredHeight: buttonHeight
                                 Layout.alignment: Qt.AlignVCenter
-                                backgroundHeight: 0.8*buttonHeight
                             }
                             StopButton {
                                 id: stoptraining
@@ -328,6 +334,11 @@ ApplicationWindow {
                                         "Hardware_resources","allow_GPU"]) ? "GPU" : "CPU"
                                 }
                             }
+                            Label {
+                                topPadding: 0.5*margin
+                                text: "Controls:"
+                                font.bold: true
+                            }
                             Row {
                                 spacing: 0.3*margin
                                 Label {
@@ -362,7 +373,29 @@ ApplicationWindow {
                                             ["Training","Options","Hyperparameters","learning_rate"],
                                             value/100000)
                                         Julia.set_data(
-                                            ["Training","learning_rate_changed"],true)
+                                            ["Training","Training_plot","learning_rate_changed"],true)
+                                    }
+                                }
+                            }
+                            Row {
+                                visible: Julia.get_data(
+                                    ["Training","Options","General","test_data_fraction"])!==0
+                                spacing: 0.3*margin
+                                Label {
+                                    id: testingfrLabel
+                                    text: "Testing frequency:"
+                                    width: iterationsperepochLabel.width
+                                }
+                                SpinBox {
+                                    from: 0
+                                    value: Julia.get_data(
+                                               ["Training","Options","General","testing_frequency"])
+                                    to: 10000
+                                    stepSize: 1
+                                    editable: true
+                                    onValueModified: {
+                                        Julia.set_data(
+                                            ["Training","Options","General","testing_frequency"],value)
                                     }
                                 }
                             }

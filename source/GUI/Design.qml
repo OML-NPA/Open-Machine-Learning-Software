@@ -115,7 +115,6 @@ ApplicationWindow {
                             upNode.connectedItem.connectedNode = null
                             upNode.connectedItem.connection.destroy()
                             upNode.connectedItem.destroy()
-                            connections.num = connections.num - 1
                         }
                     }
                     for (i=0;i<downNodes.children.length;i++) {
@@ -126,7 +125,6 @@ ApplicationWindow {
                                 downNode.connectedNode.connectedNode = null
                                 downNode.connectedNode.connectedItem = null
                                 downNode.connection.destroy()
-                                connections.num = connections.num - 1
                             }
                         }
                     }
@@ -1226,11 +1224,10 @@ ApplicationWindow {
         else {
             return(false)
         }
-
     }
 
     function getconnectionsnum() {
-        return(connections.num)
+        return(connections.children.length)
     }
 
     function getirregularitiesnum() {
@@ -1486,9 +1483,6 @@ ApplicationWindow {
         if (downNodeRectangle.connection!==null) {
             downNodeRectangle.connection.destroy()
             existedCon = true
-        }
-        else {
-            connections.num = connections.num + 1
         }
         downNodeRectangle.connectedNode = upNode
         upNode.connectedNode = downNode
@@ -2026,7 +2020,6 @@ ApplicationWindow {
                         for (i=downNodeItem.children.length-1;i>=2;i--) {
                             if (downNodeItem.children[i-1].connectedNode===null) {
                                 downNodeItem.children[i].destroy()
-                                connections.num = connections.num - 1
                             }
                         }
                     }

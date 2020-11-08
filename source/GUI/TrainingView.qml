@@ -20,6 +20,7 @@ Component {
         Loader { id: trainingoptionsLoader}
         Loader { id: customizationLoader}
         Loader { id: trainingplotLoader}
+        Loader { id: validationplotLoader}
 
         function load_model_features() {
             var num_features = Julia.num_features()
@@ -92,19 +93,39 @@ Component {
                             topPadding: 10*pix
                         }
                         ComboBox {
+                            id: problemtypeComboBox
                             function changeLabels() {
                                 if (currentIndex===0) {
-                                    outputLabel.text = "Labels:"
+                                    labelsLabel.text = "Labels:"
+                                    inputtypeModel.clear()
+                                    inputtypeModel.append({text: "Image"})
+                                    inputtypeModel.append({text: "Data series"})
+                                    inputtypeComboBox.currentIndex = 0
+                                    labelsRow.visible = false
+
+                                }
+                                else if (currentIndex===1) {
+                                    labelsLabel.text = "Labels:"
+                                    inputtypeModel.clear()
+                                    inputtypeModel.append({text: "Image"})
+                                    inputtypeComboBox.currentIndex = 0
+                                    labelsRow.visible = true
                                 }
                                 else {
-                                    outputLabel.text = "Targets:"
+                                    labelsLabel.text = "Targets:"
+                                    inputtypeModel.clear()
+                                    inputtypeModel.append({text: "Image"})
+                                    inputtypeModel.append({text: "Data series"})
+                                    inputtypeComboBox.currentIndex = 0
+                                    labelsRow.visible = true
                                 }
                             }
                             editable: false
-                            width: 0.64*buttonWidth-1*pix
+                            width: 0.69*buttonWidth-1*pix
                             model: ListModel {
                                 id: problemtypeModel
                                 ListElement {text: "Classification"}
+                                ListElement {text: "Segmentation"}
                                 ListElement {text: "Regression"}
                             }
                             onActivated: {
@@ -126,6 +147,7 @@ Component {
                             topPadding: 10*pix
                         }
                         ComboBox {
+                            id: inputtypeComboBox
                             function changeLabels() {
                                 if (currentIndex===0) {
                                     inputLabel.text = "Images:"
@@ -138,7 +160,7 @@ Component {
                             }
 
                             editable: false
-                            width: 0.64*buttonWidth-1*pix
+                            width: 0.59*buttonWidth-1*pix
                             model: ListModel {
                                 id: inputtypeModel
                                 ListElement {text: "Image"}
@@ -154,37 +176,6 @@ Component {
                                 currentIndex = val[1]
                                 changeLabels()
                             }
-                        }
-                    }
-                }
-                Row {
-                    spacing: 0.3*margin
-                    Label {
-                        text: "Network:"
-                        topPadding: 10*pix
-                        width: 0.34*buttonWidth
-                    }
-                    TextField {
-                        id: neuralnetworkTextField
-                        readOnly: true
-                        width: 1.55*buttonWidth
-                        height: buttonHeight
-                        Component.onCompleted: {
-                            var url = Julia.get_data(["Training","template"])
-                            if (Julia.isfile(url)) {
-                                text = url
-                                importmodel(model,url)
-                                load_model_features()
-                            }
-                        }
-                    }
-                    Button {
-                        width: buttonWidth/2
-                        height: buttonHeight
-                        text: "Browse"
-                        onClicked: {
-                            dialogtarget = "Network"
-                            fileDialog.open()
                         }
                     }
                 }
@@ -219,9 +210,10 @@ Component {
                     }
                 }
                 Row {
+                    id: labelsRow
                     spacing: 0.3*margin
                     Label {
-                        id: outputLabel
+                        id: labelsLabel
                         text: "Labels:"
                         topPadding: 10*pix
                         width: 0.34*buttonWidth
@@ -239,12 +231,44 @@ Component {
                         }
                     }
                     Button {
+                        id: browselabelsButton
                         width: buttonWidth/2
                         height: buttonHeight
                         text: "Browse"
                         onClicked: {
                             dialogtarget = "Labels"
                             folderDialog.open()
+                        }
+                    }
+                }
+                Row {
+                    spacing: 0.3*margin
+                    Label {
+                        text: "Network:"
+                        topPadding: 10*pix
+                        width: 0.34*buttonWidth
+                    }
+                    TextField {
+                        id: neuralnetworkTextField
+                        readOnly: true
+                        width: 1.55*buttonWidth
+                        height: buttonHeight
+                        Component.onCompleted: {
+                            var url = Julia.get_data(["Training","template"])
+                            if (Julia.isfile(url)) {
+                                text = url
+                                importmodel(model,url)
+                                load_model_features()
+                            }
+                        }
+                    }
+                    Button {
+                        width: buttonWidth/2
+                        height: buttonHeight
+                        text: "Browse"
+                        onClicked: {
+                            dialogtarget = "Network"
+                            fileDialog.open()
                         }
                     }
                 }
@@ -438,92 +462,140 @@ Component {
                         }
                     }
                     Button {
-                        id: validateButton
-                        text: "Validate"
-                        width: buttonWidth
-                        height: buttonHeight
-                    }
-                    Button {
                         id: starttrainingButton
-                        text: "Start training"
+                        text: "Train"
                         width: buttonWidth
                         height: buttonHeight
                         onClicked: {
                             if (imagesTextField.length===0 || labelsTextField.length===0) {
                                 return
                             }
-                            if (text==="Start training") {
-                                text = "Stop data preparation"
+                            if (starttrainingButton.text==="Train") {
+                                starttrainingButton.text = "Stop data preparation"
                                 Julia.set_data(["Training","stop_training"],false)
                                 Julia.get_urls_imgs_labels()
-                                dataprocessingTimer.running = true
+                                trainingTimer.running = true
                                 Julia.prepare_training_data()
                             }
                             else {
-                                if (dataprocessingTimer.running) {
-                                    text = "Wait"
+                                if (trainingTimer.running) {
+                                    starttrainingButton.text = "Wait"
                                 }
                                 else {
-                                    text = "Start training"
+                                    starttrainingButton.text = "Train"
                                     progressbar.value = 0
                                 }
                                 Julia.set_data(["Training","stop_training"],true)
                             }
                         }
                         Timer {
-                            id: dataprocessingTimer
+                            id: trainingTimer
                             interval: 1000; running: false; repeat: true
                             property double step: 0
-                            property bool training_init: false
+                            property bool done: false
                             onTriggered: {
-                                Julia.yield()
-                                if (starttrainingButton.text==="Wait") {
-                                    if (Julia.get_data(["Training","task_done"])) {
-                                        starttrainingButton.text = "Start training"
-                                        running = false
-                                        step = 0
-                                        progressbar.value = 0
-                                        return
-                                    }
-                                    return
-                                }
-                                if (step!==0 && !training_init) {
-                                    var state = Julia.get_data(["Training","data_ready"])
-                                    var mean_val = mean(state)
-                                    var sum_val = sum(state)
-                                    if (mean_val===1) {
-                                        Julia.set_data(["Training","stop_training"],false)
-                                        training_init = true
-                                        Julia.train()
-                                    }
-                                    progressbar.value = mean_val
-                                }
-                                else if (training_init && Julia.get_data(["Training","training_started"])) {
-                                    running = false
-                                    starttrainingButton.text = "Stop training"
+                                function load_window() {
                                     trainingplotLoader.source = "TrainingPlot.qml"
                                 }
-
-                                else {
-                                    state = Julia.get_data(["Training","data_ready"])
-                                    if (state.length!==0) {
-                                        state = Julia.get_data(["Training","data_ready"])
-                                        step = 1/state.length
-                                    }
-                                    else {
-                                        running = false
-                                        starttrainingButton.text = "Start training"
-                                    }
+                                dataProcessingTimerFunction(starttrainingButton,trainingTimer,
+                                    "Train","Stop training","Training",
+                                    ["Training","training_started"],load_window)
+                            }
+                        }
+                    }
+                    Button {
+                        id: validateButton
+                        text: "Validate"
+                        width: buttonWidth
+                        height: buttonHeight
+                        onClicked: {
+                            if (imagesTextField.length===0 || labelsTextField.length===0) {
+                                return
+                            }
+                            if (validateButton.text==="Validate") {
+                                validateButton.text = "Stop data preparation"
+                                Julia.set_data(["stop_task"],false)
+                                Julia.get_urls_imgs_labels()
+                                validationTimer.running = true
+                                Julia.prepare_validation_data()
+                            }
+                            else {
+                                if (validationTimer.running) {
+                                    starttrainingButton.text = "Wait"
                                 }
+                                else {
+                                    starttrainingButton.text = "Train"
+                                    progressbar.value = 0
+                                }
+                                Julia.set_data(["Training","stop_training"],true)
+                            }
+                        }
+                        Timer {
+                            id: validationTimer
+                            interval: 1000; running: false; repeat: true
+                            property double step: 0
+                            property bool done: false
+                            onTriggered: {
+                                function load_window() {
+                                    validationplotLoader.source = "ValidationPlot.qml"
+                                }
+                                dataProcessingTimerFunction(validateButton,validationTimer,
+                                    "Validate","Stop validation", "Validation",
+                                    ["Training","validation_started"],load_window)
                             }
                         }
                     }
                     ProgressBar {
                         id: progressbar
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                        value: 0
                         width: buttonWidth
                     }
+                }
+            }
+        }
+        function dataProcessingTimerFunction(button,timer,start,stop,
+            action,check_action,load_window) {
+            Julia.yield()
+            if (button.text==="Wait") {
+                if (Julia.get_data(["Training","task_done"])) {
+                    button.text = start
+                    timer.running = false
+                    timer.step = 0
+                    progressbar.value = 0
+                    return
+                }
+                return
+            }
+            if (timer.step!==0 && !timer.done) {
+                var state = Julia.get_data(["Training","data_ready"])
+                var mean_val = mean(state)
+                var sum_val = sum(state)
+                if (mean_val===1) {
+                    timer.done = true
+                    if (action==="Training") {
+                        Julia.train()
+                    }
+                    else if (action==="Validation") {
+                        Julia.validate()
+                    }
+                }
+                progressbar.value = mean_val
+            }
+            else if (timer.done && Julia.get_data(check_action)) {
+                timer.running = false
+                Julia.yield()
+                button.text = stop
+                load_window()
+            }
+            else {
+                state = Julia.get_data(["Training","data_ready"])
+                if (state.length!==0) {
+                    state = Julia.get_data(["Training","data_ready"])
+                    timer.step = 1/state.length
+                }
+                else {
+                    timer.running = false
+                    button.text = start
                 }
             }
         }

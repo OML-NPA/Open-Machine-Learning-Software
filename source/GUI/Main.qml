@@ -47,7 +47,7 @@ ApplicationWindow {
 
     onClosing: {
         Julia.stop_all()
-        //Julia.save_data()
+        Julia.save_data()
     }
 
     header: Rectangle {
@@ -161,6 +161,17 @@ ApplicationWindow {
     }
 
 //--Functions---------------------------------------------------------
+
+    function listProperty(item)
+    {
+        for (var p in item)
+        {
+            if( typeof item[p] != "function" )
+                if(p !== "objectName")
+                    console.log(p + ":" + item[p]);
+        }
+
+    }
 
     function debug(x) {
         console.log(x)

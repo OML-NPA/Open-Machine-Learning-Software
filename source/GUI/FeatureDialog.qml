@@ -106,63 +106,6 @@ ApplicationWindow {
                     }
                 }
             }
-            /*Label {
-                text: "Color (RGB):"
-            }
-            Row {
-                topPadding: 0.1*margin
-                bottomPadding: 0.4*margin
-                spacing: 0.3*margin
-                Label {
-                    topPadding: 12*pix
-                    text: "Red:"
-                }
-                TextField {
-                    id: red
-                    text: featureModel.get(indTree).colorR
-                    width: 0.25*buttonWidth
-                    height: buttonHeight
-                    validator: IntValidator { bottom: 0; top: 999;}
-                    onEditingFinished: {
-                    if (parseFloat(red.text)>255) {
-                            red.text = "255"
-                        }
-                    }
-                }
-                Label {
-                    topPadding: 12*pix
-                    text: "Green:"
-                }
-                TextField {
-                    id: green
-                    text: featureModel.get(indTree).colorG
-                    width: 0.25*buttonWidth
-                    height: buttonHeight
-                    validator: IntValidator { bottom: 0; top: 999;}
-                    onEditingFinished: {
-                        if (parseFloat(green.text)>255) {
-                            green.text = "255"
-                        }
-                    }
-                }
-                Label {
-                    topPadding: 12*pix
-                    text: "Blue:"
-                }
-                TextField {
-                    id: blue
-                    text: featureModel.get(indTree).colorB
-                    width: 0.25*buttonWidth
-                    height: buttonHeight
-                    maximumLength: 3
-                    validator: IntValidator { bottom: 0; top: 999;}
-                    onEditingFinished: {
-                        if (parseFloat(blue.text)>255) {
-                            blue.text = "255"
-                        }
-                    }
-                }
-            }*/
             RowLayout {
                 Layout.alignment : Qt.AlignHCenter
                 spacing: 1.5*margin
@@ -184,13 +127,6 @@ ApplicationWindow {
                         var feature = featureModel.get(indTree)
                         feature.name = new_name
                         feature.parent = parentComboBox.currentText
-                        /*feature.colorR = parseFloat(red.text)
-                        feature.colorG = parseFloat(green.text)
-                        feature.colorB = parseFloat(blue.text)
-                        featureView.itemAtIndex(indTree).children[0].children[0].color =
-                                rgbtohtml([featureModel.get(indTree).colorR,
-                                           featureModel.get(indTree).colorG,
-                                           featureModel.get(indTree).colorB])*/
                         Julia.update_features(indTree+1,
                                               feature.name,
                                               feature.colorR,

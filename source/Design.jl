@@ -1,22 +1,11 @@
 
-outdims = Flux.outdims
-
 # Layers
 struct Parallel
     layers::Tuple
 end
-function Parallel(x::Array{AbstractFloat}, layers::Tuple)
-    result = []
-    for i = 1:length(layers)
-        push!(result, layers[i](x))
-    end
-    return result
-end
-function Parallel(x::Array{Array}, layers::Tuple)
-    result = []
-    for i = 1:length(layers)
-        push!(result, layers[i](x[i]))
-    end
+function Parallel(x::Union{CuArray{<:AbstractFloat},Array{<:AbstractFloat}},
+        layers::Tuple)
+    result = map(fun -> fun(x), layers)
     return result
 end
 (m::Parallel)(x) = Parallel(x, m.layers)
@@ -265,7 +254,6 @@ end
 function getbranch(layer_params,in_size)
     num = layer_params isa Dict ? 1 : length(layer_params)
     if num==1
-        #@info in_size
         layer, in_size = getlayer(layer_params, in_size)
     else
         par_layers = []
@@ -281,7 +269,11 @@ function getbranch(layer_params,in_size)
                 layer,temp_size = getbranch(layer_params[i][j],temp_size)
                 push!(temp_layers,layer)
             end
-            push!(par_layers,Chain(temp_layers...))
+            if length(temp_layers)>1
+                push!(par_layers,Chain(temp_layers...))
+            else
+                push!(par_layers,temp_layers[1])
+            end
             push!(par_size,temp_size)
         end
         layer = Parallel((par_layers...,))

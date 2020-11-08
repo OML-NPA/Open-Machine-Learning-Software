@@ -41,13 +41,17 @@ end
     get_urls_imgs_labels,
     get_labels_colors,
     prepare_training_data,
+    prepare_validation_data,
     # Data handling
     reset,
     get_data,
     set_data,
     save_data,
+    get_image,
+    display_image,
     # Training
     train,
+    validate,
     training_elapsed_time,
     # Other
     isfile,

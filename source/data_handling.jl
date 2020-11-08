@@ -79,12 +79,53 @@ options_training = Options_training()
     min_dist_x::Float64 = 40
     min_dist_y::Float64 = 40
     hide_name::Bool = false
+    iteration::Int64 = 0
+    epoch::Int64 = 0
+    iterations_per_epoch::Int64 = 0
+    starting_time::String = string(now())
+    max_iterations::Int64 = iterations_per_epoch*hyperparameters_training.epochs
+    training_started::Bool = false
 end
 design = Design()
+
+@with_kw mutable struct Training_plot
+    data_input::Array{Array} = []
+    data_labels::Array{Array} = []
+    loss::Array = []
+    accuracy::Array = []
+    test_accuracy::Array = []
+    test_loss::Array = []
+    iteration::Int64 = 0
+    epoch::Int64 = 0
+    iterations_per_epoch::Int64 = 0
+    starting_time::String = string(now())
+    max_iterations::Int64 = iterations_per_epoch*hyperparameters_training.epochs
+    learning_rate_changed::Bool = false
+end
+training_plot = Training_plot()
+
+@with_kw mutable struct Validation_plot
+    loss::Array{AbstractFloat} = []
+    accuracy::Array{AbstractFloat} = []
+    loss_std::AbstractFloat = 0
+    accuracy_std::AbstractFloat = 0
+    accuracy_std_in::Array{AbstractFloat} = []
+    data_input_orig::Array{Array} = []
+    data_labels_orig::Array{Array} = []
+    data_input::Array{Array} = []
+    data_labels::Array{Array} = []
+    data_predicted::Array{Array} = []
+    data_error::Array{Array} = []
+    progress::Float64 = 0
+    validation_done::Bool = false
+end
+validation_plot = Validation_plot()
 
 @with_kw mutable struct Training
     Options = options_training
     Design = design
+    Training_plot = training_plot
+    Validation_plot = validation_plot
     problem_type::Array{Union{String,Int64}} = ["Classification",0]
     input_type::Array{Union{String,Int64}} = ["Image",0]
     template::String = ""
@@ -94,22 +135,11 @@ design = Design()
     type::String = "segmentation"
     url_imgs::Array = []
     url_labels::Array = []
-    data_input::Array{Array} = []
-    data_labels::Array{Array} = []
     data_ready::Array{Float64} = []
-    loss::Array = []
-    accuracy::Array = []
-    test_accuracy::Array = []
-    test_loss::Array = []
     stop_training::Bool = false
     task_done::Bool = false
-    iteration::Int64 = 0
-    epoch::Int64 = 0
-    iterations_per_epoch::Int64 = 0
-    starting_time::String = string(now())
-    max_iterations::Int64 = iterations_per_epoch*hyperparameters_training.epochs
     training_started::Bool = false
-    learning_rate_changed::Bool = false
+    validation_started::Bool = false
 end
 training = Training()
 
@@ -132,19 +162,27 @@ visualisation = Visualisation()
     Training = training
     Analysis = analysis
     Visualisation = visualisation
+    stop_task::Bool = false
+    image::Array = []
 end
 master = Master()
 
-function get_data_main(master::Master,fields::QML.QListAllocated)
+function get_data_main(master::Master,fields,inds...)
     data = master
-    fields = QML.value.(fields)
+    fields = fix_QML_types(fields)
     for i = 1:length(fields)
         field = Symbol(fields[i])
         data = getproperty(data,field)
     end
+    if !(isempty(inds))
+        inds = fix_QML_types(inds[1])
+        for i = 1:length(inds)
+            data = data[inds[i]]
+        end
+    end
     return data
 end
-get_data(fields) = get_data_main(master,fields)
+get_data(fields,inds...) = get_data_main(master,fields,inds...)
 
 function set_data_main(master::Master,fields::QML.QListAllocated,args...)
     data = master
@@ -172,8 +210,16 @@ end
 set_data(fields,value,args...) = set_data_main(master,fields,value,args...)
 
 function save_data_main(master::Master)
+    data_saved = Master()
+    skip_fields = [:data_input,:data_labels,:data_ready,
+        :stop_training,:url_imgs,:url_labels,:starting_time,
+        :data_input_orig,:data_labels_orig,:loss,:accuracy,
+        :loss_std,:accuracy_std,:accuracy_std_in,:data_input_orig,
+        :data_labels_orig,:data_input,:data_labels,:data_predicted,
+        :data_error]
+    copy_struct!(data_saved,master,skip_fields)
     open("config.json","w") do f
-      JSON.print(f,master)
+      JSON.print(f,data_saved)
     end
 end
 save_data() = save_data_main(master)
@@ -185,11 +231,11 @@ function load_data!(master)
         dict = JSON.parse(f)
       end
     end
-    dict_to_struct!(master,dict)
+    dict_to_struct!(master,dict,[""])
 end
 
-function reset(fields)
-    var = get_data(fields)
+function reset(field)
+    var = get_data(field)
     if var isa Array
         var = similar(var,0)
     elseif var isa Number
@@ -197,6 +243,19 @@ function reset(fields)
     elseif var isa String
         var = ""
     end
+end
+
+function resetproperty!(datatype,field)
+    var = getproperty(datatype,field)
+    if var isa Array
+
+        var = similar(var,0)
+    elseif var isa Number
+        var = zero(typeof(var))
+    elseif var isa String
+        var = ""
+    end
+    setproperty!(datatype,field,var)
 end
 
 function info(fields)
@@ -207,3 +266,46 @@ function stop_all_main(master)
     master.Training.stop_training = true
 end
 stop_all() = stop_all_main(master)
+
+function fix_QML_types(var)
+    if var isa AbstractString
+        return String(var)
+    elseif var isa Integer
+        return Int64(var)
+    elseif var isa AbstractFloat
+        return Float64(var)
+    elseif var isa QML.QListAllocated
+        return fix_QML_types.(QML.value.(var))
+    elseif var isa Tuple
+        return fix_QML_types.(var)
+    else
+        return var
+    end
+end
+
+function get_image_main(master::Master,model_data,fields,
+        img_size::QML.QListAllocated,inds...)
+    image = get_data(fields,inds...)
+    if !(image[1] isa Matrix || image[1] isa RGB)
+        if size(image,3)==1
+            image = colorview(Gray,image)
+        else
+            image = colorview(RGB,image)
+        end
+    end
+    img_size = fix_QML_types(img_size)
+    inds = findall(img_size.!=0)
+    if !isempty(inds)
+        r = minimum(map(x-> img_size[x]/size(image,x),inds))
+        image = imresize(image, ratio=r)
+    end
+    master.image = image
+    return [size(image)...]
+end
+get_image(fields,img_size,inds...) =
+    get_image_main(master,model_data,fields,img_size,inds...)
+
+function display_image_main(master::Master,d::JuliaDisplay)
+  display(d, master.image)
+end
+display_image(d) = display_image_main(master,d)

@@ -1,27 +1,31 @@
 
-function fix_QML_types(var)
-    if var isa AbstractString
-        return String(var)
-    elseif var isa Integer
-        return Int64(var)
-    elseif var isa AbstractFloat
-        return Float64(var)
-    else
-        if var isa QML.QListAllocated
-            var = QML.value.(var)
-        end
-        return fix_QML_types.(var)
-    end
-end
-
-function dict_to_struct!(master,dict::Dict)
+function dict_to_struct!(master,dict::Dict,skip_fields::Array{String})
   ks = [keys(dict)...]
   for i = 1:length(ks)
     value = dict[ks[i]]
     if value isa Dict
-      dict_to_struct!(getproperty(master,Symbol(ks[i])),value)
+      dict_to_struct!(getproperty(master,Symbol(ks[i])),value,skip_fields)
     else
-      setproperty!(master,Symbol(ks[i]),value)
+      if !(ks[i] in skip_fields)
+          setproperty!(master,Symbol(ks[i]),value)
+      end
+    end
+  end
+end
+
+function copy_struct!(struct1,struct2,skip_fields::Vector{Symbol})
+  ks = fieldnames(typeof(struct1))
+  for i = 1:length(ks)
+    if ks[i] in skip_fields
+        resetproperty!(struct1,ks[i])
+        continue
+    end
+    value = getproperty(struct2,ks[i])
+    if isstructtype(typeof(master))
+        copy_struct!(getproperty(struct1,ks[i]),
+            getproperty(struct2,ks[i]),skip_fields)
+    else
+        setproperty!(struct1,ks[i],value)
     end
   end
 end
@@ -43,7 +47,7 @@ function fixtypes(dict::Dict)
             dict["size"] = (dict["size"]...,1)
         end
     end
-    for key in ["filtersize", "poolsize","newsize"]
+    for key in ["filtersize", "poolsize"]
         if haskey(dict, key)
             if length(dict[key])==1 && !(dict[key] isa Array)
                 dict[key] = Int64(dict[key])
