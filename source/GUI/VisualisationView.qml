@@ -9,21 +9,6 @@ import org.julialang 1.0
 Component {
     GridLayout {
         id: gridLayout
-        JuliaDisplay {
-            id: jdisp
-            width: 512*pix
-            height: 512*pix
-        }
-        Component.onCompleted: {
-            function listProperty(item)
-            {
-                for (var p in item)
-                console.log(p + ": " + item[p]);
-            }
-            console.log( listProperty(jdisp))
-
-        }
-
     }
 }
 

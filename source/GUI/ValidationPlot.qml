@@ -26,9 +26,9 @@ ApplicationWindow {
         if (validationTimer.running) {return}
         var ind1 = sampleSpinBox.value
         var ind2 = featureComboBox.currentIndex+1
-        var modif = (validationWindow.width-700*pix)/originalDisplay.width
-        originalDisplay.width = validationWindow.width-700*pix
-        resultDisplay.width = validationWindow.width-700*pix
+        var modif = (validationWindow.width-590*pix)/originalDisplay.width
+        originalDisplay.width = validationWindow.width-590*pix
+        resultDisplay.width = validationWindow.width-590*pix
         originalDisplay.height = originalDisplay.height*modif
         resultDisplay.height = originalDisplay.height*modif
         originalDisplay.contentsScale = originalDisplay.contentsScale*modif
@@ -90,8 +90,8 @@ ApplicationWindow {
             id: informationPane
             x: displayItem.width
             height: Math.max(validationWindow.height,1024*pix)
-            width: 700*pix
-            padding: 0.5*margin
+            width: 590*pix
+            padding: 0.75*margin
             backgroundColor: defaultpalette.window2
             Column {
                 id: informationColumn
@@ -100,7 +100,7 @@ ApplicationWindow {
                     spacing: 0.3*margin
                     ProgressBar {
                         id: validationProgressBar
-                        width: 1.2*buttonWidth
+                        width: buttonWidth-50*pix
                         height: buttonHeight
                     }
                     StopButton {
@@ -216,6 +216,26 @@ ApplicationWindow {
                             }
                             get_image(resultDisplay,type,
                                 [sampleSpinBox.value,featureComboBox.currentIndex+1])
+                        }
+                    }
+                }
+                Row {
+                    topPadding: 34*pix
+                    spacing: 0.3*margin
+                    Label {
+                        text: "Opacity:"
+                        width: accuracyLabel.width
+                        topPadding: -24*pix
+                    }
+                    Slider {
+                        width: 0.64*buttonWidth-1*pix
+                        height: 12*pix
+                        leftPadding: 0
+                        from: 0
+                        value: 0.5
+                        to: 1
+                        onMoved: {
+                            resultDisplay.opacity = value
                         }
                     }
                 }

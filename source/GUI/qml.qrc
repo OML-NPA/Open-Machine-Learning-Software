@@ -36,5 +36,6 @@
         <file>Templates/NewsPanel.qml</file>
         <file>DesignOptions.qml</file>
         <file>ValidationPlot.qml</file>
+        <file>Templates/Slider.qml</file>
     </qresource>
 </RCC>
