@@ -174,8 +174,10 @@ function get_data_main(master::Master,fields,inds...)
         field = Symbol(fields[i])
         data = getproperty(data,field)
     end
+
     if !(isempty(inds))
         inds = fix_QML_types(inds[1])
+        @info (fields, inds)
         for i = 1:length(inds)
             data = data[inds[i]]
         end
@@ -286,11 +288,13 @@ end
 function get_image_main(master::Master,model_data,fields,
         img_size::QML.QListAllocated,inds...)
     image = get_data(fields,inds...)
-    if !(image[1] isa Matrix || image[1] isa RGB)
+    if !(image[1] isa Matrix || image[1] isa RGB || image[1] isa RGBA)
         if size(image,3)==1
             image = colorview(Gray,image)
-        else
+        elseif size(image,3)==3
             image = colorview(RGB,image)
+        else
+            image = colorview(RGBA,image)
         end
     end
     img_size = fix_QML_types(img_size)

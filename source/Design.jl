@@ -43,48 +43,42 @@ struct Addition end
 (m::Addition)(x) = sum(x)
 
 struct Upscaling
-    multiplier::Float64
+    multiplier::Int64
     new_size::Tuple
     dims::Any
 end
-function Upscaling_func(x, multiplier::Float64, new_size::Tuple, dims)
-    type = typeof(x[1])
-    new_x = zeros(type, new_size)
+function Upscaling_func(x, multiplier::Int64, new_size::Tuple, dims)
     if dims == 1
-        for i = 1:multiplier
-            new_x[i:multiplier:end, :, :, :] = x
-        end
+        ratio = (multiplier,1,1,1)
     elseif dims == 2
-        for i = 1:multiplier
-            new_x[:, i:multiplier:end, :, :] = x
-        end
+        ratio = (1,multiplier,1,1)
     elseif dims == 3
-        for i = 1:multiplier
-            new_x[:, :, i:multiplier:end, :] = x
-        end
-    elseif dims == (1, 2)
-        for i = 1:multiplier
-            for j = 1:multiplier
-                new_x[i:multiplier:end, j:multiplier:end, :, :] = x
-            end
-        end
-    elseif dims == (1, 2, 3)
-        for i = 1:multiplier
-            for j = 1:multiplier
-                for l = 1:multiplier
-                    new_x[
-                        i:multiplier:end,
-                        j:multiplier:end,
-                        l:multiplier:end,
-                        :,
-                    ] = x
-                end
-            end
-        end
+        ratio = (1,1,multiplier,1)
+    elseif dims == (1,2)
+         ratio = (multiplier,multiplier,1,1)
+    elseif dims == (1,2,3)
+        ratio = (multiplier,multiplier,multiplier,1)
     end
+    return upscale(x,ratio)
+end
+function upscale(x::Array,ratio)
+    s = size(x)
+    h,w,c,n = s
+    y = fill(1.0f0, (ratio[1], 1, ratio[2], 1, ratio[3], 1))
+    z = reshape(x, (1, h, 1, w, 1, c, n))  .* y
+    new_x = reshape(z, s .* ratio)
     return new_x
 end
-(m::Upscaling)(x) = Upscaling_func(x, multiplier, new_size, dims)
+function upscale(x::CuArray,ratio)
+    s = size(x)
+    h,w,c,n = s
+    y = gpu(fill(1.0f0, (ratio[1], 1, ratio[2], 1, ratio[3], 1)))
+    z = reshape(x, (1, h, 1, w, 1, c, n))  .* y
+    new_x = reshape(z, s .* ratio)
+    return new_x
+end
+(m::Upscaling)(x) = Upscaling_func(x,cpu(m.multiplier),
+    cpu(m.new_size),cpu( m.dims))
 
 struct Activation
     f::Any
@@ -143,11 +137,17 @@ function getactivation(type::AbstractString, d, in_size::Tuple)
 end
 
 function getpooling(type::AbstractString, d, in_size::Tuple)
+    poolsize = d["poolsize"]
+    stride = d["stride"]
+    temp_layer = MaxPool(poolsize, stride=2)
+    out = (outdims(Chain(temp_layer),in_size)...,in_size[3])
+    dif = Int64.(in_size[1:2]./2 .- out[1:2])
     if type == "Max pooling"
-        return MaxPool(d["poolsize"], stride = d["stride"])
+        layer = MaxPool(poolsize, stride=stride, pad=(0,dif[1],dif[2],0))
     elseif type == "Average pooling"
-        return MeanPool(d["poolsize"], stride = d["stride"])
+        layer = MeanPool(poolsize, stride=stride, pad=(0,dif[1],dif[2],0))
     end
+    return (layer,out)
 end
 
 function getresizing(type::AbstractString, d, in_size)
@@ -448,7 +448,8 @@ function arrange_branches(coordinates,coordinate,parameters,layers_arranged)
             push!(par_coordinates,temp_coordinates)
         end
         push!(coordinates,copy(par_coordinates))
-        coordinate = [coordinate[1],maximum(map(x-> x[end],map(x -> x[end],par_coordinates)))]
+        coordinate = [coordinate[1],
+            maximum(map(x-> x[end],map(x -> x[end],par_coordinates)))]
     end
     return coordinate
 end

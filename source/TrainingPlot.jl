@@ -91,43 +91,67 @@ function get_optimiser(training)
     return optimiser(parameters...)
 end
 
-function train!(model::Chain,loss,training::Training,train_batches::Array,
-        test_batches::Array,opt,run_test::Bool,use_GPU)
-    training.training_started = true
-    num = length(train_batches)
-    last_test = 0
-    for i=1:num
-        local temp_loss, predicted
-        if training.Training_plot.learning_rate_changed
-          opt.eta = training.Options.Hyperparameters.learning_rate
+function train!(model::Chain,args,loss,training::Training,
+    train_set::Tuple,test_set::Tuple,opt,use_GPU::Bool)
+    # Training loop
+    epochs = args.epochs
+    batch_size = args.batch_size
+    for epoch_idx = 1:epochs
+        training.Training_plot.epoch = training.Training_plot.epoch + 1
+        if master.Training.stop_training
+            master.Training.stop_training = false
+            master.Training.task_done = true
+            return nothing
         end
-        train_minibatch = train_batches[i]
-        if use_GPU
-        train_minibatch = gpu.(train_minibatch)
-        end
-        if training.stop_training
-          training.stop_training = false
-          training.task_done = true
-          return nothing
-        end
-        actual = train_minibatch[2]
-        predicted = []
-        ps = Flux.Params(params(model))
-        gs = gradient(ps) do
-          predicted = model(train_minibatch[1])
-          temp_loss = loss(predicted,actual)
-          return temp_loss
-        end
-        Flux.Optimise.update!(opt,ps,gs)
+        # Make minibatches
+        num_test = length(test_set[1])
+        run_test = num_test!=0
+        train_batches = make_minibatch(train_set,batch_size)
         if run_test
-          if ceil(i/training.Options.General.testing_frequency)>last_test
-              test(model,loss,training,test_batches,length(test_batches),use_GPU)
-              last_test = last_test + 1
-          end
+            test_batches = make_minibatch(test_set,batch_size)
+        else
+            test_batches = []
         end
-        training.Training_plot.iteration = training.Training_plot.iteration + 1
-        push!(training.Training_plot.loss,cpu(temp_loss))
-        push!(training.Training_plot.accuracy,cpu(accuracy(predicted,actual)))
+        training.Training_plot.iterations_per_epoch = length(train_batches)
+        training.Training_plot.max_iterations =
+            epochs*training.Training_plot.iterations_per_epoch
+        training.training_started = true
+        num = length(train_batches)
+        last_test = 0
+        for i=1:num
+            local temp_loss, predicted
+            if training.Training_plot.learning_rate_changed
+              opt.eta = training.Options.Hyperparameters.learning_rate
+            end
+            train_minibatch = train_batches[i]
+            if use_GPU
+                train_minibatch = gpu.(train_minibatch)
+            end
+            if training.stop_training
+              training.stop_training = false
+              training.task_done = true
+              return nothing
+            end
+            input = train_minibatch[1]
+            actual = train_minibatch[2]
+            predicted = []
+            ps = Flux.Params(params(model))
+            gs = gradient(ps) do
+              predicted = model(input)
+              temp_loss = loss(predicted,actual)
+              return temp_loss
+            end
+            Flux.Optimise.update!(opt,ps,gs)
+            if run_test
+              if ceil(i/training.Options.General.testing_frequency)>last_test
+                  test(model,loss,training,test_batches,length(test_batches),use_GPU)
+                  last_test = last_test + 1
+              end
+            end
+            training.Training_plot.iteration = training.Training_plot.iteration + 1
+            push!(training.Training_plot.loss,cpu(temp_loss))
+            push!(training.Training_plot.accuracy,cpu(accuracy(predicted,actual)))
+        end
     end
     return nothing
 end
@@ -221,7 +245,6 @@ function train_main(master::Master,model_data::Model_data)
     model = model_data.model
     loss = model_data.loss
     args = training.Options.Hyperparameters
-    batch_size = args.batch_size
     learning_rate = args.learning_rate
     epochs = args.epochs
     # Preparing train and test sets
@@ -240,29 +263,8 @@ function train_main(master::Master,model_data::Model_data)
     model(precomp_data)
     # Use ADAM optimiser
     opt = get_optimiser(training)
-    # Training loop
-    for epoch_idx = 1:epochs
-        training.Training_plot.epoch = training.Training_plot.epoch + 1
-        if master.Training.stop_training
-            master.Training.stop_training = false
-            master.Training.task_done = true
-            return nothing
-        end
-        # Make minibatches
-        num_test = length(test_set[1])
-        run_test = num_test!=0
-        train_batches = make_minibatch(train_set,batch_size)
-        if run_test
-            test_batches = make_minibatch(test_set,batch_size)
-        else
-            test_batches = []
-        end
-        training.Training_plot.iterations_per_epoch = length(train_batches)
-        training.Training_plot.max_iterations =
-            epochs*training.Training_plot.iterations_per_epoch
-        # Train neural network
-        train!(model,loss,training,train_batches,test_batches,opt,run_test,use_GPU)
-    end
+    train!(model,args,loss,training,train_set,
+        test_set,opt,use_GPU)
     if use_GPU
         model_data.model = move(model,cpu)
         save_model(string("models/",training.name,".model"))
@@ -298,7 +300,8 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
             temp = Float32.(temp_bool)
             temp = cat(temp,temp,temp,dims=3)
             temp = temp.*perm_labels_color[j]
-            temp = colorview(RGB,permutedims(temp,[3,1,2]))
+            temp = Float32.(permutedims(temp,[3,1,2]))
+            temp = colorview(RGB,temp)
             push!(predicted_color_temp,temp)
         end
         push!(predicted_color,predicted_color_temp)
