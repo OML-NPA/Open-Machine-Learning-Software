@@ -350,25 +350,14 @@ ApplicationWindow {
                                     value: 100000*Julia.get_data(
                                                ["Training","Options","Hyperparameters","learning_rate"])
                                     to: 1000
-                                    stepSize: 100
-                                    editable: true
+                                    stepSize: value>100 ? 100 :
+                                              value>10 ? 10 : 1
+                                    editable: false
                                     property real realValue: value/100000
                                     textFromValue: function(value, locale) {
                                         return Number(value/100000).toLocaleString(locale,'e',0)
                                     }
                                     onValueModified: {
-                                        if (value>1000) {
-                                            stepSize = 1000
-                                        }
-                                        else if (value>100) {
-                                            stepSize = 100
-                                        }
-                                        else if (value>10) {
-                                            stepSize = 10
-                                        }
-                                        else {
-                                            stepSize = 1
-                                        }
                                         Julia.set_data(
                                             ["Training","Options","Hyperparameters","learning_rate"],
                                             value/100000)
