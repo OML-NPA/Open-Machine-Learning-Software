@@ -55,13 +55,13 @@ Component {
                     }
                     if (dialogtarget=="Images") {
                         imagesTextField.text = dir
-                        Julia.set_data(["Training","images"],dir)
+                        Julia.set_settings(["Training","images"],dir)
                     }
                     else if (dialogtarget=="Labels") {
                         labelsTextField.text = dir
-                        Julia.set_data(["Training","labels"],dir)
+                        Julia.set_settings(["Training","labels"],dir)
                     }
-                    Julia.save_data()
+                    Julia.save_settings()
                 }
         }
         FileDialog {
@@ -73,8 +73,8 @@ Component {
                     importmodel(model,url)
                     featureModel.clear()
                     load_model_features()
-                    nameTextField.text = Julia.get_data(["Training","name"])
-                    Julia.save_data()
+                    nameTextField.text = Julia.get_settings(["Training","name"])
+                    Julia.save_settings()
                 }
         }
         Column {
@@ -129,12 +129,12 @@ Component {
                                 ListElement {text: "Regression"}
                             }
                             onActivated: {
-                                Julia.set_data(["Training","problem_type"],
+                                Julia.set_settings(["Training","problem_type"],
                                     [currentText,currentIndex])
                                 changeLabels()
                             }
                             Component.onCompleted: {
-                                var val = Julia.get_data(["Training","problem_type"])
+                                var val = Julia.get_settings(["Training","problem_type"])
                                 currentIndex = val[1]
                                 changeLabels()
                             }
@@ -167,12 +167,12 @@ Component {
                                 ListElement {text: "Data series"}
                             }
                             onActivated: {
-                                Julia.set_data(["Training","input_type"],
+                                Julia.set_settings(["Training","input_type"],
                                     [currentText,currentIndex])
                                 changeLabels()
                             }
                             Component.onCompleted: {
-                                var val = Julia.get_data(["Training","input_type"])
+                                var val = Julia.get_settings(["Training","input_type"])
                                 currentIndex = val[1]
                                 changeLabels()
                             }
@@ -193,7 +193,7 @@ Component {
                         width: 1.55*buttonWidth
                         height: buttonHeight
                         Component.onCompleted: {
-                            var url = Julia.get_data(["Training","images"])
+                            var url = Julia.get_settings(["Training","images"])
                             if (Julia.isdir(url)) {
                                 text = url
                             }
@@ -224,7 +224,7 @@ Component {
                         width: 1.55*buttonWidth
                         height: buttonHeight
                         Component.onCompleted: {
-                            var url = Julia.get_data(["Training","labels"])
+                            var url = Julia.get_settings(["Training","labels"])
                             if (Julia.isdir(url)) {
                                 text = url
                             }
@@ -254,7 +254,7 @@ Component {
                         width: 1.55*buttonWidth
                         height: buttonHeight
                         Component.onCompleted: {
-                            var url = Julia.get_data(["Training","template"])
+                            var url = Julia.get_settings(["Training","template"])
                             if (Julia.isfile(url)) {
                                 text = url
                                 importmodel(model,url)
@@ -283,9 +283,9 @@ Component {
                         id: nameTextField
                         width: 1.55*buttonWidth
                         height: buttonHeight
-                        onEditingFinished: Julia.set_data(["Training","name"],text)
+                        onEditingFinished: Julia.set_settings(["Training","name"],text)
                         Component.onCompleted: {
-                            text = Julia.get_data(["Training","name"])
+                            text = Julia.get_settings(["Training","name"])
                         }
                     }
                 }
@@ -377,7 +377,7 @@ Component {
                                             text: "Update model"
                                         }
                                         onClicked: {
-                                            Julia.save_model(nameTextField.text)
+                                            Julia.save_model("models/" + nameTextField.text + ".model")
                                         }
                                     }
 
@@ -472,34 +472,42 @@ Component {
                             }
                             if (starttrainingButton.text==="Train") {
                                 starttrainingButton.text = "Stop data preparation"
-                                Julia.set_data(["Training","stop_training"],false)
                                 Julia.get_urls_imgs_labels()
+                                Julia.empty_progress_channel("Training data preparation")
+                                Julia.empty_results_channel("Training data preparation")
+                                Julia.empty_progress_channel("Training data preparation modifiers")
+                                Julia.empty_progress_channel("Training")
+                                Julia.empty_results_channel("Training")
+                                Julia.empty_progress_channel("Training modifiers")
+                                trainingTimer.max_value = 0
+                                trainingTimer.value = 0
+                                trainingTimer.done = false
                                 trainingTimer.running = true
+                                Julia.gc()
                                 Julia.prepare_training_data()
                             }
                             else {
-                                if (trainingTimer.running) {
-                                    starttrainingButton.text = "Wait"
-                                }
-                                else {
-                                    starttrainingButton.text = "Train"
-                                    progressbar.value = 0
-                                }
-                                Julia.set_data(["Training","stop_training"],true)
+                                starttrainingButton.text = "Train"
+                                trainingTimer.running = false
+                                progressbar.value = 0
+                                Julia.put_channel("Training data preparation",["stop"])
+                                Julia.put_channel("Training",["stop"])
                             }
                         }
                         Timer {
                             id: trainingTimer
                             interval: 1000; running: false; repeat: true
                             property double step: 0
+                            property double value: 0
+                            property double max_value: 0
                             property bool done: false
                             onTriggered: {
                                 function load_window() {
                                     trainingplotLoader.source = "TrainingPlot.qml"
                                 }
                                 dataProcessingTimerFunction(starttrainingButton,trainingTimer,
-                                    "Train","Stop training","Training",
-                                    ["Training","training_started"],load_window)
+                                    "Train","Stop training","Training data preparation",
+                                    "Training",load_window)
                             }
                         }
                     }
@@ -514,34 +522,42 @@ Component {
                             }
                             if (validateButton.text==="Validate") {
                                 validateButton.text = "Stop data preparation"
-                                Julia.set_data(["stop_task"],false)
                                 Julia.get_urls_imgs_labels()
+                                Julia.empty_progress_channel("Validation data preparation")
+                                Julia.empty_results_channel("Validation data preparation")
+                                Julia.empty_progress_channel("Validation data preparation modifiers")
+                                Julia.empty_progress_channel("Validation")
+                                Julia.empty_results_channel("Validation")
+                                Julia.empty_progress_channel("Validation modifiers")
+                                validationTimer.max_value = 0
+                                validationTimer.value = 0
+                                validationTimer.done = false
                                 validationTimer.running = true
+                                Julia.gc()
                                 Julia.prepare_validation_data()
                             }
                             else {
-                                if (validationTimer.running) {
-                                    starttrainingButton.text = "Wait"
-                                }
-                                else {
-                                    starttrainingButton.text = "Train"
-                                    progressbar.value = 0
-                                }
-                                Julia.set_data(["Training","stop_training"],true)
+                                validateButton.text = "Validate"
+                                validationTimer.running = false
+                                progressbar.value = 0
+                                Julia.put_channel("Validation data preparation",["stop"])
+                                Julia.put_channel("Validation",["stop"])
                             }
                         }
                         Timer {
                             id: validationTimer
                             interval: 1000; running: false; repeat: true
                             property double step: 0
+                            property double value: 0
+                            property double max_value: 0
                             property bool done: false
                             onTriggered: {
                                 function load_window() {
                                     validationplotLoader.source = "ValidationPlot.qml"
                                 }
                                 dataProcessingTimerFunction(validateButton,validationTimer,
-                                    "Validate","Stop validation", "Validation",
-                                    ["Training","validation_started"],load_window)
+                                    "Validate","Stop validation","Validation data preparation",
+                                    "Validation",load_window)
                             }
                         }
                     }
@@ -554,44 +570,37 @@ Component {
             }
         }
         function dataProcessingTimerFunction(button,timer,start,stop,
-            action,check_action,load_window) {
-            Julia.yield()
-            if (button.text==="Wait") {
-                if (Julia.get_data(["Training","task_done"])) {
-                    button.text = start
-                    timer.running = false
-                    timer.step = 0
-                    progressbar.value = 0
-                    return
-                }
-                return
-            }
-            if (timer.step!==0 && !timer.done) {
-                var state = Julia.get_data(["Training","data_ready"])
-                var mean_val = mean(state)
-                var sum_val = sum(state)
-                if (mean_val===1) {
+            action,action_done,load_window) {
+            var temp = Julia.check_progress(action)
+            if (timer.max_value!==0 && !timer.done) {
+                var value = Julia.get_progress(action)
+                if (timer.value===timer.max_value) {
                     timer.done = true
-                    if (action==="Training") {
+                    Julia.get_results(action)
+                    if (action_done==="Training") {
                         Julia.train()
                     }
-                    else if (action==="Validation") {
+                    else if (action_done==="Validation") {
                         Julia.validate()
                     }
                 }
-                progressbar.value = mean_val
+                else {
+                        if (value!==false) {
+                            timer.value += value
+                        }
+                    }
+                progressbar.value = timer.value/timer.max_value
             }
-            else if (timer.done && Julia.get_data(check_action)) {
+            else if (timer.done && Julia.check_progress(action_done)!==false) {
                 timer.running = false
-                Julia.yield()
                 button.text = stop
                 load_window()
             }
             else {
-                state = Julia.get_data(["Training","data_ready"])
-                if (state.length!==0) {
-                    state = Julia.get_data(["Training","data_ready"])
-                    timer.step = 1/state.length
+                value = Julia.get_progress(action)
+                if (value===false) { return }
+                if (value!==0) {
+                    timer.max_value = value
                 }
                 else {
                     timer.running = false

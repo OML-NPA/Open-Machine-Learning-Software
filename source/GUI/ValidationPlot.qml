@@ -44,27 +44,57 @@ ApplicationWindow {
 
     Timer {
         id: validationTimer
-        interval: 100
+        interval: 200
         running: true
         repeat: true
+        property int iteration: 0
+        property int max_iterations: 0
+        property var accuracy: []
+        property var loss: []
+        property double mean_accuracy
+        property double mean_loss
+        property double accuracy_std
+        property double loss_std
         onTriggered: {
-            validationProgressBar.value = Julia.get_data(["Training","Validation_plot","progress"])
-            if (Julia.get_data(["Training","Validation_plot","validation_done"])) {
-                progressbar.value = 1
-                repeat = false
+            var data = Julia.get_progress("Validation")
+            //console.log(iteration,max_iterations)
+            if (max_iterations===0) {
+                if (data===false) {return}
+                max_iterations = data[0]
+            }
+            else if (iteration<max_iterations) {
+                if (data===false) {return}
+                var accuracy_temp = data[0]
+                var loss_temp = data[1]
+                var accuracy_std_temp = data[2]
+                var loss_std_temp = data[3]
+                iteration += 1
+                accuracyLabel.text = accuracy_temp.toFixed(2) + " ± " + accuracy_std_temp.toFixed(2)
+                lossLabel.text = loss_temp.toFixed(2) + " ± " + loss_std_temp.toFixed(2)
+                validationProgressBar.value = iteration/max_iterations
+            }
+            else if (iteration===max_iterations) {
+                data = Julia.get_results("Validation")
+                if (data===false) {return}
                 running = false
-                var ind1 = sampleSpinBox.value
-                var ind2 = featureComboBox.currentIndex+1
+                accuracy = data[0]
+                loss = data[1]
+                mean_accuracy = data[2]
+                mean_loss = data[3]
+                accuracy_std = data[4]
+                loss_std = data[5]
+                sampleSpinBox.value = 1
+                featureComboBox.currentIndex = 0
+                var ind1 = 1
+                var ind2 = 1
+                accuracyLabel.text = mean_accuracy.toFixed(2) + " ± " + accuracy_std.toFixed(2) +
+                    " (" + accuracy[0].toFixed(2) + ")"
+                lossLabel.text = mean_loss.toFixed(2) + " ± " + loss_std.toFixed(2) +
+                        " (" + loss[0].toFixed(2)+")"
                 get_image(originalDisplay,"data_input_orig",[ind1])
                 get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
             }
-            loss.text = mean(Julia.get_data(["Training","Validation_plot","loss"])).toFixed(2)
-            accuracy.text = mean(Julia.get_data(["Training","Validation_plot","accuracy"])).toFixed(2)
-            loss.text = loss.text + " ± " +
-                Julia.get_data(["Training","Validation_plot","loss_std"]).toFixed(2)
-            accuracy.text = accuracy.text + " ± " +
-                Julia.get_data(["Training","Validation_plot","accuracy_std"]).toFixed(2)
-            var accuracy_std_in = Julia.get_data(["Training","Validation_plot","accuracy_std_in"])
+
         }
     }
     Item {
@@ -107,7 +137,7 @@ ApplicationWindow {
                         id: stoptraining
                         width: buttonHeight
                         height: buttonHeight
-                        onClicked: Julia.set_data(["Training","stop_training"],true)
+                        onClicked: Julia.put_channel("Validation",["stop"])
                     }
                 }
                 Label {
@@ -118,21 +148,21 @@ ApplicationWindow {
                 Row {
                     spacing: 0.3*margin
                     Label {
-                        id: accuracyLabel
+                        id: accuracytextLabel
                         text: "Accuracy:"
                     }
                     Label {
-                        id: accuracy
+                        id: accuracyLabel
                     }
                 }
                 Row {
                     spacing: 0.3*margin
                     Label {
                         text: "Loss:"
-                        width: accuracyLabel.width
+                        width: accuracytextLabel.width
                     }
                     Label {
-                        id: loss
+                        id: lossLabel
                     }
                 }
                 Label {
@@ -144,18 +174,24 @@ ApplicationWindow {
                     spacing: 0.3*margin
                     Label {
                         text: "Sample:"
-                        width: accuracyLabel.width
+                        width: accuracytextLabel.width
                     }
                     SpinBox {
                         id: sampleSpinBox
                         from: 1
                         value: 1
-                        to: Julia.get_data(["Training","Validation_plot","data_input_orig"]).length
+                        to: validationTimer.accuracy.length
                         stepSize: 1
                         editable: false
                         onValueModified: {
                             var ind1 = sampleSpinBox.value
                             var ind2 = featureComboBox.currentIndex+1
+                            accuracyLabel.text = validationTimer.mean_accuracy.toFixed(2) + " ± " +
+                                validationTimer.accuracy_std.toFixed(2) +
+                                " (" + validationTimer.accuracy[ind1-1].toFixed(2) + ")"
+                            lossLabel.text = validationTimer.mean_loss.toFixed(2) + " ± " +
+                                 validationTimer.loss_std.toFixed(2) +
+                                 " (" + validationTimer.loss[ind1-1].toFixed(2)+")"
                             get_image(originalDisplay,"data_input_orig",[ind1])
                             get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
                         }
@@ -165,7 +201,7 @@ ApplicationWindow {
                     spacing: 0.3*margin
                     Label {
                         text: "Feature:"
-                        width: accuracyLabel.width
+                        width: accuracytextLabel.width
                         topPadding: 10*pix
                     }
                     ComboBox {
@@ -193,7 +229,7 @@ ApplicationWindow {
                     spacing: 0.3*margin
                     Label {
                         text: "Show:"
-                        width: accuracyLabel.width
+                        width: accuracytextLabel.width
                         topPadding: 10*pix
                     }
                     ComboBox {
@@ -224,7 +260,7 @@ ApplicationWindow {
                     spacing: 0.3*margin
                     Label {
                         text: "Opacity:"
-                        width: accuracyLabel.width
+                        width: accuracytextLabel.width
                         topPadding: -24*pix
                     }
                     Slider {
@@ -256,7 +292,7 @@ ApplicationWindow {
         onClicked: mouse.accepted = false;
     }
     function get_image(display,type,inds) {
-        var size = Julia.get_image(["Training","Validation_plot",type],
+        var size = Julia.get_image(["Training_data","Validation_plot_data",type],
             [0,0],inds)
         var ratio = size[0]/size[1]
         if (ratio<1) {

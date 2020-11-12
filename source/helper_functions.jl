@@ -1,13 +1,13 @@
 
-function dict_to_struct!(master,dict::Dict,skip_fields::Array{String})
+function dict_to_struct!(settings,dict::Dict;skip=[])
   ks = [keys(dict)...]
   for i = 1:length(ks)
     value = dict[ks[i]]
     if value isa Dict
-      dict_to_struct!(getproperty(master,Symbol(ks[i])),value,skip_fields)
+      dict_to_struct!(getproperty(settings,Symbol(ks[i])),value;skip=skip)
     else
-      if !(ks[i] in skip_fields)
-          setproperty!(master,Symbol(ks[i]),value)
+      if !(ks[i] in skip)
+          setproperty!(settings,Symbol(ks[i]),value)
       end
     end
   end
@@ -21,7 +21,7 @@ function copy_struct!(struct1,struct2,skip_fields::Vector{Symbol})
         continue
     end
     value = getproperty(struct2,ks[i])
-    if isstructtype(typeof(master))
+    if isstructtype(typeof(settings))
         copy_struct!(getproperty(struct1,ks[i]),
             getproperty(struct2,ks[i]),skip_fields)
     else

@@ -398,7 +398,7 @@ function get_topology_main(model_data)
         return "more than one input layer"
     end
     ind_output = findfirst(types .== "Output")
-    if isempty(ind_output)
+    if ind_output==nothing
         @info "no output layer"
         return "no output layer"
     elseif length(ind_output)>1

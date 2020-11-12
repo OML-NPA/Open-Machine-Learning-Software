@@ -696,7 +696,7 @@ ApplicationWindow {
                 id: mainFrame
                 width : customizationWindow.width-leftFrame.width-rightFrame.width
                 height : customizationWindow.height
-                padding: 2*pix
+                padding: 0
                 antialiasing: true
                 layer.enabled: true
                 layer.samples: 8
@@ -720,7 +720,7 @@ ApplicationWindow {
                    Pane {
                         id: mainPane
                         width: flickableMainPane.width
-                        height: flickableMainPane.height
+                        height: flickableMainPane.height-2*pix
                         padding: 0
                         backgroundColor: defaultpalette.listview
                         Component.onCompleted: {
@@ -856,7 +856,7 @@ ApplicationWindow {
                     onClicked: {
                        getarchitecture()
                        customizationItem.forceActiveFocus()
-                       var name = Julia.get_data(["Training","name"])
+                       var name = Julia.get_settings(["Training","name"])
                        var url = Julia.source_dir()+"/models/"+name+".model"
                        neuralnetworkTextField.text = url
                        Julia.make_model()
@@ -918,6 +918,12 @@ ApplicationWindow {
                         customizationItem.forceActiveFocus()
                         opacity = 1
                     }
+                }
+                Rectangle {
+                    color: "transparent"
+                    anchors.fill: parent
+                    border.width: 2*pix
+                    border.color: defaultpalette.border
                 }
             }
             Frame {
@@ -2332,7 +2338,7 @@ ApplicationWindow {
                         model_name = displayText
                     }
                     Component.onCompleted: {
-                        var name = Julia.get_data(["Training","name"])
+                        var name = Julia.get_settings(["Training","name"])
                         if (name.length===0) {
                             text = "model"
                         }

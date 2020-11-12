@@ -9,6 +9,18 @@ import org.julialang 1.0
 Component {
     GridLayout {
         id: gridLayout
+        Timer {
+            interval: 1000
+            running: true
+            repeat: true
+            onTriggered: {
+            }
+
+            Component.onCompleted: {
+            }
+
+
+        }
     }
 }
 

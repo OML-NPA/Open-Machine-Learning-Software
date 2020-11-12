@@ -1,12 +1,12 @@
 
-function get_urls_imgs_labels_main(master::Master)
-    url_imgs = master.Training.url_imgs
-    url_labels = master.Training.url_labels
+function get_urls_imgs_labels_main(training::Training,training_data::Training_data)
+    url_imgs = training_data.url_imgs
+    url_labels = training_data.url_labels
     empty!(url_imgs)
     empty!(url_labels)
-    dir_imgs = master.Training.images
-    dir_labels = master.Training.labels
-    type = master.Training.type
+    dir_imgs = training.images
+    dir_labels = training.labels
+    type = settings.Training.type
     dirs_imgs = getdirs(dir_imgs)
     dirs_labels = getdirs(dir_labels)
     dirs = intersect(dirs_imgs,dirs_labels)
@@ -34,12 +34,10 @@ function get_urls_imgs_labels_main(master::Master)
             end
         end
     end
-    master.Training.data_ready = Array{Float64}(undef,length(url_imgs))
-    fill!(master.Training.data_ready,0)
     return nothing
 end
 get_urls_imgs_labels() =
-    get_urls_imgs_labels_main(master)
+    get_urls_imgs_labels_main(training,training_data)
 
 function get_image(url_img::String)
     img = RGB.(load(url_img))
@@ -51,8 +49,8 @@ function get_label(url_label::String)
     return label
 end
 
-function load_images_main(master::Master)
-    url_imgs = master.Training.url_imgs
+function load_images(training_data::Training_data)
+    url_imgs = training_data.url_imgs
     num = length(url_imgs)
     imgs = Array{Any}(undef,num)
     for i = 1:num
@@ -60,10 +58,9 @@ function load_images_main(master::Master)
     end
     return imgs
 end
-load_images() = load_images_main(master)
 
-function load_labels_main(master::Master)
-    url_labels = master.Training.url_labels
+function load_labels(training_data::Training_data)
+    url_labels = training_data.url_labels
     num = length(url_labels)
     labels = Array{Any}(undef,num)
     for i = 1:num
@@ -71,7 +68,6 @@ function load_labels_main(master::Master)
     end
     return labels
 end
-load_labels() = load_labels_main(master)
 
 function image_to_float(image;gray=true)
     if gray
@@ -124,7 +120,8 @@ function get_feature_data(features)
     return labels_color,labels_incl,border
 end
 
-function process_images_labels_main(master,model_data)
+function prepare_training_data_main(training::Training,training_data::Training_data,
+    model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
     # Functions
     function correct_view(img,label)
         field = dilate(imfilter(img.<0.3, Kernel.gaussian(4)).>0.5,20)
@@ -146,7 +143,7 @@ function process_images_labels_main(master,model_data)
         return img,label
     end
 
-    function augment(master,k,img,label,angles_num,pix_num,min_fr_pix)
+    function augment(k,img,label,angles_num,pix_num,min_fr_pix)
 
         function rotate_img(img,angle)
             if angle!=0
@@ -172,9 +169,6 @@ function process_images_labels_main(master,model_data)
         labels_out = []
         num = length(angles)
         for g = 1:num
-            if master.Training.stop_training
-                return ([],[])
-            end
             img2 = rotate_img(img,angles[g])
             label2 = rotate_img(label,angles[g])
             num1 = Int64(floor(size(label2,1)/(pix_num[1]*0.9)))
@@ -208,37 +202,35 @@ function process_images_labels_main(master,model_data)
             end
             push!(imgs_out,img_temp...)
             push!(labels_out,label_temp...)
-            master.Training.data_ready[k] = g/num
         end
         return (imgs_out,labels_out)
     end
 
     # Code
     if isempty(model_data.features)
-        @info "Empty features"
-        return false
+        put!(results, "Empty features")
     end
-    data_input = master.Training.Training_plot.data_input
-    data_labels = master.Training.Training_plot.data_labels
+    data_input = []
+    data_labels = []
     features = model_data.features
-    type = master.Training.type
-    options = master.Training.Options
+    type = training.type
+    options = training.Options
     min_fr_pix = options.Processing.min_fr_pix
     num_angles = options.Processing.num_angles
     pix_num = model_data.input_size[1:2]
-    empty!(data_input)
-    empty!(data_labels)
     labels_color,labels_incl,border = get_feature_data(features)
-    imgs = load_images()
-    labels = load_labels()
+    imgs = load_images(training_data)
+    labels = load_labels(training_data)
     num = length(imgs)
     temp_imgs = Vector{Any}(undef,num)
     temp_labels = Vector{Any}(undef,num)
+    put!(progress, num+1)
     Threads.@threads for k = 1:num
-        if master.Training.stop_training
-            master.Training.task_done = true
-            @info "stop_training was true"
-            return false
+        if isready(channels.training_data_modifiers)
+            if fetch(channels.training_data_modifiers)[1]=="stop"
+                take!(channels.training_data_modifiers)
+                return nothing
+            end
         end
         img = imgs[k]
         img = image_to_float(img,gray=true)
@@ -246,16 +238,11 @@ function process_images_labels_main(master,model_data)
         if type=="segmentation"
             #img,label = correct_view(img,label)
             label = label_to_float(label,labels_color,labels_incl,border)
-            img,label = augment(master,k,img,label,num_angles,pix_num,min_fr_pix)
+            img,label = augment(k,img,label,num_angles,pix_num,min_fr_pix)
         end
         temp_imgs[k] = img
         temp_labels[k] = label
-        master.Training.data_ready[k] = 1
-    end
-    if master.Training.stop_training
-        master.Training.stop_training = false
-        master.Training.task_done = true
-        return false
+        put!(progress, 1)
     end
     if type=="segmentation"
         temp_imgs = vcat(temp_imgs...)
@@ -265,16 +252,52 @@ function process_images_labels_main(master,model_data)
     resize!(data_labels,length(temp_labels))
     data_input .= temp_imgs
     data_labels .= temp_labels
-    master.Training.task_done = true
-    return true
+    put!(results, (data_input,data_labels))
+    put!(progress, 1)
+    return nothing
 end
-process_images_labels() =
-    process_images_labels_main(master,model_data)
+function prepare_training_data_main2(training::Training,training_data::Training_data,
+    model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
+    @everywhere training,training_data,model_data
+    remote_do(prepare_training_data_main,workers()[end],training,training_data,
+    model_data,progress,results)
+end
+prepare_training_data() = prepare_training_data_main2(training,training_data,
+    model_data,channels.training_data_progress,channels.training_data_results)
+
+    function prepare_validation_data_main(training_data::Training_data,
+            model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
+        put!(progress,3)
+        images = load_images(training_data)
+        put!(progress,1)
+        labels = load_labels(training_data)
+        put!(progress,1)
+        features = model_data.features
+        if isempty(features)
+            @info "empty features"
+            return false
+        end
+        labels_color,labels_incl,border = get_feature_data(features)
+        data_input = map(x->image_to_float(x,gray=true),images)
+        data_labels = map(x->label_to_float(x,labels_color,labels_incl,border),labels)
+        data = (images,labels,data_input,data_labels)
+        put!(results,data)
+        put!(progress,1)
+        return nothing
+    end
+    function  prepare_validation_data_main2(training_data::Training_data,
+            model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
+        @everywhere training_data,model_data
+        remote_do(prepare_validation_data_main,workers()[end],training_data,
+        model_data,progress,results)
+    end
+    prepare_validation_data() = prepare_validation_data_main2(training_data,
+        model_data,channels.validation_data_progress,channels.validation_data_results)
 
 function apply_border_data_main(data_in::Array{<:AbstractFloat},model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     inds_border = findall(border)
-    num_feat = num_features()
+    num_feat = length(model_data.features)
     data = copy(data_in[:,:,1:num_feat])
     for i = 1:length(inds_border)
         ind_border = inds_border[i]
@@ -289,8 +312,8 @@ end
 apply_border_data(data_in) = apply_border_data_main(data_in,model_data)
 
 
-function get_labels_colors_main(master)
-    url_labels = master.Training.url_labels
+function get_labels_colors_main(training_data::Training_data)
+    url_labels = training_data.url_labels
     colors_out = Vector{Any}(undef,length(url_labels))
     labelimgs = []
     for i=1:length(url_labels)
@@ -308,7 +331,7 @@ function get_labels_colors_main(master)
     colors_out = unique(colors_out)
     return colors_out
 end
-get_labels_colors() = get_labels_colors_main(master)
+get_labels_colors() = get_labels_colors_main(training_data)
 
 model_count() = length(model_data.layers)
 model_properties(index) = [keys(model_data.layers[index])...]

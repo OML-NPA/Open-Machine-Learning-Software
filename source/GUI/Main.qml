@@ -46,8 +46,7 @@ ApplicationWindow {
     property string currentfolder: Qt.resolvedUrl(".")
 
     onClosing: {
-        Julia.stop_all()
-        Julia.save_data()
+        Julia.save_settings()
     }
 
     header: Rectangle {
@@ -55,6 +54,14 @@ ApplicationWindow {
         height: buttonHeight
         color: menuPane.backgroundColor
 
+    }
+
+    Timer {
+        id: yieldTimer
+        running: true
+        repeat: true
+        interval: 1
+        onTriggered: {Julia.yield()}
     }
 
     GridLayout {
@@ -242,6 +249,6 @@ ApplicationWindow {
                 model.push(unit)
             }
         }
-        Julia.set_data(["Training","template"],url)
+        Julia.set_settings(["Training","template"],url)
     }
 }

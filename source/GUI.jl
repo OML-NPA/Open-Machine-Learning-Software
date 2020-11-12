@@ -1,21 +1,19 @@
-
-include("packages.jl")
-include("helper_functions.jl")
-include("data_handling.jl")
-include("Training.jl")
-include("Design.jl")
-include("TrainingPlot.jl")
-
-if !isfile("config.json")
-    save_data()
-else
-    load_data!(master)
+using Distributed
+if nprocs()<2
+    addprocs(1); # add worker processes
 end
+@everywhere include("packages.jl")
+@everywhere include("data_structures.jl")
+@everywhere include("data_handling.jl")
+@everywhere include("helper_functions.jl")
+@everywhere include("Training.jl")
+@everywhere include("Design.jl")
+@everywhere include("TrainingPlot.jl")
 
 if !isfile("config.json")
-    save_data()
+    save_settings()
 else
-    load_data!(master)
+    load_settings!(settings)
 end
 
 @qmlfunction(
@@ -45,13 +43,21 @@ end
     # Data handling
     reset,
     get_data,
-    set_data,
-    save_data,
+    get_settings,
+    set_settings,
+    save_settings,
     get_image,
     display_image,
+    get_results,
+    get_progress,
+    check_progress,
+    empty_results_channel,
+    empty_progress_channel,
+    put_channel,
     # Training
     train,
     validate,
+    set_training_starting_time,
     training_elapsed_time,
     # Other
     isfile,
@@ -61,9 +67,9 @@ end
     source_dir,
     yield,
     info,
-    stop_all,
     time,
-    arrange
+    arrange,
+    gc
 )
 load("GUI//Main.qml")
 exec()

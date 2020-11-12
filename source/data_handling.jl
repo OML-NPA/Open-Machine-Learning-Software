@@ -1,193 +1,64 @@
 
-@with_kw mutable struct Model_data
-    input_size::Tuple = (160,160,1)
-    model = Chain()
-    layers::Array = []
-    features::Array = []
-    loss::Function = Losses.crossentropy
-end
-model_data = Model_data()
-
-@with_kw mutable struct Features
-    name::String = ""
-    color::Array = [0,0,0]
-    border::Bool = false
-    parent::String = ""
-end
-
-# Main
-@with_kw mutable struct Main_s
-    a::Int = 0
-end
-main = Main_s()
-
-# Options
-@with_kw mutable struct Hardware_resources
-    allow_GPU::Bool = true
-    num_cores::Int64 = Threads.nthreads()
-end
-hardware_resources = Hardware_resources()
-@with_kw mutable struct Options
-    Hardware_resources = hardware_resources
-end
-options = Options()
-
-# Training
-@with_kw mutable struct Processing_training
-    mirroring::Bool = true
-    num_angles::Int64 = 2
-    min_fr_pix::Float64 = 0.1
-end
-processing_training = Processing_training()
-
-@with_kw mutable struct Hyperparameters_training
-    optimiser::Array = ["ADAM",5]
-    optimiser_params::Array = [[],[0.9],[0.9],[0.9],
-      [0.9,0.999],[0.9,0.999],[0.9,0.999],[],[0.9],[0.9,0.999],
-      [0.9,0.999],[0.9,0.999,0]]
-    optimiser_params_names::Array = [[],["ρ"],
-      ["ρ"],["ρ"],
-      ["β1","β2"],
-      ["β1","β2"],
-      ["β1","β2"],[],
-      ["ρ"],["β1","β2"],
-      ["β1","β2"],
-      ["β1","β2","Weight decay"]]
-    learning_rate::Float64 = 1e-3
-    epochs::Int = 1
-    batch_size::Int = 10
-    savepath::String = "./"
-end
-hyperparameters_training = Hyperparameters_training()
-
-@with_kw mutable struct General_training
-    test_data_fraction::Float64 = 0.2
-    testing_frequency::Int64 = 5
-end
-general_training = General_training()
-
-@with_kw mutable struct Options_training
-    General = general_training
-    Processing = processing_training
-    Hyperparameters = hyperparameters_training
-end
-options_training = Options_training()
-
-@with_kw mutable struct Design
-    width::Float64 = 340
-    height::Float64 = 100
-    min_dist_x::Float64 = 40
-    min_dist_y::Float64 = 40
-    hide_name::Bool = false
-    iteration::Int64 = 0
-    epoch::Int64 = 0
-    iterations_per_epoch::Int64 = 0
-    starting_time::String = string(now())
-    max_iterations::Int64 = iterations_per_epoch*hyperparameters_training.epochs
-    training_started::Bool = false
-end
-design = Design()
-
-@with_kw mutable struct Training_plot
-    data_input::Array{Array} = []
-    data_labels::Array{Array} = []
-    loss::Array = []
-    accuracy::Array = []
-    test_accuracy::Array = []
-    test_loss::Array = []
-    iteration::Int64 = 0
-    epoch::Int64 = 0
-    iterations_per_epoch::Int64 = 0
-    starting_time::String = string(now())
-    max_iterations::Int64 = iterations_per_epoch*hyperparameters_training.epochs
-    learning_rate_changed::Bool = false
-end
-training_plot = Training_plot()
-
-@with_kw mutable struct Validation_plot
-    loss::Array{AbstractFloat} = []
-    accuracy::Array{AbstractFloat} = []
-    loss_std::AbstractFloat = 0
-    accuracy_std::AbstractFloat = 0
-    accuracy_std_in::Array{AbstractFloat} = []
-    data_input_orig::Array{Array} = []
-    data_labels_orig::Array{Array} = []
-    data_input::Array{Array} = []
-    data_labels::Array{Array} = []
-    data_predicted::Array{Array} = []
-    data_error::Array{Array} = []
-    progress::Float64 = 0
-    validation_done::Bool = false
-end
-validation_plot = Validation_plot()
-
-@with_kw mutable struct Training
-    Options = options_training
-    Design = design
-    Training_plot = training_plot
-    Validation_plot = validation_plot
-    problem_type::Array{Union{String,Int64}} = ["Classification",0]
-    input_type::Array{Union{String,Int64}} = ["Image",0]
-    template::String = ""
-    images::String = ""
-    labels::String = ""
-    name::String = "new"
-    type::String = "segmentation"
-    url_imgs::Array = []
-    url_labels::Array = []
-    data_ready::Array{Float64} = []
-    stop_training::Bool = false
-    task_done::Bool = false
-    training_started::Bool = false
-    validation_started::Bool = false
-end
-training = Training()
-
-# Analysis
-@with_kw mutable struct Analysis
-    a::Int = 0
-end
-analysis = Analysis()
-
-# Visualisation
-@with_kw mutable struct Visualisation
-    a::Int = 0
-end
-visualisation = Visualisation()
-
-# Master
-@with_kw mutable struct Master
-    Main = main
-    Options = options
-    Training = training
-    Analysis = analysis
-    Visualisation = visualisation
-    stop_task::Bool = false
-    image::Array = []
-end
-master = Master()
-
-function get_data_main(master::Master,fields,inds...)
-    data = master
+function get_data_main(data::Master_data,fields,inds...)
     fields = fix_QML_types(fields)
     for i = 1:length(fields)
         field = Symbol(fields[i])
         data = getproperty(data,field)
     end
-
     if !(isempty(inds))
         inds = fix_QML_types(inds[1])
-        @info (fields, inds)
         for i = 1:length(inds)
             data = data[inds[i]]
         end
     end
     return data
 end
-get_data(fields,inds...) = get_data_main(master,fields,inds...)
+get_data(fields,inds...) = get_data_main(master_data,fields,inds...)
 
-function set_data_main(master::Master,fields::QML.QListAllocated,args...)
-    data = master
+function set_data_main(master_data::Master_data,fields::QML.QListAllocated,args...)
+    data = settings
+    fields = fix_QML_types(fields)
+    for i = 1:length(fields)-1
+        field = Symbol(fields[i])
+        data = getproperty(data,field)
+    end
+    values = Array{Any}(undef,length(args))
+    for i=1:length(args)
+        values[i] = fix_QML_types(args[i])
+    end
+    if length(args)==1
+        value = fix_QML_types(args[1])
+    elseif length(args)==2
+        value = getproperty(data,Symbol(fields[end]))
+        value[args[1]] = args[2]
+    elseif length(args)==3
+        value = getproperty(data,Symbol(fields[end]))
+        value[args[1]][args[2]] = args[3]
+    end
+    setproperty!(data, Symbol(fields[end]), value)
+    return nothing
+end
+set_data(fields,value,args...) = set_data_main(master_data,fields,value,args...)
+
+function get_settings_main(settings::Settings,fields,inds...)
+    data = settings
+    fields = fix_QML_types(fields)
+    for i = 1:length(fields)
+        field = Symbol(fields[i])
+        data = getproperty(data,field)
+    end
+    if !(isempty(inds))
+        inds = fix_QML_types(inds[1])
+        for i = 1:length(inds)
+            data = data[inds[i]]
+        end
+    end
+    return data
+end
+get_settings(fields,inds...) = get_settings_main(settings,fields,inds...)
+
+function set_settings_main(settings::Settings,fields::QML.QListAllocated,args...)
+    data = settings
     fields = String.(QML.value.(fields))
     for i = 1:length(fields)-1
         field = Symbol(fields[i])
@@ -209,31 +80,23 @@ function set_data_main(master::Master,fields::QML.QListAllocated,args...)
     setproperty!(data, Symbol(fields[end]), value)
     return nothing
 end
-set_data(fields,value,args...) = set_data_main(master,fields,value,args...)
+set_settings(fields,value,args...) = set_settings_main(settings,fields,value,args...)
 
-function save_data_main(master::Master)
-    data_saved = Master()
-    skip_fields = [:data_input,:data_labels,:data_ready,
-        :stop_training,:url_imgs,:url_labels,:starting_time,
-        :data_input_orig,:data_labels_orig,:loss,:accuracy,
-        :loss_std,:accuracy_std,:accuracy_std_in,:data_input_orig,
-        :data_labels_orig,:data_input,:data_labels,:data_predicted,
-        :data_error]
-    copy_struct!(data_saved,master,skip_fields)
+function save_settings_main(settings::Settings)
     open("config.json","w") do f
-      JSON.print(f,data_saved)
+      JSON.print(f,settings)
     end
 end
-save_data() = save_data_main(master)
+save_settings() = save_settings_main(settings)
 
-function load_data!(master)
-    dict = []
+function load_settings!(settings)
+    local dict
     if isfile("config.json")
       open("config.json", "r") do f
         dict = JSON.parse(f)
       end
     end
-    dict_to_struct!(master,dict,[""])
+    dict_to_struct!(settings,dict)
 end
 
 function reset(field)
@@ -250,7 +113,6 @@ end
 function resetproperty!(datatype,field)
     var = getproperty(datatype,field)
     if var isa Array
-
         var = similar(var,0)
     elseif var isa Number
         var = zero(typeof(var))
@@ -263,11 +125,6 @@ end
 function info(fields)
     @info get_data(fields)
 end
-
-function stop_all_main(master)
-    master.Training.stop_training = true
-end
-stop_all() = stop_all_main(master)
 
 function fix_QML_types(var)
     if var isa AbstractString
@@ -285,8 +142,8 @@ function fix_QML_types(var)
     end
 end
 
-function get_image_main(master::Master,model_data,fields,
-        img_size::QML.QListAllocated,inds...)
+function get_image_main(master_data::Master_data,model_data,fields,
+        img_size,inds...)
     image = get_data(fields,inds...)
     if !(image[1] isa Matrix || image[1] isa RGB || image[1] isa RGBA)
         if size(image,3)==1
@@ -303,13 +160,175 @@ function get_image_main(master::Master,model_data,fields,
         r = minimum(map(x-> img_size[x]/size(image,x),inds))
         image = imresize(image, ratio=r)
     end
-    master.image = image
+    master_data.image = image
     return [size(image)...]
 end
 get_image(fields,img_size,inds...) =
-    get_image_main(master,model_data,fields,img_size,inds...)
+    get_image_main(master_data,model_data,fields,img_size,inds...)
 
-function display_image_main(master::Master,d::JuliaDisplay)
-  display(d, master.image)
+function display_image_main(master_data::Master_data,d::JuliaDisplay)
+  display(d, master_data.image)
 end
-display_image(d) = display_image_main(master,d)
+display_image(d) = display_image_main(master_data,d)
+
+
+function get_progress_main(channels,field)
+    field = fix_QML_types(field)
+    if field=="Training data preparation"
+        channel_temp = channels.training_data_progress
+    elseif field=="Validation data preparation"
+        channel_temp = channels.validation_data_progress
+    elseif field=="Training"
+        channel_temp = channels.training_progress
+    elseif field=="Validation"
+        channel_temp = channels.validation_progress
+    end
+    if isready(channel_temp)
+        return take!(channel_temp)
+    else
+        return false
+    end
+end
+get_progress(field) = get_progress_main(channels,field)
+
+function check_progress_main(channels,field)
+    field = fix_QML_types(field)
+    if field=="Training data preparation"
+        channel_temp = channels.training_data_progress
+    elseif field=="Validation data preparation"
+        channel_temp = channels.validation_data_progress
+    elseif field=="Training"
+        channel_temp = channels.training_progress
+    elseif field=="Validation"
+        channel_temp = channels.validation_progress
+    end
+    if isready(channel_temp)
+        return fetch(channel_temp)
+    else
+        return false
+    end
+end
+check_progress(field) = check_progress_main(channels,field)
+
+function get_results_main(channels,master_data,model_data,field)
+    field = fix_QML_types(field)
+    if field=="Training data preparation"
+        if isready(channels.training_data_results)
+            data = take!(channels.training_data_results)
+            training_plot_data = master_data.Training_data.Training_plot_data
+            training_plot_data.data_input = data[1]
+            training_plot_data.data_labels = data[2]
+            return true
+        else
+            return false
+        end
+    elseif field=="Validation data preparation"
+        if isready(channels.validation_data_results)
+            data = take!(channels.validation_data_results)
+            validation_plot_data = master_data.Training_data.Validation_plot_data
+            validation_plot_data.data_input_orig = data[1]
+            validation_plot_data.data_labels_orig = data[2]
+            validation_plot_data.data_input = data[3]
+            validation_plot_data.data_labels = data[4]
+            return true
+        else
+            return false
+        end
+    elseif field=="Training"
+        if isready(channels.training_results)
+            data = take!(channels.training_results)
+            if data!=nothing
+                training_plot_data = master_data.Training_data.Training_plot_data
+                model_data.model = data[1]
+                training_plot_data.accuracy = data[2]
+                training_plot_data.loss = data[3]
+                training_plot_data.test_accuracy = data[4]
+                training_plot_data.test_loss = data[5]
+                training_plot_data.test_iteration = data[6]
+            end
+            return true
+        else
+            return false
+        end
+    elseif field=="Validation"
+        if isready(channels.validation_results)
+            data = take!(channels.validation_results)
+            validation_plot_data = master_data.Training_data.Validation_plot_data
+            validation_plot_data.data_predicted = data[1]
+            validation_plot_data.data_error = data[2]
+            validation_plot_data.accuracy = data[3]
+            validation_plot_data.loss = data[4]
+            validation_plot_data.accuracy_std = data[5]
+            validation_plot_data.loss_std = data[6]
+            return [data[3],data[4],mean(data[3]),mean(data[4]),data[5],data[6]]
+        else
+            return false
+        end
+    end
+end
+get_results(field) = get_results_main(channels,master_data,model_data,field)
+
+function empty_progress_channel_main(channels::Channels,field)
+    field = fix_QML_types(field)
+    if field=="Training data preparation"
+        channel_temp = channels.training_data_progress
+    elseif field=="Validation data preparation"
+        channel_temp = channels.validation_data_progress
+    elseif field=="Training data preparation modifiers"
+        channel_temp = channels.training_data_modifiers
+    elseif field=="Validation data preparation modifiers"
+        channel_temp = channels.validation_data_modifiers
+    elseif field=="Training"
+        channel_temp = channels.training_progress
+    elseif field=="Validation"
+        channel_temp = channels.validation_progress
+    elseif field=="Training modifiers"
+        channel_temp = channels.training_modifiers
+    elseif field=="Validation modifiers"
+        channel_temp = channels.validation_modifiers
+    end
+    while true
+        if isready(channel_temp)
+            take!(channel_temp)
+        else
+            return nothing
+        end
+    end
+end
+empty_progress_channel(field) = empty_progress_channel_main(channels,field)
+
+function empty_results_channel_main(channels::Channels,field)
+    field = fix_QML_types(field)
+    if field=="Training data preparation"
+        channel_temp = channels.training_data_results
+    elseif field=="Validation data preparation"
+        channel_temp = channels.validation_data_results
+    elseif field=="Training"
+        channel_temp = channels.training_results
+    elseif field=="Validation"
+        channel_temp = channels.validation_results
+    end
+    while true
+        if isready(channel_temp)
+            take!(channel_temp)
+        else
+            return nothing
+        end
+    end
+end
+empty_results_channel(field) = empty_results_channel_main(channels,field)
+
+function put_channel_main(channels::Channels,field,value)
+    field = fix_QML_types(field)
+    value = fix_QML_types(value)
+    if field=="Training data preparation"
+        put!(channels.training_data_modifiers,value)
+    elseif field=="Validation data preparation"
+        put!(channels.validation_data_modifiers,value)
+    elseif field=="Training"
+        put!(channels.training_modifiers,value)
+    elseif field=="Validation"
+        put!(channels.validation_modifiers,value)
+    end
+end
+put_channel(field,value) = put_channel_main(channels,field,value)

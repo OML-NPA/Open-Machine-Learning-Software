@@ -1,6 +1,13 @@
 
-function training_elapsed_time_main(training)
-    dif = (now() - DateTime(training.Training_plot.starting_time)).value
+function set_training_starting_time_main(training_plot_data::Training_plot_data)
+    training_plot_data.starting_time = now()
+    return nothing
+end
+set_training_starting_time() =
+    set_training_starting_time_main(training_plot_data)
+
+function training_elapsed_time_main(training_plot_data::Training_plot_data)
+    dif = (now() - training_plot_data.starting_time).value
     hours = string(Int64(round(dif/3600000)))
     minutes = floor(dif/60000)
     minutes = string(Int64(minutes - floor(minutes/60)*60))
@@ -14,22 +21,22 @@ function training_elapsed_time_main(training)
     end
     return string(hours,":",minutes,":",seconds)
 end
-training_elapsed_time() = training_elapsed_time_main(training)
+training_elapsed_time() = training_elapsed_time_main(training_plot_data)
 
-
-function get_train_test(training::Training;validation::Bool=false)
+function get_train_test(training_data::Training_data,training::Training;
+    validation::Bool=false)
     if validation
-        data_input = training.Validation_plot.data_input
+        data_input = training_data.Validation_plot_data.data_input
         data_labels = convert.(Array{Float32},
-            training.Validation_plot.data_labels)
+            training_data.Validation_plot_data.data_labels)
         data_input = map(x->x[:,:,:,:],data_input)
         data_labels = map(x->x[:,:,:,:],data_labels)
         set = (data_input,data_labels)
         return set
     else
-        data_input = training.Training_plot.data_input
+        data_input = training_data.Training_plot_data.data_input
         data_labels = convert.(Array{Float32},
-            training.Training_plot.data_labels)
+            training_data.Training_plot_data.data_labels)
         num = length(data_input)
         inds = randperm(num)
         data_input = data_input[inds]
@@ -68,12 +75,15 @@ end
 
 function accuracy_validation(predicted::Union{Array,CuArray},
       actual::Union{Array,CuArray})
-    dif = predicted.-actual
-    acc = 1-mean(mean.(map(x->abs.(x),dif)))
-    return acc, std(dif)
+     actual_bool = actual.>0
+     correct_bool = predicted.>0 .& actual_bool
+     acc = count(actual_bool)/count(correct_bool)
+    #dif = predicted - actual.>0
+    #acc = 1-mean(mean.(map(x->abs.(x),dif)))
+    return acc
 end
 
-function get_optimiser(training)
+function get_optimiser(training::Training)
     optimisers = [Descent,Momentum,Nesterov,RMSProp,ADAM,
         RADAM,AdaMax,ADAGrad,ADADelta,AMSGrad,NADAM,ADAMW]
     optimiser_ind = training.Options.Hyperparameters.optimiser[2]
@@ -91,18 +101,19 @@ function get_optimiser(training)
     return optimiser(parameters...)
 end
 
-function train!(model::Chain,args,loss,training::Training,
-    train_set::Tuple,test_set::Tuple,opt,use_GPU::Bool)
+function train!(model::Chain,args,testing_frequency::Int64,loss,
+    channels::Channels,train_set::Tuple,test_set::Tuple,opt,use_GPU::Bool)
     # Training loop
     epochs = args.epochs
     batch_size = args.batch_size
+    iteration = 0
+    accuracy_array = []
+    loss_array = []
+    test_accuracy = []
+    test_loss = []
+    test_iteration = []
+    max_iterations = 0
     for epoch_idx = 1:epochs
-        training.Training_plot.epoch = training.Training_plot.epoch + 1
-        if master.Training.stop_training
-            master.Training.stop_training = false
-            master.Training.task_done = true
-            return nothing
-        end
         # Make minibatches
         num_test = length(test_set[1])
         run_test = num_test!=0
@@ -112,25 +123,34 @@ function train!(model::Chain,args,loss,training::Training,
         else
             test_batches = []
         end
-        training.Training_plot.iterations_per_epoch = length(train_batches)
-        training.Training_plot.max_iterations =
-            epochs*training.Training_plot.iterations_per_epoch
-        training.training_started = true
         num = length(train_batches)
+        if epoch_idx==1
+            testing_frequency = num/testing_frequency
+            max_iterations = epochs*num
+            put!(channels.training_progress,[epochs,num,max_iterations])
+        end
         last_test = 0
         for i=1:num
             local temp_loss, predicted
-            if training.Training_plot.learning_rate_changed
-              opt.eta = training.Options.Hyperparameters.learning_rate
+            iteration+=1
+            if isready(channels.training_modifiers)
+                modifs = fix_QML_types(take!(channels.training_modifiers))
+                while isready(channels.training_modifiers)
+                    modifs = fix_QML_types(take!(channels.training_modifiers))
+                end
+                if modifs[1]=="stop"
+                    data = (accuracy_array,loss_array,
+                        test_accuracy,test_loss,test_iteration)
+                    return data
+                elseif modifs[1]=="learning rate"
+                    opt.eta = modifs[2]
+                elseif modifs[1]=="testing frequency"
+                    testing_frequency = modifs[2]
+                end
             end
             train_minibatch = train_batches[i]
             if use_GPU
                 train_minibatch = gpu.(train_minibatch)
-            end
-            if training.stop_training
-              training.stop_training = false
-              training.task_done = true
-              return nothing
             end
             input = train_minibatch[1]
             actual = train_minibatch[2]
@@ -143,20 +163,27 @@ function train!(model::Chain,args,loss,training::Training,
             end
             Flux.Optimise.update!(opt,ps,gs)
             if run_test
-              if ceil(i/training.Options.General.testing_frequency)>last_test
-                  test(model,loss,training,test_batches,length(test_batches),use_GPU)
-                  last_test = last_test + 1
+              if ceil(i/testing_frequency)>last_test || iteration==max_iterations
+                  data = test(model,loss,channels,test_batches,length(test_batches),use_GPU)
+                  last_test += 1
+                  data = [data...,iteration]
+                  put!(channels.training_progress,["Testing",data...])
+                  push!(test_accuracy,data[1])
+                  push!(test_loss,data[2])
+                  push!(test_iteration,iteration)
               end
             end
-            training.Training_plot.iteration = training.Training_plot.iteration + 1
-            push!(training.Training_plot.loss,cpu(temp_loss))
-            push!(training.Training_plot.accuracy,cpu(accuracy(predicted,actual)))
+            data = [cpu(accuracy(predicted,actual)),(cpu(temp_loss))]
+            put!(channels.training_progress,["Training",data...])
+            push!(accuracy_array,data[1])
+            push!(loss_array,data[2])
         end
     end
-    return nothing
+    data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
+    return data
 end
 
-function test(model::Chain,loss,training::Training,test_batches::Array,
+function test(model::Chain,loss,channels::Channels,test_batches::Array,
     num_test::Int64,use_GPU::Bool)
     test_accuracy = Vector{Float32}(undef,num_test)
     test_loss = Vector{Float32}(undef,num_test)
@@ -170,54 +197,27 @@ function test(model::Chain,loss,training::Training,test_batches::Array,
         test_accuracy[j] = cpu(accuracy(predicted,actual))
         test_loss[j] = cpu(loss(predicted,actual))
     end
-    push!(training.Training_plot.test_accuracy,mean(test_accuracy))
-    push!(training.Training_plot.test_loss,mean(test_loss))
+    data = [mean(test_accuracy),mean(test_loss)]
+    return data
 end
 
-function prepare_training_data_main(master)
-    task = @async process_images_labels()
-end
-prepare_training_data() = prepare_training_data_main(master)
-
-function prepare_validation_data_main(master,model_data)
-    images = load_images()
-    labels = load_labels()
-    training.Validation_plot.data_input_orig = images
-    training.Validation_plot.data_labels_orig = labels
-    features = model_data.features
-    if isempty(features)
-        @info "empty features"
-        return false
-    end
-    labels_color,labels_incl,border = get_feature_data(features)
-    training.Validation_plot.data_input =
-        map(x->image_to_float(x,gray=true),images)
-    training.Validation_plot.data_labels =
-        map(x->label_to_float(x,labels_color,labels_incl,border),labels)
-    training.data_ready = [1]
-    return nothing
-end
-prepare_validation_data() = @async prepare_validation_data_main(master,model_data)
-
-function reset_training_data(training::Training)
-    training.Training_plot.accuracy = []
-    training.Training_plot.loss = []
-    training.Training_plot.test_accuracy = []
-    training.Training_plot.test_loss = []
-    training.Training_plot.iteration = 0
-    training.Training_plot.epoch = 0
-    training.Training_plot.iterations_per_epoch = 0
-    training.Training_plot.starting_time = string(now())
+function reset_training_data(training_plot_data::Training_plot_data)
+    training_plot_data.accuracy = []
+    training_plot_data.loss = []
+    training_plot_data.test_accuracy = []
+    training_plot_data.test_loss = []
+    training_plot_data.iteration = 0
+    training_plot_data.epoch = 0
+    training_plot_data.iterations_per_epoch = 0
+    training_plot_data.starting_time = now()
     return nothing
 end
 
-function reset_validation_data(training::Training)
-    training.Validation_plot.accuracy = []
-    training.Validation_plot.loss = []
-    training.Validation_plot.loss_std = NaN
-    training.Validation_plot.accuracy_std = NaN
-    training.Validation_plot.accuracy_std_in = []
-    training.Validation_plot.progress = 0
+function reset_validation_data(validation_plot_data::Validation_plot_data)
+    validation_plot_data.accuracy = []
+    validation_plot_data.loss = []
+    validation_plot_data.loss_std = NaN
+    validation_plot_data.accuracy_std = NaN
     return nothing
 end
 
@@ -240,49 +240,61 @@ function move(model::Chain,target::Union{typeof(cpu),typeof(gpu)})
     return model_moved
 end
 
-function train_main(master::Master,model_data::Model_data)
-    training = master.Training
+function train_main(settings::Settings,training_data::Training_data,
+        model_data::Model_data,channels::Channels)
+    training = settings.Training
     model = model_data.model
     loss = model_data.loss
     args = training.Options.Hyperparameters
     learning_rate = args.learning_rate
     epochs = args.epochs
     # Preparing train and test sets
-    train_set, test_set = get_train_test(training)
-    # Data for precompiling
-    precomp_data = train_set[1][1][:,:,:,:]
+    train_set, test_set = get_train_test(training_data,training)
     # Load model onto GPU, if enabled
-    use_GPU = master.Options.Hardware_resources.allow_GPU && has_cuda()
+    use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     if use_GPU
         model = move(model,gpu)
         loss = gpu(loss)
-        precomp_data = gpu(precomp_data)
     end
-    reset_training_data(training)
-    # Precompile model
-    model(precomp_data)
+    reset_training_data(training_plot_data)
     # Use ADAM optimiser
     opt = get_optimiser(training)
-    train!(model,args,loss,training,train_set,
-        test_set,opt,use_GPU)
-    if use_GPU
-        model_data.model = move(model,cpu)
-        save_model(string("models/",training.name,".model"))
+    if isready(channels.training_modifiers)
+        if fetch(channels.training_modifiers)[1]=="stop"
+            take!(channels.training_modifiers)
+            return nothing
+        end
     end
+    testing_frequency = training.Options.General.testing_frequency
+    data = train!(model,args,testing_frequency,loss,channels,
+        train_set,test_set,opt,use_GPU)
+    if use_GPU
+        model = move(model,cpu)
+    end
+    model_data.model = model
+    save_model_main(model_data,string("models/",training.name,".model"))
+    put!(channels.training_data_results,(model,data...))
+    return nothing
 end
-train() = @async train_main(master,model_data)
+function train_main2(settings::Settings,training_data::Training_data,
+        model_data::Model_data,channels::Channels)
+    @everywhere settings,training_data,model_data
+    remote_do(train_main,workers()[end],settings,training_data,model_data,channels)
+end
+train() = train_main2(settings,training_data,model_data,channels)
 
 function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}},
-        set::Tuple{Array{<:Array{<:AbstractFloat,4},1},Array{<:Array{<:AbstractFloat,4},1}})
+        set::Tuple{Array{<:Array{<:AbstractFloat,4},1},Array{<:Array{<:AbstractFloat,4},1}},
+        model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     perm_labels_color = map(x -> permutedims(x[:,:,:]/255,[3,2,1]),labels_color)
-    data_array = apply_border_data.(predicted_array)
+    data_array = map(x->apply_border_data_main(x,model_data),predicted_array)
     predicted_color = []
     predicted_error = []
     for i = 1:length(predicted_array)
         predicted_color_temp = []
         predicted_error_temp = []
-        for j = 1:num_features()
+        for j = 1:length(model_data.features)
             temp_bool = data_array[i][:,:,j].>0.5
             truth = set[2][i][:,:,j].>0
             correct = temp_bool .& truth
@@ -307,59 +319,71 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
         push!(predicted_color,predicted_color_temp)
         push!(predicted_error,predicted_error_temp)
     end
-    validation_plot.data_predicted = predicted_color
-    validation_plot.data_error = predicted_error
-    return nothing
+    return predicted_color,predicted_error
 end
 
-function validate_main(master::Master,model_data::Model_data)
-    training = master.Training
-    validation_plot = training.Validation_plot
+function validate_main(settings::Settings,training_data::Training_data,
+        model_data::Model_data,channels::Channels)
+    training = settings.Training
+    validation_plot = training_data.Validation_plot_data
     model = model_data.model
     loss_function = model_data.loss
-    args = training.Options.Hyperparameters
-    batch_size = args.batch_size
-    learning_rate = args.learning_rate
-    reset_validation_data(training)
+    reset_validation_data(validation_plot_data)
     # Preparing set
-    set = get_train_test(training,validation=true)
-    # Data for precompiling
-    precomp_data = set[1][1][:,:,:,:]
+    set = get_train_test(training_data,training,validation=true)
     # Load model onto GPU, if enabled
-    use_GPU = master.Options.Hardware_resources.allow_GPU && has_cuda()
+    use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     if use_GPU
         model = move(model,gpu)
         loss = gpu(loss_function)
-        precomp_data = gpu(precomp_data)
     end
-    # Precompile model
-    model(precomp_data)
     # Validate
     num = length(set[1])
     accuracy_array = Vector{Float32}(undef,num)
     predicted_array = Vector{Array{Float32}}(undef,num)
     loss_array = Vector{Float32}(undef,num)
-    accuracy_std_in = Vector{Float32}(undef,num)
-    training.validation_started = true
+    put!(channels.validation_progress,[num])
     for i = 1:num
+        if isready(channels.validation_modifiers)
+            if fetch(channels.validation_modifiers)[1]=="stop"
+                take!(channels.validation_modifiers)
+                break
+            end
+        end
+        @info CUDA.memory_status()
         data = (set[1][i],set[2][i])
         if use_GPU
             data = gpu.(data)
         end
         predicted = model(data[1])
         actual = data[2]
-        accuracy_array[i], accuracy_std_in[i] =
-            cpu(accuracy_validation(predicted,actual))
+        accuracy_array[i] = cpu(accuracy_validation(predicted,actual))
         loss_array[i] = cpu(loss(predicted,actual))
         predicted_array[i] = cpu(predicted)
-        validation_plot.progress = i/num
+        temp_accuracy = accuracy_array[1:i]
+        temp_loss = loss_array[1:i]
+        mean_accuracy = mean(temp_accuracy)
+        mean_loss = mean(temp_loss)
+        accuracy_std = std(temp_accuracy)
+        loss_std = std(temp_loss)
+        data = [mean_accuracy,mean_loss,accuracy_std,loss_std]
+        put!(channels.validation_progress,data)
+        @info CUDA.memory_status()
+        CUDA.unsafe_free!(predicted)
+        CUDA.unsafe_free!(actual)
+        CUDA.unsafe_free!(data)
+        @info CUDA.memory_status()
     end
-    validation_plot.accuracy = loss_array
-    validation_plot.loss = accuracy_array
-    validation_plot.loss_std = std(loss_array)
-    validation_plot.accuracy_std = std(accuracy_array)
-    validation_plot.accuracy_std_in = accuracy_std_in
-    output_and_error_images(predicted_array,set)
-    validation_plot.validation_done = true
+    data_predicted,data_error = output_and_error_images(predicted_array,set,
+        model_data)
+    data = (data_predicted,data_error,accuracy_array,loss_array,
+        std(accuracy_array),std(loss_array))
+    put!(channels.validation_results,data)
 end
-validate() = @async validate_main(master,model_data)
+function validate_main2(settings::Settings,training_data::Training_data,
+        model_data::Model_data,channels::Channels)
+    @everywhere settings,training_data,model_data
+    remote_do(validate_main,workers()[end],settings,training_data,model_data,channels)
+end
+validate() = remote_do(validate_main,workers()[end],settings,training_data,
+model_data,channels)

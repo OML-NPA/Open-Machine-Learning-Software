@@ -35,7 +35,7 @@ ApplicationWindow {
 
     onClosing: {
         trainingoptionsLoader.sourceComponent = null
-        Julia.save_data()}
+        Julia.save_settings()}
 
 
     GridLayout {
@@ -131,12 +131,12 @@ ApplicationWindow {
                                 CheckBox {
                                     padding: 0
                                     width: height
-                                    checkState : Julia.get_data(
+                                    checkState : Julia.get_settings(
                                                ["Training","Options","Processing","mirroring"]) ?
                                                Qt.Checked : Qt.Unchecked
                                     onClicked: {
                                         var value = checkState==Qt.Checked ? true : false
-                                        Julia.set_data(
+                                        Julia.set_settings(
                                             ["Training","Options","Processing","mirroring"],
                                             value)
                                     }
@@ -151,11 +151,11 @@ ApplicationWindow {
                                 SpinBox {
                                     id: numanglesSpinBox
                                     from: 1
-                                    value: Julia.get_data(
+                                    value: Julia.get_settings(
                                                ["Training","Options","Processing","num_angles"])
                                     to: 10
                                     onValueModified: {
-                                        Julia.set_data(
+                                        Julia.set_settings(
                                             ["Training","Options","Processing","num_angles"],
                                             value)
                                     }
@@ -170,7 +170,7 @@ ApplicationWindow {
                                 SpinBox {
                                     id: minfrpixSpinBox
                                     from: 0
-                                    value: 100*Julia.get_data(
+                                    value: 100*Julia.get_settings(
                                                ["Training","Options","Processing","min_fr_pix"])
                                     to: 100
                                     stepSize: 10
@@ -179,7 +179,7 @@ ApplicationWindow {
                                         return Number(value/100).toLocaleString(locale,'f',1)
                                     }
                                     onValueModified: {
-                                        Julia.set_data(
+                                        Julia.set_settings(
                                             ["Training","Options","Processing","min_fr_pix"],
                                             value/100)
                                     }
@@ -210,7 +210,7 @@ ApplicationWindow {
                                     id: optimisersModel
                                 }
                                 onActivated: {
-                                    Julia.set_data(
+                                    Julia.set_settings(
                                         ["Training","Options","Hyperparameters","optimiser"],
                                         [currentText,currentIndex+1])
                                     change_params()
@@ -222,16 +222,16 @@ ApplicationWindow {
                                      for (var i=0;i<optimisers.length;i++) {
                                          optimisersModel.append({"name": optimisers[i]})
                                      }
-                                     var name_ind = Julia.get_data(
+                                     var name_ind = Julia.get_settings(
                                          ["Training","Options","Hyperparameters","optimiser"])
                                      currentIndex = name_ind[1]-1
                                      change_params()
                                 }
                                 function change_params() {
-                                    var values = Julia.get_data(
+                                    var values = Julia.get_settings(
                                         ["Training","Options","Hyperparameters","optimiser_params"])
                                     values = values[currentIndex]
-                                    var names = Julia.get_data(
+                                    var names = Julia.get_settings(
                                         ["Training","Options","Hyperparameters","optimiser_params_names"])
                                     names = names[currentIndex]
                                     param1TextField.visible = false
@@ -275,7 +275,7 @@ ApplicationWindow {
                                 visible: false
                                 validator: RegExpValidator { regExp: /(0.\d{1,3}|0)/ }
                                 onEditingFinished: {
-                                    Julia.set_data(
+                                    Julia.set_settings(
                                         ["Training","Options","Hyperparameters","optimiser_params"],
                                         optimisersComboBox.currentIndex+1,1,parseFloat(text))
                                 }
@@ -295,7 +295,7 @@ ApplicationWindow {
                                 visible: false
                                 validator: RegExpValidator { regExp: /(0.\d{1,3}|0)/ }
                                 onEditingFinished: {
-                                    Julia.set_data(
+                                    Julia.set_settings(
                                         ["Training","Options","Hyperparameters","optimiser_params"],
                                         optimisersComboBox.currentIndex+1,2,parseFloat(text))
                                 }
@@ -315,7 +315,7 @@ ApplicationWindow {
                                 visible: false
                                 validator: RegExpValidator { regExp: /(0.\d{1,3}|0)/ }
                                 onEditingFinished: {
-                                    Julia.set_data(
+                                    Julia.set_settings(
                                         ["Training","Options","Hyperparameters","optimiser_params"],
                                         optimisersComboBox.currentIndex+1,3,parseFloat(text))
                                 }
@@ -330,13 +330,13 @@ ApplicationWindow {
                             }
                             SpinBox {
                                 from: 1
-                                value: Julia.get_data(
+                                value: Julia.get_settings(
                                            ["Training","Options","Hyperparameters","batch_size"])
                                 to: 10000
                                 stepSize: 1
                                 editable: true
                                 onValueModified: {
-                                    Julia.set_data(
+                                    Julia.set_settings(
                                         ["Training","Options","Hyperparameters","batch_size"],
                                         value)
                                 }
@@ -351,13 +351,13 @@ ApplicationWindow {
                             }
                             SpinBox {
                                 from: 1
-                                value: Julia.get_data(
+                                value: Julia.get_settings(
                                            ["Training","Options","Hyperparameters","epochs"])
                                 to: 100000
                                 stepSize: 1
                                 editable: true
                                 onValueModified: {
-                                    Julia.set_data(
+                                    Julia.set_settings(
                                         ["Training","Options","Hyperparameters","epochs"],
                                         value)
                                 }
@@ -372,7 +372,7 @@ ApplicationWindow {
                             }
                             SpinBox {
                                 from: 1
-                                value: 100000*Julia.get_data(
+                                value: 100000*Julia.get_settings(
                                            ["Training","Options","Hyperparameters","learning_rate"])
                                 to: 1000
                                 stepSize: value>100 ? 100 :
@@ -384,7 +384,7 @@ ApplicationWindow {
                                 }
                                 onValueModified: {
 
-                                    Julia.set_data(
+                                    Julia.set_settings(
                                         ["Training","Options","Hyperparameters","learning_rate"],
                                         value/100000)
                                 }
@@ -406,7 +406,7 @@ ApplicationWindow {
                             }
                             SpinBox {
                                 from: 0
-                                value: 10*Julia.get_data(
+                                value: 10*Julia.get_settings(
                                            ["Training","Options","General","test_data_fraction"])
                                 to: 9
                                 stepSize: 1
@@ -416,7 +416,7 @@ ApplicationWindow {
                                     return Number(value/10).toLocaleString(locale,'f',1)
                                 }
                                 onValueModified: {
-                                    Julia.set_data(
+                                    Julia.set_settings(
                                         ["Training","Options","General","test_data_fraction"],
                                         value/10)
                                 }
@@ -432,13 +432,13 @@ ApplicationWindow {
                             }
                             SpinBox {
                                 from: 0
-                                value: Julia.get_data(
+                                value: Julia.get_settings(
                                            ["Training","Options","General","testing_frequency"])
                                 to: 10000
                                 stepSize: 1
                                 editable: true
                                 onValueModified: {
-                                    Julia.set_data(
+                                    Julia.set_settings(
                                         ["Training","Options","General","testing_frequency"],value)
                                 }
                             }

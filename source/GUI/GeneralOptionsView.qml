@@ -81,7 +81,7 @@ Component {
                         visible: Julia.has_cuda()
                         padding: 0
                         width: height-18*pix
-                        checkState: Julia.get_data(
+                        checkState: Julia.get_settings(
                                    ["Options","Hardware_resources","allow_GPU"]) ?
                                    Qt.Checked : Qt.Unchecked
                         onClicked: {
@@ -114,7 +114,7 @@ Component {
                                 parseInt(currentText,10))
                         }
                         Component.onCompleted: {
-                            var val = Julia.get_data(
+                            var val = Julia.get_settings(
                                 ["Options","Hardware_resources","num_cores"])
                             var num_cores = Julia.num_cores()
                             for (var i=0;i<num_cores;i++) {

@@ -31,53 +31,64 @@ ApplicationWindow {
         starttrainingButton.text = "Train"
         progressbar.value = 0}
 
-    Item {
-        Timer {
-            property int last_iter: 0
-            property int last_test_iter: 0
-            property int last_epoch: 0
-            interval: 100
-            running: true
-            repeat: true
-            onTriggered: {
-                Julia.yield()
-                var loss = Julia.get_data(["Training","Training_plot","loss"])
-                var accuracy = Julia.get_data(["Training","Training_plot","accuracy"])
-                var test_loss = Julia.get_data(["Training","Training_plot","test_loss"])
-                var test_accuracy = Julia.get_data(["Training","Training_plot","test_accuracy"])
-                var iter = loss.length
-                var test_iter = test_loss.length
-                if (iter>last_iter) {
-                    for (var i=last_iter;i<iter;i++) {
-                        accuracyLine.append(i+1,100*accuracy[i])
-                        lossLine.append(i+1,loss[i])
-                        if (test_iter>last_test_iter) {
-                            accuracytestLine.append(i+1,100*test_accuracy[test_iter-1])
-                            losstestLine.append(i+1,test_loss[test_iter-1])
-                            last_test_iter = test_iter
-                        }
-                        if (loss[i]>lossLine.axisY.max) {
-                            lossLine.axisY.max = loss[i]
-                        }
-                        accuracyAxisX.max = iter + 1
-                        accuracyAxisX.tickInterval = Math.round(iter/10)+1
-                        lossAxisX.max = iter + 1
-                        lossAxisX.tickInterval = Math.round(iter/10)+1
-                        last_iter = iter
+    Timer {
+        property int iteration: 0
+        property int epochs: 0
+        property int epoch: 0
+        property int iterations_per_epoch: 0
+        property int max_iterations: 0
+        interval: 200
+        running: true
+        repeat: true
+        onTriggered: {
+            while (true) {
+                var data = Julia.get_progress("Training")
+                if (data===false) {break}
+                if (epoch===0) {
+                    Julia.set_training_starting_time()
+                    epoch = 1
+                    epochs = data[0]
+                    iterations_per_epoch = data[1]
+                    max_iterations = data[2]
+                    epochLabel.text = 1
+                    epochsLabel.text = epochs
+                    iterationsperepochLabel.text = iterations_per_epoch
+                    currentiterationLabel.text = 1
+                    maxiterationsLabel.text = max_iterations
+                }
+                else if (data[0]==="Training") {
+                    var accuracy = data[1]
+                    var loss = data[2]
+                    iteration += 1
+                    accuracyLine.append(iteration,100*accuracy)
+                    lossLine.append(iteration,loss)
+                    if (loss>lossLine.axisY.max) {
+                        lossLine.axisY.max = loss
                     }
-                    var max_iterations = Julia.get_data(["Training","Training_plot","max_iterations"])
-                    trainingProgressbar.value = iter/max_iterations
-                    alliterationsLabel.text = max_iterations
-                    currentiterationLabel.text = Julia.get_data(["Training","Training_plot","iteration"])
-                    epoch.text = Julia.get_data(["Training","Training_plot","epoch"])
-                    iterationsperepoch.text =
-                            Julia.get_data(["Training","Training_plot","iterations_per_epoch"])
+                    accuracyAxisX.max = iteration+1
+                    accuracyAxisX.tickInterval = Math.round(iteration/10)+1
+                    lossAxisX.max = iteration + 1
+                    lossAxisX.tickInterval = Math.round(iteration/10)+1
+                    currentiterationLabel.text = iteration
+                    trainingProgressBar.value = iteration/max_iterations
                 }
-                if (iter===Julia.get_data(["Training","Training_plot","max_iterations"])) {
+                else if (data[0]==="Testing") {
+                    var test_accuracy = data[1]
+                    var test_loss = data[2]
+                    var test_iteration = data[3]
+                    accuracytestLine.append(test_iteration,100*test_accuracy)
+                    losstestLine.append(test_iteration,test_loss)
+                }
+                if (iteration===max_iterations && max_iterations!==0) {
                     running = false
+                    Julia.get_results("Training")
                 }
-                elapsedtime.text = Julia.training_elapsed_time()
+                if ((iteration/iterations_per_epoch)>epoch && max_iterations!==0) {
+                    epoch += 1
+                    epochLabel.text = epoch
+                }
             }
+            elapsedtimelabel.text = Julia.training_elapsed_time()
         }
     }
     GridLayout {
@@ -239,13 +250,13 @@ ApplicationWindow {
                                 text: "  of  "
                             }
                             Label {
-                                id: alliterationsLabel
+                                id: maxiterationsLabel
                                 text: ""
                             }
                         }
                         RowLayout {
                             ProgressBar {
-                                id: trainingProgressbar
+                                id: trainingProgressBar
                                 Layout.preferredWidth: 1.34*buttonWidth
                                 Layout.preferredHeight: buttonHeight
                                 Layout.alignment: Qt.AlignVCenter
@@ -255,7 +266,7 @@ ApplicationWindow {
                                 Layout.preferredWidth: buttonHeight
                                 Layout.preferredHeight: buttonHeight
                                 Layout.leftMargin: 0.3*margin
-                                onClicked: Julia.set_data(["Training","stop_training"],true)
+                                onClicked: {Julia.put_channel("Training",["stop"])}
                             }
                         }
                         Column {
@@ -269,10 +280,10 @@ ApplicationWindow {
                                 spacing: 0.3*margin
                                 Label {
                                     text: "Start time:"
-                                    width: iterationsperepochLabel.width
+                                    width: iterationsperepochtextLabel.width
                                 }
                                 Label {
-                                    id: starttime
+                                    id: starttimeLabel
                                     text: Julia.time()
                                 }
                             }
@@ -280,10 +291,10 @@ ApplicationWindow {
                                 spacing: 0.3*margin
                                 Label {
                                     text: "Elapsed time:"
-                                    width: iterationsperepochLabel.width
+                                    width: iterationsperepochtextLabel.width
                                 }
                                 Label {
-                                    id: elapsedtime
+                                    id: elapsedtimelabel
                                     Layout.topMargin: 0.2*margin
                                     text: ""
                                 }
@@ -297,21 +308,32 @@ ApplicationWindow {
                                 spacing: 0.3*margin
                                 Label {
                                     text: "Epoch:"
-                                    width: iterationsperepochLabel.width
+                                    width: iterationsperepochtextLabel.width
                                 }
                                 Label {
-                                    id: epoch
+                                    id: epochLabel
                                     text: ""
                                 }
                             }
                             Row {
                                 spacing: 0.3*margin
                                 Label {
-                                    id: iterationsperepochLabel
+                                    text: "Epochs:"
+                                    width: iterationsperepochtextLabel.width
+                                }
+                                Label {
+                                    id: epochsLabel
+                                    text: ""
+                                }
+                            }
+                            Row {
+                                spacing: 0.3*margin
+                                Label {
+                                    id: iterationsperepochtextLabel
                                     text: "Iterations per epoch:"
                                 }
                                 Label {
-                                    id: iterationsperepoch
+                                    id: iterationsperepochLabel
                                     Layout.topMargin: 0.2*margin
                                     text: ""
                                 }
@@ -325,12 +347,12 @@ ApplicationWindow {
                                 spacing: 0.3*margin
                                 Label {
                                     text: "Hardware resource:"
-                                    width: iterationsperepochLabel.width
+                                    width: iterationsperepochtextLabel.width
                                 }
                                 Label {
-                                    id:hardwareresource
+                                    id: hardwareresource
                                     Layout.topMargin: 0.2*margin
-                                    text: Julia.get_data(["Options",
+                                    text: Julia.get_settings(["Options",
                                         "Hardware_resources","allow_GPU"]) ? "GPU" : "CPU"
                                 }
                             }
@@ -343,11 +365,11 @@ ApplicationWindow {
                                 spacing: 0.3*margin
                                 Label {
                                     text: "Learning rate:"
-                                    width: iterationsperepochLabel.width
+                                    width: iterationsperepochtextLabel.width
                                 }
                                 SpinBox {
                                     from: 1
-                                    value: 100000*Julia.get_data(
+                                    value: 100000*Julia.get_settings(
                                                ["Training","Options","Hyperparameters","learning_rate"])
                                     to: 1000
                                     stepSize: value>100 ? 100 :
@@ -358,33 +380,28 @@ ApplicationWindow {
                                         return Number(value/100000).toLocaleString(locale,'e',0)
                                     }
                                     onValueModified: {
-                                        Julia.set_data(
-                                            ["Training","Options","Hyperparameters","learning_rate"],
-                                            value/100000)
-                                        Julia.set_data(
-                                            ["Training","Training_plot","learning_rate_changed"],true)
+                                        Julia.put_channel("Training",["learning rate",value/100000])
                                     }
                                 }
                             }
                             Row {
-                                visible: Julia.get_data(
+                                visible: Julia.get_settings(
                                     ["Training","Options","General","test_data_fraction"])!==0
                                 spacing: 0.3*margin
                                 Label {
                                     id: testingfrLabel
                                     text: "Testing frequency:"
-                                    width: iterationsperepochLabel.width
+                                    width: iterationsperepochtextLabel.width
                                 }
                                 SpinBox {
                                     from: 0
-                                    value: Julia.get_data(
+                                    value: Julia.get_settings(
                                                ["Training","Options","General","testing_frequency"])
                                     to: 10000
                                     stepSize: 1
                                     editable: true
                                     onValueModified: {
-                                        Julia.set_data(
-                                            ["Training","Options","General","testing_frequency"],value)
+                                        Julia.put_channel("Training",["testing frequency",value])
                                     }
                                 }
                             }
