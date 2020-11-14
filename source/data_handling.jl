@@ -144,16 +144,7 @@ end
 
 function get_image_main(master_data::Master_data,model_data,fields,
         img_size,inds...)
-    image = get_data(fields,inds...)
-    if !(image[1] isa Matrix || image[1] isa RGB || image[1] isa RGBA)
-        if size(image,3)==1
-            image = colorview(Gray,image)
-        elseif size(image,3)==3
-            image = colorview(RGB,image)
-        else
-            image = colorview(RGBA,image)
-        end
-    end
+    image = collect(get_data(fields,inds...))
     img_size = fix_QML_types(img_size)
     inds = findall(img_size.!=0)
     if !isempty(inds)
@@ -256,11 +247,12 @@ function get_results_main(channels,master_data,model_data,field)
             validation_plot_data = master_data.Training_data.Validation_plot_data
             validation_plot_data.data_predicted = data[1]
             validation_plot_data.data_error = data[2]
-            validation_plot_data.accuracy = data[3]
-            validation_plot_data.loss = data[4]
-            validation_plot_data.accuracy_std = data[5]
-            validation_plot_data.loss_std = data[6]
-            return [data[3],data[4],mean(data[3]),mean(data[4]),data[5],data[6]]
+            validation_plot_data.data_target = data[3]
+            validation_plot_data.accuracy = data[4]
+            validation_plot_data.loss = data[5]
+            validation_plot_data.accuracy_std = data[6]
+            validation_plot_data.loss_std = data[7]
+            return [data[4],data[5],mean(data[4]),mean(data[5]),data[6],data[7]]
         else
             return false
         end

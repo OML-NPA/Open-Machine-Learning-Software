@@ -61,6 +61,7 @@ training_plot_data = Training_plot_data()
     data_labels::Array{Array} = []
     data_predicted::Array{Array} = []
     data_error::Array{Array} = []
+    data_target::Array{Array} = []
 end
 validation_plot_data = Validation_plot_data()
 
@@ -125,7 +126,8 @@ end
 hyperparameters_training = Hyperparameters_training()
 
 @with_kw mutable struct General_training
-    test_data_fraction::Float64 = 0.2
+    weight_accuracy::Bool = true
+    test_data_fraction::Float64 = 0
     testing_frequency::Int64 = 5
 end
 general_training = General_training()

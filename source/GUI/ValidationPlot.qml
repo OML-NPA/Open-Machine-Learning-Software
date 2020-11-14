@@ -57,7 +57,6 @@ ApplicationWindow {
         property double loss_std
         onTriggered: {
             var data = Julia.get_progress("Validation")
-            //console.log(iteration,max_iterations)
             if (max_iterations===0) {
                 if (data===false) {return}
                 max_iterations = data[0]
@@ -242,14 +241,19 @@ ApplicationWindow {
                             id: typeModel
                             ListElement {name: "Result"}
                             ListElement {name: "Error"}
+                            ListElement {name: "Target"}
                         }
                         onActivated: {
                             if (typeComboBox.currentIndex==0) {
                                 type = "data_predicted"
                             }
-                            else {
+                            else if  (typeComboBox.currentIndex==1) {
                                 type = "data_error"
                             }
+                            else {
+                                type = "data_target"
+                            }
+
                             get_image(resultDisplay,type,
                                 [sampleSpinBox.value,featureComboBox.currentIndex+1])
                         }

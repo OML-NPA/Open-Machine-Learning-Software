@@ -32,18 +32,19 @@ ApplicationWindow {
         progressbar.value = 0}
 
     Timer {
+        id: validationplotTimer
         property int iteration: 0
         property int epochs: 0
         property int epoch: 0
         property int iterations_per_epoch: 0
         property int max_iterations: 0
-        interval: 200
+        interval: 100
         running: true
         repeat: true
         onTriggered: {
             while (true) {
                 var data = Julia.get_progress("Training")
-                if (data===false) {break}
+                if (data===false) {return}
                 if (epoch===0) {
                     Julia.set_training_starting_time()
                     epoch = 1
@@ -69,8 +70,6 @@ ApplicationWindow {
                     accuracyAxisX.tickInterval = Math.round(iteration/10)+1
                     lossAxisX.max = iteration + 1
                     lossAxisX.tickInterval = Math.round(iteration/10)+1
-                    currentiterationLabel.text = iteration
-                    trainingProgressBar.value = iteration/max_iterations
                 }
                 else if (data[0]==="Testing") {
                     var test_accuracy = data[1]
@@ -87,8 +86,10 @@ ApplicationWindow {
                     epoch += 1
                     epochLabel.text = epoch
                 }
+                currentiterationLabel.text = iteration
+                trainingProgressBar.value = iteration/max_iterations
+                elapsedtimelabel.text = Julia.training_elapsed_time()
             }
-            elapsedtimelabel.text = Julia.training_elapsed_time()
         }
     }
     GridLayout {
@@ -318,17 +319,6 @@ ApplicationWindow {
                             Row {
                                 spacing: 0.3*margin
                                 Label {
-                                    text: "Epochs:"
-                                    width: iterationsperepochtextLabel.width
-                                }
-                                Label {
-                                    id: epochsLabel
-                                    text: ""
-                                }
-                            }
-                            Row {
-                                spacing: 0.3*margin
-                                Label {
                                     id: iterationsperepochtextLabel
                                     text: "Iterations per epoch:"
                                 }
@@ -360,6 +350,29 @@ ApplicationWindow {
                                 topPadding: 0.5*margin
                                 text: "Controls:"
                                 font.bold: true
+                            }
+                            Row {
+                                spacing: 0.3*margin
+                                Label {
+                                    text: "Number of epochs:"
+                                    width: iterationsperepochtextLabel.width
+                                }
+                                SpinBox {
+                                    from: validationplotTimer.epoch
+                                    value: Julia.get_settings(
+                                               ["Training","Options","Hyperparameters","epochs"])
+                                    to: 10000
+                                    stepSize: 1
+                                    editable: false
+                                    onValueModified: {
+                                        Julia.put_channel("Training",["epochs",value])
+                                        validationplotTimer.epochs = value
+                                        epochsLabel.text = value
+                                        validationplotTimer.max_iterations =
+                                                value*validationplotTimer.iterations_per_epoch
+                                        maxiterationsLabel.text = validationplotTimer.max_iterations
+                                    }
+                                }
                             }
                             Row {
                                 spacing: 0.3*margin

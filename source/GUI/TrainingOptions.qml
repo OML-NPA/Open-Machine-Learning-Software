@@ -55,9 +55,9 @@ ApplicationWindow {
                     Repeater {
                         id: menubuttonRepeater
                         Component.onCompleted: {menubuttonRepeater.itemAt(0).buttonfocus = true}
-                        model: [{"name": "Processing", "stackview": processingView},
-                            {"name": "Hyperparameters", "stackview": hyperparametersView},
-                            {"name": "General", "stackview": generalView}]
+                        model: [{"name": "General", "stackview": generalView},
+                            {"name": "Processing", "stackview": processingView},
+                            {"name": "Hyperparameters", "stackview": hyperparametersView},]
                         delegate : MenuButton {
                             id: general
                             width: 1.3*buttonWidth
@@ -396,6 +396,26 @@ ApplicationWindow {
                     id: generalView
                     Column {
                         spacing: 0.4*margin
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                text: "Weight accuracy:"
+                                width: testingfrLabel.width
+                            }
+                            CheckBox {
+                                padding: 0
+                                width: height
+                                checkState : Julia.get_settings(
+                                           ["Training","Options","General","weight_accuracy"]) ?
+                                           Qt.Checked : Qt.Unchecked
+                                onClicked: {
+                                    var value = checkState==Qt.Checked ? true : false
+                                    Julia.set_settings(
+                                        ["Training","Options","General","weight_accuracy"],
+                                        value)
+                                }
+                            }
+                        }
                         Row {
                             spacing: 0.3*margin
                             Label {
