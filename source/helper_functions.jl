@@ -91,6 +91,37 @@ function areaopen(im::BitArray,area::Real)
     return im
 end
 
+function remove_spurs!(img)
+    spurs = imfilter(Float32.(img),centered(ones(Float32,3,3)))
+    spurs = (spurs.<2) .& (img.!=0)
+    inds = findall(spurs)
+    for i=1:length(inds)
+        ind = inds[i]
+        while true
+            img[ind] = false
+            ind_tuple = Tuple(ind)
+            neighbors = img[ind_tuple[1]-1:ind_tuple[1]+1,
+                            ind_tuple[2]-1:ind_tuple[2]+1]
+            inds_temp = findall(neighbors)
+            if length(inds_temp)==0 || length(inds_temp)>1
+                break
+            else
+                inds_temp = Tuple(inds_temp[1]) .-2
+                ind = CartesianIndex(ind_tuple .+ inds_temp)
+            end
+        end
+    end
+end
+
+function component_intensity(components,image)
+    num = maximum(components)
+    intensities = Array{typeof(image[1])}(undef,num)
+    for i = 1:num
+        intensities[i] = mean(image[components.==i])
+    end
+    return intensities
+end
+
 function erode(array::BitArray,num::Int64)
     array2 = copy(array)
     for i=1:num

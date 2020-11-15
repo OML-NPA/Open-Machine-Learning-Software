@@ -220,6 +220,13 @@ ApplicationWindow {
                                 featureselectModel.append(
                                     {"name": featureModel.get(i).name})
                             }
+                            var num = featureselectModel.count
+                            for (i=0;i<num;i++) {
+                                if (featureModel.get(i).border) {
+                                    featureselectModel.append(
+                                        {"name": featureModel.get(i).name+" (border)"})
+                                }
+                            }
                             currentIndex = 0
                         }
                     }

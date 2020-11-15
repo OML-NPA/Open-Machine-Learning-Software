@@ -52,7 +52,6 @@ ApplicationWindow {
                     iterations_per_epoch = data[1]
                     max_iterations = data[2]
                     epochLabel.text = 1
-                    epochsLabel.text = epochs
                     iterationsperepochLabel.text = iterations_per_epoch
                     currentiterationLabel.text = 1
                     maxiterationsLabel.text = max_iterations

@@ -297,20 +297,31 @@ prepare_training_data() = prepare_training_data_main2(training,training_data,
 function apply_border_data_main(data_in::Array{<:AbstractFloat},model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     inds_border = findall(border)
+    num_border = length(inds_border)
     num_feat = length(model_data.features)
-    data = copy(data_in[:,:,1:num_feat])
-    for i = 1:length(inds_border)
+    data = zeros(typeof(data_in[1]),size(data_in)[1:2]...,num_border)
+    for i = 1:num_border
         ind_border = inds_border[i]
         ind = num_feat + ind_border
-        data_feat = data_in[:,:,ind]
-        skel = thinning(data_feat.>0.5)
-        data_feat[skel] .= 0
-        data[:,:,ind_border] = data_feat
+        data_feat = data_in[:,:,ind_border]
+        data_border = data_in[:,:,ind]
+        data_border = imfilter(data_border, Kernel.gaussian(1.5))
+        skel = thinning(data_border.>0.5)
+        remove_spurs!(skel)
+        kernel = [false true false
+                  true true true
+                  false true false]
+        components = label_components((!).(skel),kernel)
+        intensities = component_intensity(components,data_feat)
+        bad_components = findall(intensities.<0.7)
+        for i = 1:length(bad_components)
+            components[components.==i] .= 0
+        end
+        data[:,:,ind_border] = Float32.(components.>0)
     end
     return data
 end
 apply_border_data(data_in) = apply_border_data_main(data_in,model_data)
-
 
 function get_labels_colors_main(training_data::Training_data)
     url_labels = training_data.url_labels

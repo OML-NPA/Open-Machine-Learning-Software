@@ -199,6 +199,7 @@ function train!(model::Chain,args,testing_frequency::Int64,loss,
             push!(loss_array,data[2])
             GC.safepoint()
         end
+        GC.gc()
     end
     data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
     return data
@@ -308,8 +309,10 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
         set::Tuple{Array{<:Array{<:AbstractFloat,4},1},Array{<:Array{<:AbstractFloat,4},1}},
         model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
+    labels_color = vcat(labels_color,labels_color[findall(border)])
     perm_labels_color = map(x -> permutedims(x[:,:,:]/255,[3,2,1]),labels_color)
-    data_array = map(x->apply_border_data_main(x,model_data),predicted_array)
+    data_array = predicted_array
+    #data_array = map(x->apply_border_data_main(x,model_data),predicted_array)
     target_color = []
     predicted_color = []
     predicted_error = []
@@ -317,7 +320,7 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
         target_temp = []
         predicted_color_temp = []
         predicted_error_temp = []
-        for j = 1:length(model_data.features)
+        for j = 1:length(labels_color)
             target = set[2][i][:,:,j]
             target_img = target.*perm_labels_color[j]
             target_img = permutedims(target_img,[3,1,2])
@@ -371,8 +374,9 @@ function validate_main(settings::Settings,training_data::Training_data,
     predicted_array = Vector{Array{Float32}}(undef,num)
     loss_array = Vector{Float32}(undef,num)
     put!(channels.validation_progress,[num])
-    num_parts = 2
-    offset = 5
+    num_parts = 5
+    offset = 20
+    GC.gc()
     for i = 1:num
         if isready(channels.validation_modifiers)
             if fetch(channels.validation_modifiers)[1]=="stop"
@@ -388,11 +392,14 @@ function validate_main(settings::Settings,training_data::Training_data,
             input_size = size(input_data)
             max_value = max(input_size...)
             ind_max = findfirst(max_value.==input_size)
-            ind_split = round(max_value/num_parts)
+            ind_split = floor(max_value/num_parts)
             predicted = []
             for j = 1:num_parts
-                start_ind = 1 + (j-1)*ind_split
-                end_ind = j*ind_split
+                if j==num_parts
+                    ind_split = ind_split+rem(max_value,num_parts)
+                end
+                start_ind = 1 + (j-1)*ind_split-1
+                end_ind = start_ind + ind_split-1
                 correct_size = Int64(end_ind-start_ind+1)
                 start_ind = start_ind - offset
                 end_ind = end_ind + offset
@@ -403,22 +410,25 @@ function validate_main(settings::Settings,training_data::Training_data,
                     temp_data = gpu(temp_data)
                 end
                 temp_predicted = model(temp_data)
-                if j==1
-                    temp_size = size(temp_predicted,ind_max)
-                    offset_temp = temp_size - correct_size
-                    temp_predicted = temp_predicted[:,1:end-offset_temp,:,:]
-                elseif j==num_parts
-                    temp_size = size(temp_predicted,ind_max)
-                    offset_temp = temp_size - correct_size
-                    temp_predicted = temp_predicted[:,1+offset_temp:end,:,:]
-                else
-                    temp_size = size(temp_predicted,ind_max)
-                    offset_temp = temp_size - correct_size
-                    offset_temp2 = ceil(temp_size - correct_size)
-                    offset_temp = floor(offset_temp)
-                    temp_predicted = temp_predicted[:,1+offset_temp:end-offset_temp2,:,:]
+                temp_size = size(temp_predicted,ind_max)
+                offset_temp = temp_size - correct_size
+                if offset_temp>0
+                    if j==1
+                        temp_predicted = temp_predicted[:,1:end-offset_temp,:,:]
+                    elseif j==num_parts
+                        temp_predicted = temp_predicted[:,1+offset_temp:end,:,:]
+                    else
+                        temp = (temp_size - correct_size)/2
+                        offset_temp = Int64(floor(temp))
+                        offset_temp2 = Int64(ceil(temp))
+                        temp_predicted = temp_predicted[:,1+offset_temp:end-offset_temp2,:,:]
+                    end
+                elseif offset_temp<0
+                    temp_predicted = gpu(collect(padarray(
+                        cpu(temp_predicted),Pad(0,-offset_temp,0,0))))
                 end
                 push!(predicted,temp_predicted)
+                GC.gc()
             end
             predicted = cpu(hcat(predicted...))
         end
