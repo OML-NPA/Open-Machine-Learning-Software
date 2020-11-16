@@ -1463,15 +1463,12 @@ ApplicationWindow {
             for (var i=0;i<upNodes.children.length;i++) {
                 var upNodeRectangle = upNodes.children[i].children[0]
                 if (upNodeRectangle.connectedNode!==null) {
-                    var startX = upNodeRectangle.connectedItem.connection.data[0].startX;
-                    var startY = upNodeRectangle.connectedItem.connection.data[0].startY;
-                    upNodeRectangle.connectedItem.connection.destroy()
-                    upNodeRectangle.connectedItem.connection = shapeComponent.createObject(connections, {
-                          "beginX": startX ,
-                          "beginY": startY,
-                          "finishX": unit.x + unit.width*upNodes.children[i].index/(unit.inputnum+1),
-                          "finishY": unit.y + 2*pix,
-                          "origin": upNodeRectangle.connectedItem});
+                    var connection = upNodeRectangle.connectedItem.connection
+                    var beginX = connection.data[0].startX
+                    var beginY = connection.data[0].startY
+                    var finishX = unit.x + unit.width*upNodes.children[i].index/(unit.inputnum+1)
+                    var finishY = unit.y + 2*pix
+                    updateConnection(connection,beginX,beginY,finishX,finishY)
                     var nodePoint = upNodeRectangle.mapToItem(upNodeRectangle.connectedItem.parent,0,0)
                     upNodeRectangle.connectedItem.x = nodePoint.x - upNodeRectangle.radius/2
                     upNodeRectangle.connectedItem.y = nodePoint.y - upNodeRectangle.radius/2
@@ -1481,15 +1478,11 @@ ApplicationWindow {
                 for (var j=1;j<downNodes.children[i].children.length;j++) {
                     var downNodeRectangle = downNodes.children[i].children[j]
                     if (downNodeRectangle.connectedNode!==null) {
-                        var finishX = downNodeRectangle.connection.data[0].pathElements[0].x
-                        var finishY = downNodeRectangle.connection.data[0].pathElements[0].y
-                        downNodeRectangle.connection.destroy()
-                        downNodeRectangle.connection = shapeComponent.createObject(connections, {
-                              "beginX": unit.x + unit.width*downNodes.children[i].index/(unit.outputnum+1),
-                              "beginY": unit.y + unit.height - 2*pix,
-                              "finishX": finishX,
-                              "finishY": finishY,
-                              "origin": downNodeRectangle});
+                        connection = downNodeRectangle.connection
+                        beginX = unit.x + unit.width*downNodes.children[i].index/(unit.outputnum+1)
+                        beginY = unit.y + unit.height - 2*pix
+                        finishX = connection.data[0].pathElements[0].x
+                        finishY = connection.data[0].pathElements[0].y
                         nodePoint = downNodeRectangle.connectedNode.
                             mapToItem(downNodes.children[i],0,0)
                         downNodeRectangle.x = nodePoint.x - downNodeRectangle.radius/2
@@ -1500,12 +1493,20 @@ ApplicationWindow {
         }
     }
 
+
+    function updateConnection(connection,beginX,beginY,finishX,finishY) {
+        connection.beginX = beginX
+        connection.beginY = beginY
+        connection.finishX = finishX
+        connection.finishY = finishY
+        var object = connectionShapePathComponent.createObject(connection, {
+              "beginX": connection.beginX,
+              "beginY": connection.beginY,
+              "finishX": connection.finishX,
+              "finishY": connection.finishY});
+    }
+
     function makeConnection(unit,downNode,downNodeRectangle,upNode) {
-        var existedCon = false
-        if (downNodeRectangle.connection!==null) {
-            downNodeRectangle.connection.destroy()
-            existedCon = true
-        }
         downNodeRectangle.connectedNode = upNode
         upNode.connectedNode = downNode
         upNode.connectedItem = downNodeRectangle
@@ -1516,7 +1517,7 @@ ApplicationWindow {
             (upNodePoint.x - downNodeRectangle.mapToItem(layers,0,0).x)
         downNodeRectangle.y = downNodeRectangle.y - 10*pix +
                 (upNodePoint.y - downNodeRectangle.mapToItem(layers,0,0).y)
-        downNodeRectangle.connection = shapeComponent.createObject(connections, {
+        downNodeRectangle.connection = connectionShapeComponent.createObject(connections, {
              "beginX": unit.x + unit.width*downNode.parent.index/(unit.outputnum+1),
              "beginY": unit.y + unit.height - 2*pix,
              "finishX": upNodePoint.x + downNode.radius/2,
@@ -1610,15 +1611,13 @@ ApplicationWindow {
             }
 
             var num = connections.children.length
-            for (i = 0; i < num; i++) {
-                var object = shapeComponent.createObject(connections, {
-                      "beginX": connections.children[i].beginX + adjX,
-                      "beginY": connections.children[i].beginY + adjY,
-                      "finishX": connections.children[i].finishX + adjX,
-                      "finishY": connections.children[i].finishY + adjY,
-                      "origin": connections.children[i].origin});
-                connections.children[i].origin.connection.destroy()
-                connections.children[i].origin.connection = object
+            for (i=0; i<num; i++) {
+                var connection = connections.children[i]
+                var beginX = connection.beginX + adjX
+                var beginY = connection.beginY + adjY
+                var finishX = connection.finishX + adjX
+                var finishY = connection.finishY + adjY
+                updateConnection(connection,beginX,beginY,finishX,finishY)
             }
         }
 
@@ -1816,13 +1815,13 @@ ApplicationWindow {
                                     }
                                     var startX = upNodeRectangle.connectedItem.connection.data[0].startX;
                                     var startY = upNodeRectangle.connectedItem.connection.data[0].startY;
-                                    upNodeRectangle.connectedItem.connection.destroy()
-                                    upNodeRectangle.connectedItem.connection = shapeComponent.createObject(connections, {
-                                          "beginX": startX ,
-                                          "beginY": startY,
-                                          "finishX": unit.x + unit.width*upNodes.children[i].index/(layers.children[inds[k]].inputnum+1) + devX,
-                                          "finishY": unit.y + 2*pix + devY,
-                                          "origin": upNodeRectangle.connectedItem});
+                                    var connection = upNodeRectangle.connectedItem.connection
+                                    var beginX = startX
+                                    var beginY = startY
+                                    var finishX = unit.x +unit.width*upNodes.children[i].index/
+                                            (layers.children[inds[k]].inputnum+1) + devX
+                                    var finishY = unit.y + 2*pix + devY
+                                    updateConnection(connection,beginX,beginY,finishX,finishY)
                                     var nodePoint = upNodeRectangle.mapToItem(upNodeRectangle.connectedItem.parent,0,0)
                                     upNodeRectangle.connectedItem.x = nodePoint.x - upNodeRectangle.radius/2
                                     upNodeRectangle.connectedItem.y = nodePoint.y - upNodeRectangle.radius/2
@@ -1838,15 +1837,13 @@ ApplicationWindow {
                                             devX = layers.children[inds[k]].x - unit.x
                                             devY = layers.children[inds[k]].y - unit.y
                                         }
-                                        var finishX = downNodeRectangle.connection.data[0].pathElements[0].x
-                                        var finishY = downNodeRectangle.connection.data[0].pathElements[0].y
-                                        downNodeRectangle.connection.destroy()
-                                        downNodeRectangle.connection = shapeComponent.createObject(connections, {
-                                              "beginX": unit.x + unit.width*downNodes.children[i].index/(layers.children[inds[k]].outputnum+1) + devX,
-                                              "beginY": unit.y + unit.height - 2*pix + devY,
-                                              "finishX": finishX,
-                                              "finishY": finishY,
-                                              "origin": downNodeRectangle});
+                                        connection = downNodeRectangle.connection
+                                        beginX = unit.x + unit.width*downNodes.children[i].index/
+                                                (layers.children[inds[k]].outputnum+1) + devX
+                                        beginY = unit.y + unit.height - 2*pix + devY
+                                        finishX = connection.data[0].pathElements[0].x
+                                        finishY = connection.data[0].pathElements[0].y
+                                        updateConnection(connection,beginX,beginY,finishX,finishY)
                                         nodePoint = downNodeRectangle.connectedNode.
                                             mapToItem(downNodes.children[i],0,0)
                                         downNodeRectangle.x = nodePoint.x - 10*pix
@@ -1996,14 +1993,14 @@ ApplicationWindow {
                         if (downNodeRectangle.connection !== null) {
                             downNodeRectangle.connection.destroy()
                         }
-                        downNodeRectangle.connection = shapeComponent.createObject(connections, {
-                             "beginX": unit.x + unit.width*index/(outputnum+1),
-                             "beginY": unit.y + unit.height - 2*pix,
-                             "finishX": unit.x + downNodeRectangle.x + downNode.radius +
-                                            mouseAdjust[0],
-                             "finishY": unit.y + downNodeRectangle.y + downNode.radius +
-                                            mouseAdjust[1] + 2*pix,
-                             "origin": downNodeRectangle});
+                        var connection = downNodeRectangle.connection
+                        var beginX = unit.x + unit.width*index/(outputnum+1)
+                        var beginY = unit.y + unit.height - 2*pix
+                        var finishX = unit.x + downNodeRectangle.x + downNode.radius +
+                                mouseAdjust[0]
+                        var finishY = unit.y + downNodeRectangle.y + downNode.radius +
+                                mouseAdjust[1] + 2*pix
+                        updateConnection(connection,beginX,beginY,finishX,finishY)
                     }
                 }
                 onReleased: {
@@ -2132,19 +2129,17 @@ ApplicationWindow {
                             return
                         }
                         if (pressed) {
-                            if (upNode.connectedItem.connection !== null) {
-                                upNode.connectedItem.connection.destroy()
-                            }
                             var point = upNodeRectangle.mapToItem(layers,0,0)
-                            upNode.connectedItem.connection = shapeComponent.createObject(connections, {
-                                 "beginX": upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
-                                                upNode.connectedItem.index/(upNode.connectedItem.outputnum+1),
-                                 "beginY": upNode.connectedItem.unit.y + upNode.connectedItem.unit.height - 2*pix,
-                                 "finishX": point.x +
-                                            upNode.connectedNode.radius + mouseAdjust[0],
-                                 "finishY": point.y +
-                                            upNode.connectedNode.radius + mouseAdjust[1] + 2*pix,
-                                 "origin": upNode.connectedItem})
+                            var connection = upNode.connectedItem.connection
+                            var beginX = upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
+                                    upNode.connectedItem.index/(upNode.connectedItem.outputnum+1)
+                            var beginY = upNode.connectedItem.unit.y +
+                                    upNode.connectedItem.unit.height - 2*pix
+                            var finishX = point.x +
+                                    upNode.connectedNode.radius + mouseAdjust[0]
+                            var finishY = point.y +
+                                    upNode.connectedNode.radius + mouseAdjust[1] + 2*pix
+                            updateConnection(connection,beginX,beginY,finishX,finishY)
                         }
                     }
                     onReleased: {
@@ -2174,7 +2169,9 @@ ApplicationWindow {
                                         upNode_other.connectedNode===upNode.connectedNode) &&
                                         upNodeRec_other!==
                                         upNode.connectedNode.parent.parent.parent.children[j].children[1]) {
-                                    upNode.connectedItem.connectedNode = upNode_other
+                                    var connectedItem = upNode.connectedItem
+                                    var connectedNode = upNode.connectedNode
+                                    connectedItem.connectedNode = upNode_other
                                     upNode_other.connectedNode = upNode.connectedNode
                                     upNode_other.connectedItem = upNode.connectedItem
                                     upNode_other.visible = true
@@ -2184,22 +2181,21 @@ ApplicationWindow {
                                     var adjY = downNodePoint.y - upNodePoint.y
                                     upNodeRectangle.x = unit.width*index/(inputnum+1)-upNode.radius
                                     upNodeRectangle.y = -upNode.radius + 2*pix
-                                    upNode.connectedItem.x = upNode.connectedItem.x - adjX
-                                    upNode.connectedItem.y = upNode.connectedItem.y - adjY
-                                    upNode.connectedItem.connection.destroy()
+                                    upNode.connectedItem.x = connectedItem.x - adjX
+                                    upNode.connectedItem.y = connectedItem.y - adjY
                                     var point = downNodeRec_other.mapToItem(layers,0,0)
-                                    upNode.connectedItem.connection = shapeComponent.createObject(connections, {
-                                          "beginX": upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
-                                                        upNode.connectedItem.index/(upNode.connectedItem.outputnum+1),
-                                          "beginY": upNode.connectedItem.unit.y + upNode.connectedItem.unit.height - 2*pix,
-                                          "finishX": point.x +
-                                                     upNode.connectedNode.radius + mouseAdjust[0],
-                                          "finishY": point.y +
-                                                     upNode.connectedNode.radius + mouseAdjust[1] + 2*pix,
-                                          "origin": upNode.connectedItem})
+                                    var connection = connectedItem.connection
+                                    var beginX = connectedItem.unit.x + connectedItem.unit.width*
+                                            connectedItem.index/(connectedItem.outputnum+1)
+                                    var beginY = connectedItem.unit.y + connectedItem.unit.height - 2*pix
+                                    var finishX = point.x +
+                                            connectedNode.radius + mouseAdjust[0]
+                                    var finishY = point.y +
+                                            connectedNode.radius + mouseAdjust[1] + 2*pix
+                                    updateConnection(connection,beginX,beginY,finishX,finishY)
                                     if (upNode!==upNode_other) {
-                                        upNode.connectedNode = null
-                                        upNode.connectedItem = null
+                                        connectedNode = null
+                                        connectedItem = null
                                     }
                                     return
                                 }
@@ -2234,7 +2230,7 @@ ApplicationWindow {
     }
 
     Component {
-        id: shapeComponent
+        id: connectionShapeComponent
         Shape {
             id: pathShape
             property double beginX: 0
@@ -2269,6 +2265,41 @@ ApplicationWindow {
                 }
             }
         }
+    }
+
+    Component {
+        id: connectionShapePathComponent
+        ShapePath {
+            id: pathShapePath
+            property double beginX: 0
+            property double beginY: 0
+            property double finishX: 0
+            property double finishY: 0
+            strokeColor: defaultcolors.middark2
+            strokeWidth: 4*pix
+            fillColor: "transparent"
+            capStyle: ShapePath.RoundCap
+
+            property int joinStyleIndex: 0
+
+            property variant styles: [
+                ShapePath.BevelJoin,
+                ShapePath.MiterJoin,
+                ShapePath.RoundJoin
+            ]
+
+            joinStyle: styles[joinStyleIndex]
+
+            startX: beginX
+            startY: beginY
+            PathLine {
+                x: finishX
+                y: finishY
+            }
+        }
+
+
+
     }
 
     Component {
@@ -2344,7 +2375,9 @@ ApplicationWindow {
                     defaultHeight: 0.75*buttonHeight
                     defaultWidth: rightFrame.width - 220*pix
                     onEditingFinished: {
-                        model_name = displayText
+                        nameTextField.text = displayText
+                        Julia.set_settings(["Training","name"],displayText)
+
                     }
                     Component.onCompleted: {
                         var name = Julia.get_settings(["Training","name"])
