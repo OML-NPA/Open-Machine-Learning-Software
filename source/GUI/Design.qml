@@ -875,7 +875,7 @@ ApplicationWindow {
                        var name = Julia.get_settings(["Training","name"])
                        var url = Julia.source_dir()+"/models/"+name+".model"
                        neuralnetworkTextField.text = url
-                       Julia.make_model()
+                       //Julia.make_model()
                        Julia.save_model(url)
                        opacity = 1
                     }
@@ -928,8 +928,12 @@ ApplicationWindow {
                             var layer = layers.children[inds[i]]
                             layer.x = coordinates[i][0]
                             layer.y = coordinates[i][1]
+                            layer.oldpos = [layer.x,layer.y]
                         }
                         updateMainPane(layers.children[0])
+                        for (i=0;i<layers.children.length;i++) {
+                            updatePosition(layers.children[i],layers.children[i])
+                        }
                         updateConnections()
                         customizationItem.forceActiveFocus()
                         opacity = 1
@@ -1708,6 +1712,49 @@ ApplicationWindow {
         return unit.children[2].children[1].children[ind1].children[ind2]
     }
 
+    function updatePosition(unit) {
+        var devX = unit.x - unit.oldpos[0]
+        var devY = unit.y - unit.oldpos[1]
+        var upNodes = unit.children[2].children[0]
+        var downNodes = unit.children[2].children[1]
+        for (var i=0;i<upNodes.children.length;i++) {
+            var upNodeRectangle = upNodes.children[i].children[0]
+            if (upNodeRectangle.connectedNode!==null) {
+                var startX = upNodeRectangle.connectedItem.connection.data[0].startX;
+                var startY = upNodeRectangle.connectedItem.connection.data[0].startY;
+                var connection = upNodeRectangle.connectedItem.connection
+                var beginX = startX
+                var beginY = startY
+                var finishX = unit.x +unit.width*upNodes.children[i].index/
+                        (unit.inputnum+1) + devX
+                var finishY = unit.y + 2*pix + devY
+                updateConnection(connection,beginX,beginY,finishX,finishY)
+                var nodePoint = upNodeRectangle.mapToItem(upNodeRectangle.connectedItem.parent,0,0)
+                upNodeRectangle.connectedItem.x = nodePoint.x - upNodeRectangle.radius/2
+                upNodeRectangle.connectedItem.y = nodePoint.y - upNodeRectangle.radius/2
+            }
+        }
+        for (i=0;i<downNodes.children.length;i++) {
+            for (var j=1;j<downNodes.children[i].children.length;j++) {
+                var downNodeRectangle = downNodes.children[i].children[j]
+                if (downNodeRectangle.connectedNode!==null) {
+                    connection = downNodeRectangle.connection
+                    beginX = unit.x + unit.width*downNodes.children[i].index/
+                            (unit.outputnum+1) + devX
+                    beginY = unit.y + unit.height - 2*pix + devY
+                    finishX = connection.data[0].pathElements[0].x
+                    finishY = connection.data[0].pathElements[0].y
+                    updateConnection(connection,beginX,beginY,finishX,finishY)
+                    nodePoint = downNodeRectangle.connectedNode.
+                        mapToItem(downNodes.children[i],0,0)
+                    downNodeRectangle.x = nodePoint.x - 10*pix
+                    downNodeRectangle.y = nodePoint.y - 10*pix
+                }
+            }
+        }
+    }
+
+
 //--COMPONENTS--------------------------------------------------------------------
 
     Component {
@@ -1808,61 +1855,16 @@ ApplicationWindow {
                         else {
                             inds = mainPane.selectioninds
                         }
+                        var devX = unit.x - unit.oldpos[0]
+                        var devY = unit.y - unit.oldpos[1]
                         for (var k=0;k<inds.length;k++) {
+                            var other_unit = layers.children[inds[k]]
                             if (inds[k]!==currentind) {
-                                layers.children[inds[k]].x = layers.children[inds[k]].x + unit.x - unit.oldpos[0]
-                                layers.children[inds[k]].y = layers.children[inds[k]].y + unit.y - unit.oldpos[1]
+                                other_unit.x = other_unit.x + devX
+                                other_unit.y = other_unit.y + devY
                             }
-
-                            var upNodes = layers.children[inds[k]].children[2].children[0]
-                            var downNodes = layers.children[inds[k]].children[2].children[1]
-                            for (i=0;i<upNodes.children.length;i++) {
-                                var upNodeRectangle = upNodes.children[i].children[0]
-                                if (upNodeRectangle.connectedNode!==null) {
-                                    var devX = 0
-                                    var devY = 0
-                                    if (inds[k]!==currentind) {
-                                        devX = layers.children[inds[k]].x - unit.x
-                                        devY = layers.children[inds[k]].y - unit.y
-                                    }
-                                    var startX = upNodeRectangle.connectedItem.connection.data[0].startX;
-                                    var startY = upNodeRectangle.connectedItem.connection.data[0].startY;
-                                    var connection = upNodeRectangle.connectedItem.connection
-                                    var beginX = startX
-                                    var beginY = startY
-                                    var finishX = unit.x +unit.width*upNodes.children[i].index/
-                                            (layers.children[inds[k]].inputnum+1) + devX
-                                    var finishY = unit.y + 2*pix + devY
-                                    updateConnection(connection,beginX,beginY,finishX,finishY)
-                                    var nodePoint = upNodeRectangle.mapToItem(upNodeRectangle.connectedItem.parent,0,0)
-                                    upNodeRectangle.connectedItem.x = nodePoint.x - upNodeRectangle.radius/2
-                                    upNodeRectangle.connectedItem.y = nodePoint.y - upNodeRectangle.radius/2
-                                }
-                            }
-                            for (i=0;i<downNodes.children.length;i++) {
-                                for (var j=1;j<downNodes.children[i].children.length;j++) {
-                                    var downNodeRectangle = downNodes.children[i].children[j]
-                                    if (pressed && downNodeRectangle.connectedNode!==null) {
-                                        devX = 0
-                                        devY = 0
-                                        if (inds[k]!==currentind) {
-                                            devX = layers.children[inds[k]].x - unit.x
-                                            devY = layers.children[inds[k]].y - unit.y
-                                        }
-                                        connection = downNodeRectangle.connection
-                                        beginX = unit.x + unit.width*downNodes.children[i].index/
-                                                (layers.children[inds[k]].outputnum+1) + devX
-                                        beginY = unit.y + unit.height - 2*pix + devY
-                                        finishX = connection.data[0].pathElements[0].x
-                                        finishY = connection.data[0].pathElements[0].y
-                                        updateConnection(connection,beginX,beginY,finishX,finishY)
-                                        nodePoint = downNodeRectangle.connectedNode.
-                                            mapToItem(downNodes.children[i],0,0)
-                                        downNodeRectangle.x = nodePoint.x - 10*pix
-                                        downNodeRectangle.y = nodePoint.y - 10*pix
-                                    }
-                                }
-                            }
+                            other_unit.oldpos = [other_unit.x,other_unit.y]
+                            updatePosition(other_unit)
                         }
                         unit.oldpos = [unit.x,unit.y]
                     }
@@ -1950,8 +1952,8 @@ ApplicationWindow {
             property double index
             width: 2*downNode.radius
             height: 2*downNode.radius
-            opacity: 0.2
-            color: "red"
+            //opacity: 0.2
+            color: "transparent"
             x: unit.width*index/(outputnum+1) - downNode.radius
             y: unit.height - downNode.radius - 2*pix
             MouseArea {

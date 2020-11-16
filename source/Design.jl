@@ -85,6 +85,10 @@ struct Activation
 end
 (m::Activation)(x) = m.f.(x)
 
+struct Identity
+end
+(m::Identity)(x) = x
+
 # Model constructor
 function getlinear(type::AbstractString, d, in_size::Tuple)
     if type == "Convolution"
@@ -264,10 +268,14 @@ function getbranch(layer_params,in_size)
             else
                 temp_size = in_size
             end
-            temp_layers = []
-            for j = 1:length(layer_params[i])
-                layer,temp_size = getbranch(layer_params[i][j],temp_size)
-                push!(temp_layers,layer)
+            if isempty(layer_params[i])
+                temp_layers = [Identity()]
+            else
+                temp_layers = []
+                for j = 1:length(layer_params[i])
+                    layer,temp_size = getbranch(layer_params[i][j],temp_size)
+                    push!(temp_layers,layer)
+                end
             end
             if length(temp_layers)>1
                 push!(par_layers,Chain(temp_layers...))
@@ -328,36 +336,56 @@ function topology_split(layers_arranged,inds_arranged,layers,
     connections,connections_in,types,ind,ind_output)
     num = length(ind)
     par_inds = Array{Array}(undef, num)
+    fill!(par_inds,[])
+    inds_return = Array{Array}(undef, num)
     par_layers_arranged = Array{Any}(undef, num)
+    fill!(par_layers_arranged,[])
     for i = 1:num
         layers_temp = []
         inds_temp = []
         ind_temp = [[ind[i]]]
-        par_inds[i] =
-            get_topology_branches(layers_temp,inds_temp,layers,connections,
-            connections_in,types,ind_temp,ind_output)[1]
-        par_layers_arranged[i] = layers_temp
-        par_inds[i] = inds_temp
+        inds_return[i] = get_topology_branches(layers_temp,inds_temp,layers,
+            connections,connections_in,types,ind_temp,ind_output)[1]
+        type = types[inds_return[i][1]]
+        if isempty(inds_temp)
+            inds_temp = [0]
+        end
+        if (type=="Catenation" || type=="Addition") && inds_temp[1]==nothing
+            #par_inds[i] = []
+        else
+            par_layers_arranged[i] = layers_temp
+            par_inds[i] = inds_temp
+        end
     end
     push!(layers_arranged,par_layers_arranged)
     push!(inds_arranged,par_inds)
-    ind = map(x -> x[end],par_inds)
-    ind = connections[ind]
-    return ind
+    return inds_return
 end
 
 function get_topology_branches(layers_arranged,inds_arranged,
     layers,connections,connections_in,types,ind,ind_output)
     while !isempty.([ind])[1]
         numk = length(ind)
-        if any(map(x -> x.=="Catenation",types[vcat(vcat(ind...)...)]))
-            if allcmp(ind) && length(ind)==length(connections_in[ind[1][1][1]])
-                ind = ind[1][1][1]
-                push!(layers_arranged,layers[ind])
-                push!(inds_arranged,ind)
-                ind = connections[ind]
+        if any(map(x -> x.=="Catenation" ||
+                x.=="Addition",types[vcat(vcat(ind...)...)]))
+            if all(length.(ind).==1) && allcmp(ind) &&
+                    length(ind)==length(connections_in[ind[1][1][1]])
+                prev_ind = ind[1][1][1]
+                to_arrange_inds = map(x->x[1],inds_arranged[end])
+                inds_zero = findall(map(x-> x[1]==0,to_arrange_inds))
+                if length(inds_zero)>0
+                    to_arrange_inds[inds_zero] .= inds_arranged[end-1]
+                end
+                input_inds = connections_in[prev_ind]
+                inds_rearrange = map(x->
+                    findfirst(x.==input_inds),to_arrange_inds)
+                inds_arranged[end] = inds_arranged[end][inds_rearrange]
+                layers_arranged[end] = layers_arranged[end][inds_rearrange]
+                push!(layers_arranged,layers[prev_ind])
+                push!(inds_arranged,prev_ind)
+                ind = connections[prev_ind]
                 continue
-            else
+            elseif length(ind[1])==1
                 return ind
             end
         end
@@ -441,9 +469,13 @@ function arrange_branches(coordinates,coordinate,parameters,layers_arranged)
         for i = 1:num
             temp_coordinates = []
             temp_coordinate = [x_coordinates[i],coordinate[2]]
-            for j = 1:length(layers_arranged[i])
-                temp_coordinate = arrange_branches(temp_coordinates,temp_coordinate,
-                    parameters,layers_arranged[i][j])
+            if isempty(layers_arranged[i])
+                push!(temp_coordinates,[x_coordinates[i],coordinate[2]])
+            else
+                for j = 1:length(layers_arranged[i])
+                    temp_coordinate = arrange_branches(temp_coordinates,temp_coordinate,
+                        parameters,layers_arranged[i][j])
+                end
             end
             push!(par_coordinates,temp_coordinates)
         end
@@ -481,6 +513,8 @@ function arrange_main(design)
         x-> x isa Array && x[1] isa Array)
     inds_flattened = []
     get_values!(inds_flattened,inds_arranged,x-> x isa Array)
+    coordinates_flattened = coordinates_flattened[inds_flattened.>0]
+    inds_flattened = inds_flattened[inds_flattened.>0]
     return [coordinates_flattened,inds_flattened.-1]
 end
 arrange() = arrange_main(design)
