@@ -1507,6 +1507,7 @@ ApplicationWindow {
     }
 
     function makeConnection(unit,downNode,downNodeRectangle,upNode) {
+        var connection = downNodeRectangle.connection
         downNodeRectangle.connectedNode = upNode
         upNode.connectedNode = downNode
         upNode.connectedItem = downNodeRectangle
@@ -1517,12 +1518,21 @@ ApplicationWindow {
             (upNodePoint.x - downNodeRectangle.mapToItem(layers,0,0).x)
         downNodeRectangle.y = downNodeRectangle.y - 10*pix +
                 (upNodePoint.y - downNodeRectangle.mapToItem(layers,0,0).y)
-        downNodeRectangle.connection = connectionShapeComponent.createObject(connections, {
-             "beginX": unit.x + unit.width*downNode.parent.index/(unit.outputnum+1),
-             "beginY": unit.y + unit.height - 2*pix,
-             "finishX": upNodePoint.x + downNode.radius/2,
-             "finishY": upNodePoint.y + downNode.radius/2,
-             "origin": downNodeRectangle});
+        if (connection===null) {
+            downNodeRectangle.connection = connectionShapeComponent.createObject(connections, {
+                 "beginX": unit.x + unit.width*downNode.parent.index/(unit.outputnum+1),
+                 "beginY": unit.y + unit.height - 2*pix,
+                 "finishX": upNodePoint.x + downNode.radius/2,
+                 "finishY": upNodePoint.y + downNode.radius/2,
+                 "origin": downNodeRectangle});
+        }
+        else {
+            var beginX = unit.x + unit.width*downNode.parent.index/(unit.outputnum+1)
+            var beginY = unit.y + unit.height - 2*pix
+            var finishX = upNodePoint.x + downNode.radius/2
+            var finishY = upNodePoint.y + downNode.radius/2
+            updateConnection(connection,beginX,beginY,finishX,finishY)
+        }
         var downNodeItem = downNode.parent
         var num = downNodeItem.children.length
         if (downNodeItem.children[num-1].connection!==null) {
@@ -1761,9 +1771,11 @@ ApplicationWindow {
                             upNodes.children[i].children[0].visible = false
                         }
                     }
+
                     for (i=0;i<downNodes.children.length;i++) {
-                        if (downNodes.children[i].children[1].connectedNode===null) {
-                            downNodes.children[i].children[0].visible = false
+                        var downNode = downNodes.children[i]
+                        if (downNode.children[1].connectedNode===null) {
+                            downNode.children[0].visible = false
                         }
                     }
                 }
@@ -1938,8 +1950,8 @@ ApplicationWindow {
             property double index
             width: 2*downNode.radius
             height: 2*downNode.radius
-            //opacity: 0.2
-            color: "transparent"
+            opacity: 0.2
+            color: "red"
             x: unit.width*index/(outputnum+1) - downNode.radius
             y: unit.height - downNode.radius - 2*pix
             MouseArea {
@@ -1987,12 +1999,15 @@ ApplicationWindow {
                             }
                         }
                     }
+                    downNodeRectangle.connection = connectionShapeComponent.createObject(connections, {
+                         "beginX": unit.x + unit.width*index/(outputnum+1),
+                         "beginY": unit.y + unit.height - 2*pix,
+                         "finishX": unit.x + unit.width*index/(outputnum+1),
+                         "finishY": unit.y + unit.height - 2*pix,
+                         "origin": downNodeRectangle});
                 }
                 onPositionChanged: {
                     if (pressed) {
-                        if (downNodeRectangle.connection !== null) {
-                            downNodeRectangle.connection.destroy()
-                        }
                         var connection = downNodeRectangle.connection
                         var beginX = unit.x + unit.width*index/(outputnum+1)
                         var beginY = unit.y + unit.height - 2*pix
@@ -2032,16 +2047,19 @@ ApplicationWindow {
                             }
                         }
                     }
+                    if (downNodeRectangle.connectedNode!==null) {
+                        downNodeRectangle.connectedNode.visible = false
+                        downNodeRectangle.connectedNode.connectedItem = null
+                        downNodeRectangle.connectedNode.connectedNode = null
+                    }
                     downNodeRectangle.connection.destroy()
-                    downNodeRectangle.connectedNode.visible = false
-                    downNodeRectangle.connectedNode.connectedItem = null
-                    downNodeRectangle.connectedNode.connectedNode = null
                     downNode.border.color = defaultpalette.controlborder
                     downNode.border.width = 3*pix
                     if (downNodeItem.children.length===2) {
                         downNode.visible = false
                     }
-                    downNodeRectangle.destroy()
+                    downNodeRectangle.x = unit.width*index/(outputnum+1) - downNode.radius
+                    downNodeRectangle.y = unit.height - downNode.radius - 2*pix
                 }
             }
         }
