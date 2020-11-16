@@ -37,6 +37,15 @@ ApplicationWindow {
 
     Loader { id: designoptionsLoader}
 
+
+    onWidthChanged: {
+        console.log(customizationWindow.width)
+        if (layers.children.length>0) {
+            mainFrame.width = customizationWindow.width-leftFrame.width-rightFrame.width
+            updateMainPane(layers.children[0])
+        }
+    }
+
     onClosing: { customizationLoader.sourceComponent = undefined }
 
     Item {
@@ -175,7 +184,7 @@ ApplicationWindow {
             Frame {
                 id: leftFrame
                 height: customizationWindow.height + 1
-                width: 500*pix + 1
+                width: 530*pix + 1
                 padding:0
                 Item {
                     id: layersItem
@@ -930,7 +939,7 @@ ApplicationWindow {
             Frame {
                 id: rightFrame
                 height: customizationWindow.height
-                width: 500*pix
+                width: 530*pix
                 padding:0
 
                 Item {
@@ -1580,7 +1589,6 @@ ApplicationWindow {
             if (adjX<0 ) { adjX = 0}
             if (adjY<0 ) { adjY = 0}
         }
-
         if (adjX!==0 || adjY!==0) {
             for (var i = 0; i < layers.children.length; i++) {
                 layers.children[i].x = layers.children[i].x + adjX
