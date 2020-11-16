@@ -53,54 +53,6 @@ ApplicationWindow {
     Item {
         id: customizationItem
         focus: true
-        Component.onCompleted: {
-            for (var i=0;i<model.length;i++) {
-                var data = model[i]
-                var datastore = copy(data)
-                var names = ["connections_down","connections_up",
-                    "labelColor","x","y"]
-                for (var j=0;j<names.length;j++) {
-                    delete datastore[names[j]]
-                }
-                layerComponent.createObject(layers,{"color" : adjustcolor(data.labelColor),
-                   "name": data.name,
-                   "group": data.group,
-                   "type": data.type,
-                   "labelColor": data.labelColor,
-                   "inputnum": data.connections_up.length,
-                   "outputnum": data.connections_down.length,
-                   "x": data.x,
-                   "y": data.y,
-                   "datastore": datastore});
-            }
-
-            for (i=0;i<model.length;i++) {
-                data = model[i]
-                var connections_down = data.connections_down
-                for (j=0;j<connections_down.length;j++) {
-                    var conns = connections_down[j]
-                    for (var l=0;l<conns.length;l++) {
-                        var conn = conns[l]-1
-                        var unit = layers.children[i]
-                        var unit_connected = layers.children[conn]
-                        var downNode = getDownNode(unit,j)
-                        var downNodeRectangle = getDownNodeRec(unit,j,l+1)
-                        var ind = -1
-                        var connections_up = model[conn].connections_up
-                        for (var a=0;a<connections_up.length;a++) {
-                            if ((connections_up[a]-1)===i) {
-                                ind = a
-                            }
-                        }
-                        var upNode = getUpNode(unit_connected,ind)
-                        makeConnection(unit,downNode,downNodeRectangle,upNode)
-                    }
-                }
-            }
-            deselectunits()
-            propertiesStackView.push(generalpropertiesComponent)
-            updateOverview()
-        }
         Keys.onPressed: {
             if (event.key===Qt.Key_Backspace || event.key===Qt.Key_Delete) {
                 var inds = mainPane.selectioninds
@@ -726,6 +678,55 @@ ApplicationWindow {
                         Component.onCompleted: {
                             flickableMainPane.ScrollBar.vertical.visible = false
                             flickableMainPane.ScrollBar.horizontal.visible = false
+                            for (var i=0;i<model.length;i++) {
+                                var data = model[i]
+                                var datastore = copy(data)
+                                var names = ["connections_down","connections_up",
+                                    "labelColor","x","y"]
+                                for (var j=0;j<names.length;j++) {
+                                    delete datastore[names[j]]
+                                }
+                                layerComponent.createObject(layers,{"color" : adjustcolor(data.labelColor),
+                                   "name": data.name,
+                                   "group": data.group,
+                                   "type": data.type,
+                                   "labelColor": data.labelColor,
+                                   "inputnum": data.connections_up.length,
+                                   "outputnum": data.connections_down.length,
+                                   "x": data.x,
+                                   "y": data.y,
+                                   "datastore": datastore});
+                            }
+
+                            for (i=0;i<model.length;i++) {
+                                data = model[i]
+                                var connections_down = data.connections_down
+                                for (j=0;j<connections_down.length;j++) {
+                                    var conns = connections_down[j]
+                                    for (var l=0;l<conns.length;l++) {
+                                        var conn = conns[l]-1
+                                        var unit = layers.children[i]
+                                        var unit_connected = layers.children[conn]
+                                        var downNode = getDownNode(unit,j)
+                                        var downNodeRectangle = getDownNodeRec(unit,j,l+1)
+                                        var ind = -1
+                                        var connections_up = model[conn].connections_up
+                                        for (var a=0;a<connections_up.length;a++) {
+                                            if ((connections_up[a]-1)===i) {
+                                                ind = a
+                                            }
+                                        }
+                                        var upNode = getUpNode(unit_connected,ind)
+                                        makeConnection(unit,downNode,downNodeRectangle,upNode)
+                                    }
+                                }
+                            }
+                            deselectunits()
+                            if (layers.children.length!==0) {
+                                updateMainPane(layers.children[0])
+                            }
+                            propertiesStackView.push(generalpropertiesComponent)
+                            updateOverview()
                         }
                         property var selectioninds: []
                         property var justselected: false
@@ -2021,21 +2022,15 @@ ApplicationWindow {
                         }
                     }
                     downNodeRectangle.connection.destroy()
-                    downNode.visible = false
-                    if (downNodeItem.children.length>2) {
-                        for (i=downNodeItem.children.length-1;i>=2;i--) {
-                            if (downNodeItem.children[i-1].connectedNode===null) {
-                                downNodeItem.children[i].destroy()
-                            }
-                        }
+                    downNodeRectangle.connectedNode.visible = false
+                    downNodeRectangle.connectedNode.connectedItem = null
+                    downNodeRectangle.connectedNode.connectedNode = null
+                    downNode.border.color = defaultpalette.controlborder
+                    downNode.border.width = 3*pix
+                    if (downNodeItem.children.length===2) {
+                        downNode.visible = false
                     }
-                    if (downNodeItem.children[1].connectedNode!==null) {
-                        downNode.visible = true
-                    }
-                    if (downNodeRectangle.connectedNode===null) {
-                        downNodeRectangle.x = unit.width*index/(outputnum+1) - downNode.radius
-                        downNodeRectangle.y = unit.height - downNode.radius - 2*pix
-                    }
+                    downNodeRectangle.destroy()
                 }
             }
         }
