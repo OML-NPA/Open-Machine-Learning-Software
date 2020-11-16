@@ -39,9 +39,9 @@ ApplicationWindow {
 
 
     onWidthChanged: {
-        console.log(customizationWindow.width)
         if (layers.children.length>0) {
             mainFrame.width = customizationWindow.width-leftFrame.width-rightFrame.width
+            mainFrame.height = customizationWindow.height
             updateMainPane(layers.children[0])
         }
     }
@@ -94,6 +94,12 @@ ApplicationWindow {
                 mainPane.selectioninds = []
                 updateOverview()
                 propertiesStackView.push(generalpropertiesComponent)
+            }
+            else if ((event.key===Qt.Key_A) && (event.modifiers && Qt.ControlModifier)) {
+                for (i=0;i<layers.children.length;i++){
+                    selectunit(layers.children[i])
+                    mainPane.selectioninds.push(i)
+                }
             }
             else if ((event.key===Qt.Key_C) && (event.modifiers && Qt.ControlModifier)) {
                 copycache.objectsdata = []
@@ -1292,7 +1298,7 @@ ApplicationWindow {
                 overviewImage.source = result.url;
             })
         }
-        delay(10, upd)
+        delay(50, upd)
     }
 
     function deselectunits() {
