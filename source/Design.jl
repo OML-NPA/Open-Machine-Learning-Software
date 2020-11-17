@@ -333,7 +333,7 @@ function topology_linear(layers_arranged,inds_arranged,layers,connections,types,
 end
 
 function topology_split(layers_arranged,inds_arranged,layers,
-    connections,connections_in,types,ind,ind_output)
+    connections,connections_in,types,ind)
     num = length(ind)
     par_inds = Array{Array}(undef, num)
     fill!(par_inds,[])
@@ -345,7 +345,7 @@ function topology_split(layers_arranged,inds_arranged,layers,
         inds_temp = []
         ind_temp = [[ind[i]]]
         inds_return[i] = get_topology_branches(layers_temp,inds_temp,layers,
-            connections,connections_in,types,ind_temp,ind_output)[1]
+            connections,connections_in,types,ind_temp)[1]
         type = types[inds_return[i][1]]
         if isempty(inds_temp)
             inds_temp = [0]
@@ -363,7 +363,7 @@ function topology_split(layers_arranged,inds_arranged,layers,
 end
 
 function get_topology_branches(layers_arranged,inds_arranged,
-    layers,connections,connections_in,types,ind,ind_output)
+    layers,connections,connections_in,types,ind)
     while !isempty.([ind])[1]
         numk = length(ind)
         if any(map(x -> x.=="Catenation" ||
@@ -395,12 +395,12 @@ function get_topology_branches(layers_arranged,inds_arranged,
                     layers,connections,types,ind[1][1])
             else
                 ind = topology_split(layers_arranged,inds_arranged,layers,
-                    connections,connections_in,types,ind[1],ind_output)
+                    connections,connections_in,types,ind[1])
             end
         else
             if all(length.(ind).==1)
                 ind = topology_split(layers_arranged,inds_arranged,layers,
-                    connections,connections_in,types,vcat(ind...),ind_output)
+                    connections,connections_in,types,vcat(ind...))
             else
                 return ind
             end
@@ -426,10 +426,7 @@ function get_topology_main(model_data)
         return "more than one input layer"
     end
     ind_output = findfirst(types .== "Output")
-    if ind_output==nothing
-        @info "no output layer"
-        return "no output layer"
-    elseif length(ind_output)>1
+    if ind_output!==nothing && length(ind_output)>1
         @info "more than one output layer"
         return "more than one output layer"
     end
@@ -439,7 +436,10 @@ function get_topology_main(model_data)
     push!(inds_arranged,ind)
     ind = connections[ind]
     ind = get_topology_branches(layers_arranged,inds_arranged,layers,
-        connections,connections_in,types,ind,ind_output)
+        connections,connections_in,types,ind)
+    if isempty(inds_arranged[end])
+        inds_arranged = inds_arranged[1:end-1]
+    end
     return layers_arranged, inds_arranged
 end
 get_topology() = get_topology_main(model_data)

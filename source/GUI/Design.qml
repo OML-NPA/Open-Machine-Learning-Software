@@ -1503,11 +1503,20 @@ ApplicationWindow {
         connection.beginY = beginY
         connection.finishX = finishX
         connection.finishY = finishY
-        var object = connectionShapePathComponent.createObject(connection, {
+        var connection_data = connection.data[0]
+        connection_data.startX = beginX
+        connection_data.startY = beginY
+        var pathElement = connection_data.pathElements[0]
+        pathElement.x = finishX
+        pathElement.y = finishY
+        /*for (var i=0;i<data_length;i++) {
+            //connection.data[0].destroy()
+        }*/
+        /*var object = connectionShapePathComponent.createObject(connection, {
               "beginX": connection.beginX,
               "beginY": connection.beginY,
               "finishX": connection.finishX,
-              "finishY": connection.finishY});
+              "finishY": connection.finishY});*/
     }
 
     function makeConnection(unit,downNode,downNodeRectangle,upNode) {
@@ -1952,8 +1961,8 @@ ApplicationWindow {
             property double index
             width: 2*downNode.radius
             height: 2*downNode.radius
-            //opacity: 0.2
-            color: "transparent"
+            opacity: 0.2
+            color: "red"
             x: unit.width*index/(outputnum+1) - downNode.radius
             y: unit.height - downNode.radius - 2*pix
             MouseArea {
@@ -2001,12 +2010,6 @@ ApplicationWindow {
                             }
                         }
                     }
-                    downNodeRectangle.connection = connectionShapeComponent.createObject(connections, {
-                         "beginX": unit.x + unit.width*index/(outputnum+1),
-                         "beginY": unit.y + unit.height - 2*pix,
-                         "finishX": unit.x + unit.width*index/(outputnum+1),
-                         "finishY": unit.y + unit.height - 2*pix,
-                         "origin": downNodeRectangle});
                 }
                 onPositionChanged: {
                     if (pressed) {
@@ -2017,7 +2020,18 @@ ApplicationWindow {
                                 mouseAdjust[0]
                         var finishY = unit.y + downNodeRectangle.y + downNode.radius +
                                 mouseAdjust[1] + 2*pix
-                        updateConnection(connection,beginX,beginY,finishX,finishY)
+                        if (connection===null) {
+                            connection = connectionShapeComponent.createObject(connections, {
+                                 "beginX": beginX,
+                                 "beginY": beginY,
+                                 "finishX": finishX,
+                                 "finishY": finishY,
+                                 "origin": downNodeRectangle});
+                            downNodeRectangle.connection = connection
+                        }
+                        else {
+                            updateConnection(connection,beginX,beginY,finishX,finishY)
+                        }
                     }
                 }
                 onReleased: {
@@ -2049,19 +2063,24 @@ ApplicationWindow {
                             }
                         }
                     }
-                    if (downNodeRectangle.connectedNode!==null) {
-                        downNodeRectangle.connectedNode.visible = false
-                        downNodeRectangle.connectedNode.connectedItem = null
-                        downNodeRectangle.connectedNode.connectedNode = null
+                    var connectedNode = downNodeRectangle.connectedNode
+                    if (connectedNode!==null) {
+                        connectedNode.connectedItem = null
+                        connectedNode.connectedNode = null
+                        connectedNode.visible = false
+                        downNodeRectangle.destroy()
+                    }
+                    else {
+                        downNodeRectangle.x = unit.width*index/(outputnum+1) - downNode.radius
+                        downNodeRectangle.y = unit.height - downNode.radius - 2*pix
                     }
                     downNodeRectangle.connection.destroy()
+
                     downNode.border.color = defaultpalette.controlborder
                     downNode.border.width = 3*pix
                     if (downNodeItem.children.length===2) {
                         downNode.visible = false
                     }
-                    downNodeRectangle.x = unit.width*index/(outputnum+1) - downNode.radius
-                    downNodeRectangle.y = unit.height - downNode.radius - 2*pix
                 }
             }
         }
@@ -2221,27 +2240,19 @@ ApplicationWindow {
                                 }
                             }
                         }
-                        upNode.connectedItem.connection.destroy()
-                        upNode.connectedItem.connectedNode = null
-                        upNode.connectedItem.destroy()
-
-                        upNode.connectedNode.visible = false
+                        connectedNode = upNode.connectedNode
+                        connectedItem = upNode.connectedItem
+                        connectedItem.connectedNode = null
+                        connectedItem.connection.destroy()
+                        connectedItem.destroy()
+                        if (connectedNode.parent.children.length===2) {
+                            connectedNode.visible = false
+                        }
                         upNode.connectedNode = null
+                        upNode.connectedItem = null
                         upNodeRectangle.x = unit.width*index/(inputnum+1)-upNode.radius
                         upNodeRectangle.y = -upNode.radius + 2*pix
-                        for (i=0;i<layers.children.length;i++) {
-                            unit_other = layers.children[i]
-                            upNodes_other = getUpNodes(unit_other)
-                            for (j=0;j<upNodes_other.children.length;j++) {
-                                upNode_other = getUpNode(unit_other,j)
-                                if (upNode_other.connectedNode===null) {
-                                    upNode_other.visible = false
-                                }
-                            }
-                        }
-                        for (i=0;i<downNodes.children.length;i++) {
-                            downNodes.children[i].children[0].visible = false
-                        }
+                        upNode.visible = false
                     }
                 }
             }
@@ -2317,9 +2328,6 @@ ApplicationWindow {
                 y: finishY
             }
         }
-
-
-
     }
 
     Component {
