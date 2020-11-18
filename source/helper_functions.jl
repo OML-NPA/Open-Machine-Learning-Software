@@ -296,3 +296,25 @@ function pad(array::CUDA.CuArray,padding::Vector,fun::Union{typeof(zeros),typeof
             array,CUDA.zeros(el_type,size(array,1),rightpad[2]))
     end
 end
+
+function conn(num::Int64)
+    if num==4
+        kernel = [false true false
+                  true true true
+                  false true false]
+    else
+        kernel = [true true true
+                  true true true
+                  true true true]
+    end
+
+end
+
+function get_random_color(seed)
+    Random.seed!(seed)
+    rand(RGB{N0f8})
+end
+
+function allequal(itr::Union{Array,Tuple})
+    return length(itr)==0 || all( ==(itr[1]), itr)
+end

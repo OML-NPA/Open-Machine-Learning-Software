@@ -303,21 +303,26 @@ function apply_border_data_main(data_in::Array{<:AbstractFloat},model_data::Mode
     for i = 1:num_border
         ind_border = inds_border[i]
         ind = num_feat + ind_border
-        data_feat = data_in[:,:,ind_border]
+        data_feat_bool = data_in[:,:,ind_border].>0.5
+        data_feat = Float32.(data_feat_bool)
         data_border = data_in[:,:,ind]
-        data_border = imfilter(data_border, Kernel.gaussian(1.5))
-        skel = thinning(data_border.>0.5)
-        remove_spurs!(skel)
-        kernel = [false true false
-                  true true true
-                  false true false]
-        components = label_components((!).(skel),kernel)
+        border_bool = (!).(data_border.>0.5)
+        components = label_components(border_bool,conn(4))
+        centroids = component_centroids(components)
         intensities = component_intensity(components,data_feat)
         bad_components = findall(intensities.<0.7)
         for i = 1:length(bad_components)
-            components[components.==i] .= 0
+            components[components.==bad_components[i]] .= 0
         end
-        data[:,:,ind_border] = Float32.(components.>0)
+        dist_feat = feature_transform(components.>0)
+        dist = Float32.(distance_transform(dist_feat))
+        markers = label_components(dist .< 1)
+        segments = watershed(dist, markers)
+        segmented = collect(labels_map(segments))
+        segmented[(!).(data_feat_bool)] .= 0
+        borders = mapwindow(x->!allequal(x), segmented, (3,3))
+        segmented[borders] .= 0
+        data[:,:,ind_border] = Float32.(segmented.>0.5)
     end
     return data
 end
