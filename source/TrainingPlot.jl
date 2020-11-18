@@ -243,22 +243,30 @@ function reset_validation_data(validation_plot_data::Validation_plot_data)
     return nothing
 end
 
-function move(model::Chain,target::Union{typeof(cpu),typeof(gpu)})
+function move(model,target::Union{typeof(cpu),typeof(gpu)})
     model_moved = []
-    for i = 1:length(model)
-        if model[i] isa Parallel
-            layers = (target.([model[i].layers...])...,)
-            for i = 1:length(layers)
-                if layers[i] isa Parallel
-                    move(layers[i],target)
+    if model isa Chain
+        for i = 1:length(model)
+            if model[i] isa Parallel
+                layers = model[i].layers
+                new_layers = Array{Any}(undef,length(layers))
+                for i = 1:length(layers)
+                    new_layers[i] = move(layers[i],target)
                 end
+                new_layers = (new_layers...,)
+                push!(model_moved,Parallel(new_layers))
+            else
+                push!(model_moved,target(model[i]))
             end
-            push!(model_moved,Parallel(layers))
-        else
-            push!(model_moved,target(model[i]))
         end
+    else
+        push!(model_moved,target(model))
     end
-    model_moved = Chain(model_moved...)
+    if length(model_moved)==1
+        model_moved = model_moved[1]
+    else
+        model_moved = Chain(model_moved...)
+    end
     return model_moved
 end
 
@@ -309,19 +317,29 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
         set::Tuple{Array{<:Array{<:AbstractFloat,4},1},Array{<:Array{<:AbstractFloat,4},1}},
         model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
-    labels_color = vcat(labels_color,labels_color[findall(border)])
+    border_colors = labels_color[findall(border)]
+    labels_color = vcat(labels_color,border_colors,border_colors)
     perm_labels_color = map(x -> permutedims(x[:,:,:]/255,[3,2,1]),labels_color)
-    data_array = predicted_array
-    #data_array = map(x->apply_border_data_main(x,model_data),predicted_array)
+    if any(border)
+        border_array = map(x->apply_border_data_main(x,model_data),predicted_array)
+        data_array = cat.(predicted_array,border_array,dims=3)
+    else
+        data_array = predicted_array
+    end
     target_color = []
     predicted_color = []
     predicted_error = []
+    num_feat = size(predicted_array[1],3)
     for i = 1:length(predicted_array)
         target_temp = []
         predicted_color_temp = []
         predicted_error_temp = []
         for j = 1:length(labels_color)
-            target = set[2][i][:,:,j]
+            if j>num_feat
+                target = set[2][i][:,:,j-num_feat]
+            else
+                target = set[2][i][:,:,j]
+            end
             target_img = target.*perm_labels_color[j]
             target_img = permutedims(target_img,[3,1,2])
             target_img = colorview(RGB,target_img)
@@ -374,7 +392,7 @@ function validate_main(settings::Settings,training_data::Training_data,
     predicted_array = Vector{Array{Float32}}(undef,num)
     loss_array = Vector{Float32}(undef,num)
     put!(channels.validation_progress,[num])
-    num_parts = 5
+    num_parts = 6
     offset = 20
     GC.gc()
     for i = 1:num
@@ -395,6 +413,7 @@ function validate_main(settings::Settings,training_data::Training_data,
             ind_split = floor(max_value/num_parts)
             predicted = []
             for j = 1:num_parts
+
                 if j==num_parts
                     ind_split = ind_split+rem(max_value,num_parts)
                 end
@@ -406,26 +425,34 @@ function validate_main(settings::Settings,training_data::Training_data,
                 start_ind = Int64(start_ind<1 ? 1 : start_ind)
                 end_ind = Int64(end_ind>max_value ? max_value : end_ind)
                 temp_data = input_data[:,start_ind:end_ind,:,:]
+                max_dim_size = size(temp_data,ind_max)
+                offset_add = Int64(ceil(max_dim_size/16)*16 - max_dim_size)
+                temp_data = pad(temp_data,[0,offset_add],same)
                 if use_GPU
                     temp_data = gpu(temp_data)
                 end
                 temp_predicted = model(temp_data)
                 temp_size = size(temp_predicted,ind_max)
-                offset_temp = temp_size - correct_size
+                offset_temp = (temp_size - correct_size) - offset_add
                 if offset_temp>0
+                    div_result = offset_add/2
+                    offset_add1 = Int64(floor(div_result))
+                    offset_add2 = Int64(ceil(div_result))
                     if j==1
-                        temp_predicted = temp_predicted[:,1:end-offset_temp,:,:]
+                        temp_predicted = temp_predicted[:,
+                            (1+offset_add1):(end-offset_temp-offset_add2),:,:]
                     elseif j==num_parts
-                        temp_predicted = temp_predicted[:,1+offset_temp:end,:,:]
+                        temp_predicted = temp_predicted[:,
+                            (1+offset_temp+offset_add1):(end-offset_add2),:,:]
                     else
-                        temp = (temp_size - correct_size)/2
+                        temp = (temp_size - correct_size - offset_add)/2
                         offset_temp = Int64(floor(temp))
                         offset_temp2 = Int64(ceil(temp))
-                        temp_predicted = temp_predicted[:,1+offset_temp:end-offset_temp2,:,:]
+                        temp_predicted = temp_predicted[:,
+                            (1+offset_temp+offset_add1):(end-offset_temp2-offset_add2),:,:]
                     end
                 elseif offset_temp<0
-                    temp_predicted = gpu(collect(padarray(
-                        cpu(temp_predicted),Pad(0,-offset_temp,0,0))))
+                    temp_predicted = pad(temp_predicted,[0,-offset_temp])
                 end
                 push!(predicted,temp_predicted)
                 GC.gc()

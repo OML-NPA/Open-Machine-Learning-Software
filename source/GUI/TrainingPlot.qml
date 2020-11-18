@@ -201,7 +201,7 @@ ApplicationWindow {
                                     labelsFont.pointSize: 10
                                     tickInterval: 0.1
                                     min: 0
-                                    max: 1
+                                    max: 0.01
                                 }
                             LineSeries {
                                 id: lossLine
@@ -366,7 +366,6 @@ ApplicationWindow {
                                     onValueModified: {
                                         Julia.put_channel("Training",["epochs",value])
                                         validationplotTimer.epochs = value
-                                        epochsLabel.text = value
                                         validationplotTimer.max_iterations =
                                                 value*validationplotTimer.iterations_per_epoch
                                         maxiterationsLabel.text = validationplotTimer.max_iterations

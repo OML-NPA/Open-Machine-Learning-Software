@@ -875,7 +875,7 @@ ApplicationWindow {
                        var name = Julia.get_settings(["Training","name"])
                        var url = Julia.source_dir()+"/models/"+name+".model"
                        neuralnetworkTextField.text = url
-                       //Julia.make_model()
+                       Julia.make_model()
                        Julia.save_model(url)
                        opacity = 1
                     }
@@ -1961,8 +1961,8 @@ ApplicationWindow {
             property double index
             width: 2*downNode.radius
             height: 2*downNode.radius
-            opacity: 0.2
-            color: "red"
+            //opacity: 0.2
+            color: "transparent"
             x: unit.width*index/(outputnum+1) - downNode.radius
             y: unit.height - downNode.radius - 2*pix
             MouseArea {

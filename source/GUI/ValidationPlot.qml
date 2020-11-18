@@ -227,6 +227,12 @@ ApplicationWindow {
                                         {"name": featureModel.get(i).name+" (border)"})
                                 }
                             }
+                            for (i=0;i<num;i++) {
+                                if (featureModel.get(i).border) {
+                                    featureselectModel.append(
+                                        {"name": featureModel.get(i).name+" (applied border)"})
+                                }
+                            }
                             currentIndex = 0
                         }
                     }

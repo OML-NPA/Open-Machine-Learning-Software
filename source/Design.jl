@@ -9,6 +9,7 @@ function Parallel(x::Union{CuArray{<:AbstractFloat},Array{<:AbstractFloat}},
     return result
 end
 (m::Parallel)(x) = Parallel(x, m.layers)
+Flux.@functor Parallel
 
 struct Catenation
     dims::Any
@@ -97,7 +98,7 @@ function getlinear(type::AbstractString, d, in_size::Tuple)
             in_size[3] => d["filters"],
             pad = SamePad(),
             stride = d["stride"],
-            dilation = d["dilationfactor"],
+            dilation = d["dilationfactor"]
         )
         out = (outdims(layer, in_size)..., d["filters"])
         return (layer, out)
@@ -365,18 +366,21 @@ end
 function get_topology_branches(layers_arranged,inds_arranged,
     layers,connections,connections_in,types,ind)
     while !isempty.([ind])[1]
+    #for i = 1
         numk = length(ind)
         if any(map(x -> x.=="Catenation" ||
                 x.=="Addition",types[vcat(vcat(ind...)...)]))
             if all(length.(ind).==1) && allcmp(ind) &&
                     length(ind)==length(connections_in[ind[1][1][1]])
                 prev_ind = ind[1][1][1]
-                to_arrange_inds = map(x->x[1],inds_arranged[end])
+                #@info ind,inds_arranged[end-1],inds_arranged[end]
+                to_arrange_inds = map(x->x[end],inds_arranged[end])
                 inds_zero = findall(map(x-> x[1]==0,to_arrange_inds))
                 if length(inds_zero)>0
                     to_arrange_inds[inds_zero] .= inds_arranged[end-1]
                 end
                 input_inds = connections_in[prev_ind]
+
                 inds_rearrange = map(x->
                     findfirst(x.==input_inds),to_arrange_inds)
                 inds_arranged[end] = inds_arranged[end][inds_rearrange]
