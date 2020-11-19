@@ -663,6 +663,7 @@ ApplicationWindow {
                 id: mainFrame
                 width : customizationWindow.width-leftFrame.width-rightFrame.width
                 height : customizationWindow.height
+                backgroundColor: defaultpalette.listview
                 padding: 0
                 antialiasing: true
                 layer.enabled: true
@@ -682,7 +683,6 @@ ApplicationWindow {
                    contentWidth: flickableMainPane.width
                    contentHeight: flickableMainPane.height
                    showBackground: false
-                   backgroundColor: defaultpalette.listview
                    clip: false
                    Pane {
                         id: mainPane
@@ -745,9 +745,180 @@ ApplicationWindow {
                         }
                         property var selectioninds: []
                         property var justselected: false
+                        Timer {
+                            id: mainframeTimer
+                            running: true
+                            repeat: true
+                            interval: 50
+                            property double prevY: 0
+                            property double prevX: 0
+                            property double prevMouseY: 0
+                            property double prevMouseX: 0
+                            property double prevValY: 0.5
+                            property double prevValX: 0.5
+                            property double prevAdjY: 0
+                            property double prevAdjX: 0
+                            property double mouseY: 0
+                            property double mouseX: 0
+                            property bool pressed: false
+                            property var object: null
+                            property var object_data: null
+                            onTriggered: {
+                                // During scrolling
+                                if (flickableMainPane.contentY!==prevY) {
+                                    var startY = flickableMainPane.ScrollBar.vertical.height/
+                                        mainPane.height
+                                    var valY = (flickableMainPane.contentY +
+                                        flickableMainPane.ScrollBar.vertical.height)/
+                                        mainPane.height
+                                    var maxheightchildren = getbottomchild(layers)
+                                    var minheightchildren = gettopchild(layers)
+                                    var adjY = 50*pix
+                                    if (valY>0.99) {
+                                        mainPane.height = mainPane.height + adjY
+                                        flickableMainPane.contentHeight = mainPane.height
+                                    }
+                                    else if (valY<0.98 && valY>maxheightchildren/mainPane.height) {
+                                        mainPane.height = mainPane.height - adjY
+                                        flickableMainPane.contentHeight = mainPane.height
+                                    }
+                                    prevY = flickableMainPane.contentY
+                                }
+                                if (flickableMainPane.contentX!==prevX) {
+                                    var valX = (flickableMainPane.contentX +
+                                        flickableMainPane.ScrollBar.horizontal.width)/
+                                        mainPane.width
+                                    var maxwidthchildren = getrightchild(layers)
+                                    var adjX = 50*pix
+                                    if (valX>0.99) {
+                                        mainPane.width = mainPane.width + adjX
+                                        flickableMainPane.contentWidth = mainPane.width
+                                    }
+                                    else if (valX>maxwidthchildren/mainPane.width && valX<0.98) {
+                                        mainPane.width = mainPane.width - adjX
+                                        flickableMainPane.contentWidth = mainPane.width
+                                    }
+                                    prevX = flickableMainPane.contentX
+                                }
+                                // Object moving
+                                if (pressed) {
+                                    adjY = 0
+                                    valY = (mouseY-
+                                        flickableMainPane.contentY)/flickableMainPane.height
+                                    if (valY>0.95 && ((prevAdjY===0) || (mouseY!==prevMouseY))) {
+                                        adjY = 30*pix*(valY-0.95)/0.05
+                                        prevAdjY = adjY
+                                        prevValY = valY
+                                    }
+                                    else if ((mouseY==prevMouseY) && (prevValY>=0.95)) {
+                                        adjY = prevAdjY
+                                        mouseY = mouseY + adjY
+                                        prevMouseY = mouseY
+                                    }
+                                    else if (valY<0.05 && ((prevAdjY===0) || (mouseY!==prevMouseY))) {
+                                        adjY = 30*pix*(valY-0.05)/0.05
+                                        prevAdjY = adjY
+                                        prevValY = valY
+                                    }
+                                    else if ((mouseY==prevMouseY) && (prevValY<=0.05)) {
+                                        adjY = prevAdjY
+                                        mouseY = mouseY + adjY
+                                        prevMouseY = mouseY
+                                    }
+                                    else {
+                                        prevAdjY = 0
+                                    }
+                                    if (adjY!==0) {
+                                        var newY = flickableMainPane.contentY + adjY
+                                        if (newY>0) {
+                                            flickableMainPane.contentY = newY
+                                        }
+                                        else if (newY<0) {
+                                            flickableMainPane.contentY = 0
+                                        }
+                                    }
+                                    adjX = 0
+                                    valX = (mouseX-
+                                        flickableMainPane.contentX)/flickableMainPane.width
+                                    if (valX>0.95 && ((prevAdjX===0) || (mouseX!==prevMouseX))) {
+                                        adjX = 30*pix*(valX-0.95)/0.05
+                                        prevAdjX = adjX
+                                        prevValX = valX
+                                    }
+                                    else if ((mouseX==prevMouseX) && (prevValX>=0.95)) {
+                                        adjX = prevAdjX
+                                        mouseX = mouseX + adjX
+                                        prevMouseX = mouseX
+                                    }
+                                    else if (valX<0.05 && ((prevAdjX===0) || (mouseX!==prevMouseX))) {
+                                        adjX = 30*pix*(valX-0.05)/0.05
+                                        prevAdjX = adjX
+                                        prevValX = valX
+                                    }
+                                    else if ((mouseX==prevMouseX) && (prevValX<=0.05)) {
+                                        adjX = prevAdjX
+                                        mouseX = mouseX + adjX
+                                        prevMouseX = mouseX
+                                    }
+                                    else {
+                                        prevAdjX = 0
+                                    }
+                                    if (adjX!==0) {
+                                        var newX = flickableMainPane.contentX + adjX
+                                        if (newX>0) {
+                                            flickableMainPane.contentX = newX
+                                        }
+                                        else if (newX<0) {
+                                            flickableMainPane.contentX = 0
+                                        }
+                                    }
+                                    prevMouseY = mouseY
+                                    prevMouseX = mouseX
+                                    if (mouseX>mainPane.width) {
+                                        mouseX = mainPane.width
+                                    }
+                                    else if (flickableMainPane.contentX==0) {
+                                        adjX = 0
+                                    }
+                                    if (mouseY>mainPane.height) {
+                                        mouseY = mainPane.height
+                                    }
+                                    else if (flickableMainPane.contentY==0) {
+                                        adjY = 0
+                                    }
+                                    // Update object position
+                                    if (adjX!==0 || adjY!==0) {
+                                        if (object==="mainMouseArea") {
+                                            var mouse = {x: mouseX, y: mouseY}
+                                            updatePosSelectRect(mouse,object_data[0],object_data[1])
+                                        }
+                                        else if (object==="unit") {
+                                            var unit = object_data[0]
+                                            unit.x = unit.x + adjX
+                                            unit.y = unit.y + adjY
+                                            updatePosUnit(unit)
+                                        }
+                                        else if (object==="upnode") {
+                                            var upNodeRectangle = object_data[1]
+                                            upNodeRectangle.x = upNodeRectangle.x + adjX
+                                            upNodeRectangle.y = upNodeRectangle.y + adjY
+                                            updatePosUpNode(object_data[0],upNodeRectangle,object_data[2])
+                                        }
+                                        else if (object==="downnode") {
+                                            var downNodeRectangle = object_data[2]
+                                            downNodeRectangle.x = downNodeRectangle.x + adjX
+                                            downNodeRectangle.y = downNodeRectangle.y + adjY
+                                            updatePosDownNode(object_data[0],
+                                                object_data[1],downNodeRectangle,object_data[3])
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         MouseArea {
                             id: mainMouseArea
                             anchors.fill: parent
+                            hoverEnabled: true
                             property int initialXPos
                             property int initialYPos
                             onClicked: {
@@ -772,36 +943,16 @@ ApplicationWindow {
                                     selectionRect.width = 0
                                     selectionRect.height = 0
                                     selectionRect.visible = true
+                                    mainframeTimer.pressed = true
+                                    mainframeTimer.object = "mainMouseArea"
                                 }
                             }
-
                             onPositionChanged: {
-                                if (selectionRect.visible == true) {
-                                    if ((mouse.x != initialXPos || mouse.y != initialYPos)) {
-                                        if (mouse.x >= initialXPos) {
-                                            if (mouse.y >= initialYPos)
-                                               selectionRect.rotation = 0
-                                            else
-                                               selectionRect.rotation = -90
-
-                                        }
-                                        else {
-                                            if (mouse.y >= initialYPos)
-                                                selectionRect.rotation = 90
-                                            else
-                                                selectionRect.rotation = -180
-                                        }
-                                    }
-
-                                    if (selectionRect.rotation == 0 || selectionRect.rotation == -180) {
-                                        selectionRect.width = Math.abs(mouse.x - selectionRect.x)
-                                        selectionRect.height = Math.abs(mouse.y - selectionRect.y)
-                                    }
-                                    else {
-                                        selectionRect.width = Math.abs(mouse.y - selectionRect.y)
-                                        selectionRect.height = Math.abs(mouse.x - selectionRect.x)
-                                    }
-                                }
+                                updatePosSelectRect(mouse,initialXPos,initialYPos)
+                                mainframeTimer.object_data = [initialXPos,initialYPos]
+                                var mapped_point = mapToItem(mainMouseArea,mouse.x,mouse.y)
+                                mainframeTimer.mouseY = mapped_point.y
+                                mainframeTimer.mouseX = mapped_point.x
                             }
 
                             onReleased: {
@@ -826,6 +977,8 @@ ApplicationWindow {
                                     }
                                 }
                                 mainPane.justselected = true
+                                mainframeTimer.pressed = false
+                                mainframeTimer.object = null
                             }
                         }
 
@@ -982,7 +1135,6 @@ ApplicationWindow {
                             width: rightFrame.width-2*pix
                             contentHeight: 0.6*(customizationWindow.height - 2*layersLabel.height) - 4*pix
                             ScrollBar.horizontal.visible: false
-
                             Item {
                                 MouseArea {
                                     width: propertiesFrame.width
@@ -1082,6 +1234,104 @@ ApplicationWindow {
 
 
 //--FUNCTIONS--------------------------------------------------------------------
+    function updatePosDownNode(unit,downNode,downNodeRectangle,mouseAdjust) {
+        var outputnum = downNodeRectangle.outputnum
+        var index = downNodeRectangle.index
+        var connection = downNodeRectangle.connection
+        var beginX = unit.x + unit.width*index/(outputnum+1)
+        var beginY = unit.y + unit.height - 2*pix
+        var finishX = unit.x + downNodeRectangle.x + downNode.radius +
+                mouseAdjust[0]
+        var finishY = unit.y + downNodeRectangle.y + downNode.radius +
+                mouseAdjust[1] + 2*pix
+        if (connection===null) {
+            connection = connectionShapeComponent.createObject(connections, {
+                 "beginX": beginX,
+                 "beginY": beginY,
+                 "finishX": finishX,
+                 "finishY": finishY,
+                 "origin": downNodeRectangle});
+            downNodeRectangle.connection = connection
+        }
+        else {
+            updateConnection(connection,beginX,beginY,finishX,finishY)
+        }
+    }
+
+    function updatePosUpNode(upNode,upNodeRectangle,mouseAdjust) {
+        var point = upNodeRectangle.mapToItem(layers,0,0)
+        var connection = upNode.connectedItem.connection
+        var beginX = upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
+                upNode.connectedItem.index/(upNode.connectedItem.outputnum+1)
+        var beginY = upNode.connectedItem.unit.y +
+                upNode.connectedItem.unit.height - 2*pix
+        var finishX = point.x +
+                upNode.connectedNode.radius + mouseAdjust[0]
+        var finishY = point.y +
+                upNode.connectedNode.radius + mouseAdjust[1] + 2*pix
+        updateConnection(connection,beginX,beginY,finishX,finishY)
+
+    }
+
+    function updatePosUnit(unit) {
+        var inds = -1
+        var currentind = -1
+        for (var i=0;i<layers.children.length;i++) {
+            if (layers.children[i]===unit) {
+                currentind = i
+                break
+            }
+        }
+        if (mainPane.selectioninds.length===0) {
+            inds = [currentind]
+        }
+        else {
+            inds = mainPane.selectioninds
+        }
+        var devX = unit.x - unit.oldpos[0]
+        var devY = unit.y - unit.oldpos[1]
+        for (var k=0;k<inds.length;k++) {
+            var other_unit = layers.children[inds[k]]
+            if (inds[k]!==currentind) {
+                other_unit.x = other_unit.x + devX
+                other_unit.y = other_unit.y + devY
+            }
+            other_unit.oldpos = [other_unit.x,other_unit.y]
+            updatePosition(other_unit)
+        }
+        unit.oldpos = [unit.x,unit.y]
+    }
+
+    function updatePosSelectRect(mouse,initialXPos,initialYPos) {
+        if (selectionRect.visible==true) {
+            if ((mouse.x!==initialXPos || mouse.y!==initialYPos)) {
+                if (mouse.x>=initialXPos) {
+                    if (mouse.y>=initialYPos)
+                       selectionRect.rotation = 0
+                    else
+                       selectionRect.rotation = -90
+
+                }
+                else {
+                    if (mouse.y>=initialYPos)
+                        selectionRect.rotation = 90
+                    else
+                        selectionRect.rotation = -180
+                }
+            }
+
+            if (selectionRect.rotation==0 || selectionRect.rotation==-180) {
+                selectionRect.width = Math.abs(mouse.x - selectionRect.x)
+                selectionRect.height = Math.abs(mouse.y - selectionRect.y)
+            }
+            else {
+                selectionRect.width = Math.abs(mouse.y - selectionRect.y)
+                selectionRect.height = Math.abs(mouse.x - selectionRect.x)
+            }
+            mainframeTimer.mouseY = mouse.y
+            mainframeTimer.mouseX = mouse.x
+        }
+    }
 
     function add(array,num) {
         var array2 = [...array]
@@ -1572,7 +1822,7 @@ ApplicationWindow {
         var minwidthchildren = getleftchild(layers)
         var maxheightchildren = getbottomchild(layers)
         var maxwidthchildren = getrightchild(layers)
-        var padding = 20*pix
+        var padding = 100*pix
         var limit = [mainFrame.width/4,mainFrame.height]
 
         var adjX = 0
@@ -1841,6 +2091,9 @@ ApplicationWindow {
                         deselectunits()
                         selectunit(unit)
                     }
+                    mainframeTimer.pressed = true
+                    mainframeTimer.object = "unit"
+                    mainframeTimer.object_data = [unit]
                 }
                 onClicked: {
                     deselectunits()
@@ -1850,36 +2103,16 @@ ApplicationWindow {
                 }
                 onPositionChanged: {
                     if (pressed) {
-                        var inds = -1
-                        var currentind = -1
-                        for (var i=0;i<layers.children.length;i++) {
-                            if (layers.children[i]===unit) {
-                                currentind = i
-                                break
-                            }
-                        }
-                        if (mainPane.selectioninds.length===0) {
-                            inds = [currentind]
-                        }
-                        else {
-                            inds = mainPane.selectioninds
-                        }
-                        var devX = unit.x - unit.oldpos[0]
-                        var devY = unit.y - unit.oldpos[1]
-                        for (var k=0;k<inds.length;k++) {
-                            var other_unit = layers.children[inds[k]]
-                            if (inds[k]!==currentind) {
-                                other_unit.x = other_unit.x + devX
-                                other_unit.y = other_unit.y + devY
-                            }
-                            other_unit.oldpos = [other_unit.x,other_unit.y]
-                            updatePosition(other_unit)
-                        }
-                        unit.oldpos = [unit.x,unit.y]
+                        updatePosUnit(unit)
+                        var mapped_point = mapToItem(mainMouseArea,mouse.x,mouse.y)
+                        mainframeTimer.mouseY = mapped_point.y
+                        mainframeTimer.mouseX = mapped_point.x
                     }
                 }
                 onReleased: {
                     updateMainPane(unit)
+                    mainframeTimer.pressed = false
+                    mainframeTimer.object = null
                 }
             }
 
@@ -2010,28 +2243,16 @@ ApplicationWindow {
                             }
                         }
                     }
+                    mainframeTimer.pressed = true
+                    mainframeTimer.object = "downnode"
+                    mainframeTimer.object_data = [unit,downNode,downNodeRectangle,mouseAdjust]
                 }
                 onPositionChanged: {
                     if (pressed) {
-                        var connection = downNodeRectangle.connection
-                        var beginX = unit.x + unit.width*index/(outputnum+1)
-                        var beginY = unit.y + unit.height - 2*pix
-                        var finishX = unit.x + downNodeRectangle.x + downNode.radius +
-                                mouseAdjust[0]
-                        var finishY = unit.y + downNodeRectangle.y + downNode.radius +
-                                mouseAdjust[1] + 2*pix
-                        if (connection===null) {
-                            connection = connectionShapeComponent.createObject(connections, {
-                                 "beginX": beginX,
-                                 "beginY": beginY,
-                                 "finishX": finishX,
-                                 "finishY": finishY,
-                                 "origin": downNodeRectangle});
-                            downNodeRectangle.connection = connection
-                        }
-                        else {
-                            updateConnection(connection,beginX,beginY,finishX,finishY)
-                        }
+                        updatePosDownNode(unit,downNode,downNodeRectangle,mouseAdjust)
+                        var mapped_point = mapToItem(mainMouseArea,mouse.x,mouse.y)
+                        mainframeTimer.mouseY = mapped_point.y
+                        mainframeTimer.mouseX = mapped_point.x
                     }
                 }
                 onReleased: {
@@ -2081,6 +2302,8 @@ ApplicationWindow {
                     if (downNodeItem.children.length===2) {
                         downNode.visible = false
                     }
+                    mainframeTimer.pressed = false
+                    mainframeTimer.object = null
                 }
             }
         }
@@ -2162,23 +2385,19 @@ ApplicationWindow {
                                 getUpNode(unit_other,j).visible = true
                             }
                         }
+                        mainframeTimer.pressed = true
+                        mainframeTimer.object = "upnode"
+                        mainframeTimer.object_data = [upNode,upNodeRectangle,mouseAdjust]
                     }
                     onPositionChanged: {
                         if (upNode.connectedNode==null) {
                             return
                         }
                         if (pressed) {
-                            var point = upNodeRectangle.mapToItem(layers,0,0)
-                            var connection = upNode.connectedItem.connection
-                            var beginX = upNode.connectedItem.unit.x + upNode.connectedItem.unit.width*
-                                    upNode.connectedItem.index/(upNode.connectedItem.outputnum+1)
-                            var beginY = upNode.connectedItem.unit.y +
-                                    upNode.connectedItem.unit.height - 2*pix
-                            var finishX = point.x +
-                                    upNode.connectedNode.radius + mouseAdjust[0]
-                            var finishY = point.y +
-                                    upNode.connectedNode.radius + mouseAdjust[1] + 2*pix
-                            updateConnection(connection,beginX,beginY,finishX,finishY)
+                            updatePosUpNode(upNode,upNodeRectangle,mouseAdjust)
+                            var mapped_point = mapToItem(mainMouseArea,mouse.x,mouse.y)
+                            mainframeTimer.mouseY = mapped_point.y
+                            mainframeTimer.mouseX = mapped_point.x
                         }
                     }
                     onReleased: {
@@ -2215,22 +2434,21 @@ ApplicationWindow {
                                     upNode_other.connectedItem = upNode.connectedItem
                                     upNode_other.visible = true
                                     var upNodePoint = upNodeRec_other.mapToItem(layers,0,0)
-                                    var downNodePoint = upNode.connectedItem.mapToItem(layers,0,0)
+                                    var downNodePoint = connectedItem.mapToItem(layers,0,0)
                                     var adjX = downNodePoint.x - upNodePoint.x
                                     var adjY = downNodePoint.y - upNodePoint.y
                                     upNodeRectangle.x = unit.width*index/(inputnum+1)-upNode.radius
                                     upNodeRectangle.y = -upNode.radius + 2*pix
-                                    upNode.connectedItem.x = connectedItem.x - adjX
-                                    upNode.connectedItem.y = connectedItem.y - adjY
-                                    var point = downNodeRec_other.mapToItem(layers,0,0)
+                                    connectedItem.x = connectedItem.x - adjX
+                                    connectedItem.y = connectedItem.y - adjY
                                     var connection = connectedItem.connection
+                                    var connection_data = connection.data[0]
+                                    var pathElement = connection_data.pathElements[0]
                                     var beginX = connectedItem.unit.x + connectedItem.unit.width*
                                             connectedItem.index/(connectedItem.outputnum+1)
                                     var beginY = connectedItem.unit.y + connectedItem.unit.height - 2*pix
-                                    var finishX = point.x +
-                                            connectedNode.radius + mouseAdjust[0]
-                                    var finishY = point.y +
-                                            connectedNode.radius + mouseAdjust[1] + 2*pix
+                                    var finishX = pathElement.x + adjX
+                                    var finishY = pathElement.y + adjY - 2*pix
                                     updateConnection(connection,beginX,beginY,finishX,finishY)
                                     if (upNode!==upNode_other) {
                                         connectedNode = null
@@ -2253,6 +2471,8 @@ ApplicationWindow {
                         upNodeRectangle.x = unit.width*index/(inputnum+1)-upNode.radius
                         upNodeRectangle.y = -upNode.radius + 2*pix
                         upNode.visible = false
+                        mainframeTimer.pressed = false
+                        mainframeTimer.object = null
                     }
                 }
             }
