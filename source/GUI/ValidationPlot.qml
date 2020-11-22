@@ -14,27 +14,13 @@ ApplicationWindow {
     id: validationWindow
     visible: true
     minimumHeight: Math.max(1024*pix,informationPane.height)
-    maximumHeight: Math.max(1024*pix,informationPane.height)
-    minimumWidth: informationPane.width + 1024*pix
+    //maximumHeight: Math.max(1024*pix,informationPane.height)
+    minimumWidth: informationPane.width + 1024*pix + margin
     title: qsTr("  Deep Data Analysis Software")
     color: defaultpalette.window
     property double margin: 0.02*Screen.width
     property double buttonWidth: 0.1*Screen.width
     property double buttonHeight: 0.03*Screen.height
-
-    onWidthChanged: {
-        if (validationTimer.running) {return}
-        var ind1 = sampleSpinBox.value
-        var ind2 = featureComboBox.currentIndex+1
-        var modif = (validationWindow.width-590*pix)/originalDisplay.width
-        originalDisplay.width = validationWindow.width-590*pix
-        resultDisplay.width = validationWindow.width-590*pix
-        originalDisplay.height = originalDisplay.height*modif
-        resultDisplay.height = originalDisplay.height*modif
-        originalDisplay.contentsScale = originalDisplay.contentsScale*modif
-        resultDisplay.contentsScale = resultDisplay.contentsScale*modif
-        informationPane.height = informationPane.height*modif
-    }
 
     onClosing: {
         trainingplotLoader.sourceComponent = undefined
@@ -96,12 +82,62 @@ ApplicationWindow {
 
         }
     }
+    Timer {
+        id: sizechangeTimer
+        interval: 300
+        running: true
+        repeat: true
+        property double prevWidth: 0
+        property bool prevWidthChanged: false
+        property double check: 0
+        onTriggered: {
+            if (prevWidth!==validationWindow.width) {
+                prevWidth = validationWindow.width
+                check = 0
+                prevWidthChanged = true
+            }
+            else if (prevWidthChanged) {
+                check = check + 1
+                prevWidthChanged = false
+            }
+            else {
+                return
+            }
+            if (check<3) {
+                if (validationTimer.running) {return}
+                var ind1 = sampleSpinBox.value
+                var ind2 = featureComboBox.currentIndex+1
+                var modif = (validationWindow.width-580*pix)/originalDisplay.width
+                var new_width = validationWindow.width-580*pix-margin
+                var new_heigth = Math.min(0.95*Screen.height,originalDisplay.height*modif)
+                var modif2 = Math.min(new_width/originalDisplay.width,
+                    new_heigth/originalDisplay.height)
+                displayItem.width = displayItem.width*modif2
+                originalDisplay.width = originalDisplay.width*modif2
+                resultDisplay.width = originalDisplay.width
+                originalDisplay.height = originalDisplay.height*modif2
+                resultDisplay.height = originalDisplay.height
+                originalDisplay.contentsScale = originalDisplay.contentsScale*modif2
+                resultDisplay.contentsScale = resultDisplay.contentsScale*modif2
+                informationPane.height = Math.max(1024*pix,originalDisplay.height+margin)
+                displayItem.y = Math.max(0.5*margin,
+                    (informationPane.height-originalDisplay.height)/2-0.25*margin)
+                validationWindow.maximumHeight = Math.max(1024*pix,informationPane.height)
+                validationWindow.height = Math.max(1024*pix,informationPane.height)
+                //validationWindow.maximumHeight = Screen.height
+                check = check + 1
+            }
+            else {
+                check = 0
+            }
+        }
+    }
     Item {
-        Item {
+        Pane {
             id: displayItem
             x: 0.5*margin
-            y: (validationWindow.height-originalDisplay.height)/2
-            height: Math.max(1024*pix,originalDisplay.height)
+            y: (validationWindow.height-originalDisplay.height)/2-0.25*margin
+            height: Math.max(1024*pix,originalDisplay.height + 0.5*margin)
             width: Math.max(1024*pix,originalDisplay.width + 0.8*margin)
             JuliaDisplay {
                 id: originalDisplay
@@ -117,9 +153,9 @@ ApplicationWindow {
         }
         Pane {
             id: informationPane
-            x: displayItem.width
+            x: validationWindow.width - 580*pix
             height: Math.max(validationWindow.height,1024*pix)
-            width: 590*pix
+            width: 580*pix
             padding: 0.75*margin
             backgroundColor: defaultpalette.window2
             Column {
