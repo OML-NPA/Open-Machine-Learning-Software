@@ -78,8 +78,12 @@ ApplicationWindow {
                         " (" + loss[0].toFixed(2)+")"
                 get_image(originalDisplay,"data_input_orig",[ind1])
                 get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
+                controlsLabel.visible = true
+                sampleRow.visible = true
+                featureRow.visible = true
+                typeRow.visible = true
+                opacityRow.visible = true
             }
-
         }
     }
     Timer {
@@ -122,9 +126,9 @@ ApplicationWindow {
                 informationPane.height = Math.max(1024*pix,originalDisplay.height+margin)
                 displayItem.y = Math.max(0.5*margin,
                     (informationPane.height-originalDisplay.height)/2-0.25*margin)
-                validationWindow.maximumHeight = Math.max(1024*pix,informationPane.height)
                 validationWindow.height = Math.max(1024*pix,informationPane.height)
-                //validationWindow.maximumHeight = Screen.height
+                displayItem.x = (validationWindow.width - originalDisplay.width -
+                    informationPane.width)/2
                 check = check + 1
             }
             else {
@@ -165,7 +169,7 @@ ApplicationWindow {
                     spacing: 0.3*margin
                     ProgressBar {
                         id: validationProgressBar
-                        width: buttonWidth-50*pix
+                        width: buttonWidth
                         height: buttonHeight
                     }
                     StopButton {
@@ -201,11 +205,15 @@ ApplicationWindow {
                     }
                 }
                 Label {
+                    id: controlsLabel
+                    visible: false
                     topPadding: 0.2*margin
                     text: "Visualization controls"
                     font.bold: true
                 }
                 Row {
+                    id: sampleRow
+                    visible: false
                     spacing: 0.3*margin
                     Label {
                         text: "Sample:"
@@ -233,6 +241,8 @@ ApplicationWindow {
                     }
                 }
                 Row {
+                    id: featureRow
+                    visible: false
                     spacing: 0.3*margin
                     Label {
                         text: "Feature:"
@@ -242,7 +252,7 @@ ApplicationWindow {
                     ComboBox {
                         id: featureComboBox
                         editable: false
-                        width: 0.64*buttonWidth-1*pix
+                        width: 0.76*buttonWidth
                         model: ListModel {
                             id: featureselectModel
                         }
@@ -274,6 +284,8 @@ ApplicationWindow {
                     }
                 }
                 Row {
+                    id: typeRow
+                    visible: false
                     spacing: 0.3*margin
                     Label {
                         text: "Show:"
@@ -285,7 +297,7 @@ ApplicationWindow {
                         property string type: "data_predicted"
                         editable: false
                         currentIndex: 0
-                        width: 0.64*buttonWidth-1*pix
+                        width: 0.76*buttonWidth
                         model: ListModel {
                             id: typeModel
                             ListElement {name: "Result"}
@@ -309,6 +321,8 @@ ApplicationWindow {
                     }
                 }
                 Row {
+                    id: opacityRow
+                    visible: false
                     topPadding: 34*pix
                     spacing: 0.3*margin
                     Label {
@@ -317,7 +331,7 @@ ApplicationWindow {
                         topPadding: -24*pix
                     }
                     Slider {
-                        width: 0.64*buttonWidth-1*pix
+                        width: 0.76*buttonWidth
                         height: 12*pix
                         leftPadding: 0
                         from: 0
