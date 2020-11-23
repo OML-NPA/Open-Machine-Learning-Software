@@ -266,13 +266,12 @@ prepare_training_data() = prepare_training_data_main2(training,training_data,
     model_data,channels.training_data_progress,channels.training_data_results)
 
     function prepare_validation_data_main(training_data::Training_data,
-            model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
+            features::Array,progress::RemoteChannel,results::RemoteChannel)
         put!(progress,3)
         images = load_images(training_data)
         put!(progress,1)
         labels = load_labels(training_data)
         put!(progress,1)
-        features = model_data.features
         if isempty(features)
             @info "empty features"
             return false
@@ -286,13 +285,14 @@ prepare_training_data() = prepare_training_data_main2(training,training_data,
         return nothing
     end
     function  prepare_validation_data_main2(training_data::Training_data,
-            model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
-        @everywhere training_data,model_data
+            features::Array,progress::RemoteChannel,results::RemoteChannel)
+        @everywhere training_data
         remote_do(prepare_validation_data_main,workers()[end],training_data,
-        model_data,progress,results)
+        features,progress,results)
     end
     prepare_validation_data() = prepare_validation_data_main2(training_data,
-        model_data,channels.validation_data_progress,channels.validation_data_results)
+        model_data.features,channels.validation_data_progress,
+        channels.validation_data_results)
 
 function apply_border_data_main(data_in::Array{<:AbstractFloat},model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
@@ -314,12 +314,8 @@ function apply_border_data_main(data_in::Array{<:AbstractFloat},model_data::Mode
         for i = 1:length(bad_components)
             components[components.==bad_components[i]] .= 0
         end
-        dist_feat = feature_transform(components.>0)
-        dist = Float32.(distance_transform(dist_feat))
-        markers = label_components(dist .< 1)
-        segments = watershed(dist, markers)
-        segmented = collect(labels_map(segments))
-        segmented[(!).(data_feat_bool)] .= 0
+        background = data_feat.!=0
+        segmented = segment_objects(components,background)
         borders = mapwindow(x->!allequal(x), segmented, (3,3))
         segmented[borders] .= 0
         data[:,:,ind_border] = Float32.(segmented.>0.5)

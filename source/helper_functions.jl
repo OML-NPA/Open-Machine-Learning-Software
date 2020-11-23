@@ -248,7 +248,8 @@ function time()
 end
 
 same(el_type::Type,row::Int64,col::Int64,vect::Array) = ones(el_type,row,col).*vect
-same(el_type::Type,row::Int64,col::Int64,vect::CUDA.CuArray) = ones(el_type,row,col).*vect
+same(el_type::Type,row::Int64,col::Int64,vect::CUDA.CuArray) =
+    ones(el_type,row,col).*vect
 function pad(array::Array,padding::Vector,fun::Union{typeof(zeros),typeof(ones)})
     el_type = eltype(array)
     div_result = padding./2
@@ -282,7 +283,8 @@ function pad(array::Array,padding::Vector,fun::typeof(same))
     end
 end
 
-function pad(array::CUDA.CuArray,padding::Vector,fun::Union{typeof(zeros),typeof(ones)})
+function pad(array::CUDA.CuArray,padding::Vector,
+        fun::Union{typeof(zeros),typeof(ones)})
     el_type = eltype(array)
     div_result = padding./2
     leftpad = Int64.(floor.(div_result))
@@ -317,4 +319,39 @@ end
 
 function allequal(itr::Union{Array,Tuple})
     return length(itr)==0 || all( ==(itr[1]), itr)
+end
+
+function segment_objects(components::AbstractArray{Int64,2},background::AbstractArray{Bool,2})
+    img_size = size(components)[1:2]
+    initial_indices = findall(components.!=0)
+    operations = [(0,1),(1,0),(0,-1),(-1,0),(1,-1),(-1,1),(-1,-1),(1,1)]
+    new_components = copy(components)
+    indices_out = initial_indices
+
+    while length(indices_out)!=0
+        indices_in = indices_out
+        indices_out = []
+        for i = 1:8
+            new_indices = broadcast((x,y) -> x .+ y,
+                Tuple.(indices_in),repeat([operations[i]],length(indices_in)))
+            background_values = background[indices_in]
+            nonzero_bool = broadcast((x,y) -> all(x .> y),
+                new_indices,repeat(gpu([(0,0)]),length(new_indices)))
+            correct_size_bool = broadcast((x,y) -> all(x.<img_size),
+                new_indices,repeat([img_size],length(new_indices)))
+            remove_incorrect = nonzero_bool .&
+                correct_size_bool .& background_values
+            new_indices = new_indices[remove_incorrect]
+            values = new_components[CartesianIndex.(new_indices)]
+            new_indices_0_bool = values.==0
+            new_indices_0 = map(x-> CartesianIndex(x),
+                new_indices[new_indices_0_bool])
+            indices_prev = indices_in[remove_incorrect][new_indices_0_bool]
+            prev_values = new_components[CartesianIndex.(indices_prev)]
+            new_components[new_indices_0] .= prev_values
+            push!(indices_out,new_indices_0)
+        end
+        indices_out = vcat(indices_out...)
+    end
+    return new_components
 end
