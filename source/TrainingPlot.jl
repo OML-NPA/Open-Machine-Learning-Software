@@ -254,7 +254,7 @@ function move(model,target::Union{typeof(cpu),typeof(gpu)})
                     new_layers[i] = move(layers[i],target)
                 end
                 new_layers = (new_layers...,)
-                push!(model_moved,Parallel(new_layers))
+                push!(model_moved,target(Parallel(new_layers)))
             else
                 push!(model_moved,target(model[i]))
             end
@@ -265,7 +265,7 @@ function move(model,target::Union{typeof(cpu),typeof(gpu)})
     if length(model_moved)==1
         model_moved = model_moved[1]
     else
-        model_moved = Chain(model_moved...)
+        model_moved = target(Chain(model_moved...))
     end
     return model_moved
 end

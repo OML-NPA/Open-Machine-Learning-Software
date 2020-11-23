@@ -1,6 +1,9 @@
 using Distributed
+if nprocs() > 2
+    rmprocs(workers()[end])
+end
 if nprocs() < 2
-    addprocs(1) # add worker processes
+    addprocs(1)
 end
 @everywhere include("packages.jl")
 @everywhere include("data_structures.jl")

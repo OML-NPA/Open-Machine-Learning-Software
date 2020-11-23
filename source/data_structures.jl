@@ -15,15 +15,6 @@
 end
 channels = Channels()
 
-@with_kw mutable struct Model_data
-    input_size::Tuple = (160,160,1)
-    model = Chain()
-    layers::Array = []
-    features::Array = []
-    loss::Function = Losses.crossentropy
-end
-model_data = Model_data()
-
 @with_kw mutable struct Features
     name::String = ""
     color::Array = [0,0,0]
@@ -31,6 +22,15 @@ model_data = Model_data()
     parent::String = ""
 end
 features = Features()
+
+@with_kw mutable struct Model_data
+    input_size::Tuple = (160,160,1)
+    model::Chain = Chain()
+    layers::Array = []
+    features::Array{Features} = []
+    loss::Function = Losses.crossentropy
+end
+model_data = Model_data()
 
 #---
 @with_kw mutable struct Training_plot_data
