@@ -318,7 +318,7 @@ function apply_border_data_main(data_in::Array{<:AbstractFloat},model_data::Mode
         segmented = segment_objects(components,background)
         borders = mapwindow(x->!allequal(x), segmented, (3,3))
         segmented[borders] .= 0
-        data[:,:,ind_border] = Float32.(segmented.>0.5)
+        data[:,:,ind_border] = Float32.(segmented.>0)
     end
     return data
 end

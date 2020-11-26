@@ -522,19 +522,19 @@ Component {
                             }
                             if (validateButton.text==="Validate") {
                                 validateButton.text = "Stop data preparation"
-                                Julia.get_urls_imgs_labels()
-                                Julia.empty_progress_channel("Validation data preparation")
-                                Julia.empty_results_channel("Validation data preparation")
-                                Julia.empty_progress_channel("Validation data preparation modifiers")
-                                Julia.empty_progress_channel("Validation")
-                                Julia.empty_results_channel("Validation")
-                                Julia.empty_progress_channel("Validation modifiers")
+                                //Julia.get_urls_imgs_labels()
+                                //Julia.empty_progress_channel("Validation data preparation")
+                                //Julia.empty_results_channel("Validation data preparation")
+                                //Julia.empty_progress_channel("Validation data preparation modifiers")
+                                //Julia.empty_progress_channel("Validation")
+                                //Julia.empty_results_channel("Validation")
+                                //Julia.empty_progress_channel("Validation modifiers")
                                 validationTimer.max_value = 0
                                 validationTimer.value = 0
                                 validationTimer.done = false
                                 validationTimer.running = true
-                                Julia.gc()
-                                Julia.prepare_validation_data()
+                                //Julia.gc()
+                                //Julia.prepare_validation_data()
                             }
                             else {
                                 validateButton.text = "Validate"
@@ -571,7 +571,7 @@ Component {
         }
         function dataProcessingTimerFunction(button,timer,start,stop,
             action,action_done,load_window) {
-            var temp = Julia.check_progress(action)
+            /*var temp = Julia.check_progress(action)
             if (timer.max_value!==0 && !timer.done) {
                 var value = Julia.get_progress(action)
                 if (timer.value===timer.max_value) {
@@ -590,14 +590,15 @@ Component {
                         }
                     }
                 progressbar.value = timer.value/timer.max_value
-            }
-            else if (timer.done && Julia.check_progress(action_done)!==false) {
+            }*/
+            timer.done = true
+            if (timer.done) {// && Julia.check_progress(action_done)!==false) {
                 timer.running = false
                 button.text = stop
                 load_window()
             }
             else {
-                value = Julia.get_progress(action)
+                /*value = Julia.get_progress(action)
                 if (value===false) { return }
                 if (value!==0) {
                     timer.max_value = value
@@ -605,7 +606,7 @@ Component {
                 else {
                     timer.running = false
                     button.text = start
-                }
+                }*/
             }
         }
     }
