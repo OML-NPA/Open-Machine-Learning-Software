@@ -13,13 +13,17 @@ Flickable{
     property bool showBackground: true
     property color backgroundColor: "white"
     property color scrollbarColor: defaultpalette.window
+    property bool scrollbar: true
     default property alias content : pane.contentItem
+    property double offset_x: 0
 
     Pane {
-
         id:pane
+        x: offset_x
         anchors.fill: parent
         padding: 0
+        width: flickable.width
+        height: flickable.height
         background: Rectangle {anchors.fill: parent; color: backgroundColor}
     }
     ScrollBar.vertical: ScrollBar{
@@ -44,7 +48,7 @@ Flickable{
                     implicitHeight: parent.height - 4*pix
                     radius: width / 2
                     visible: contentHeight > flickable.height
-                    color: defaultpalette.border
+                    color: scrollbar ? defaultpalette.border : "transparent"
                 }
         }
     }
@@ -68,7 +72,7 @@ Flickable{
                     implicitHeight: 10*pix
                     radius: height / 2
                     visible: contentWidth > flickable.width
-                    color: defaultpalette.border
+                    color: scrollbar ? defaultpalette.border : "transparent"
                 }
         }
     }

@@ -77,8 +77,8 @@ ApplicationWindow {
                         " (" + loss[0].toFixed(2)+")"
                 get_image(originalDisplay,"data_input_orig",[ind1])
                 get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
-                displayItem.height = validationWindow.height - originalDisplay.height
-                displayItem.width = validationWindow.width - originalDisplay.width
+                displayPane.height = validationWindow.height - originalDisplay.height
+                displayPane.width = validationWindow.width - originalDisplay.width
                 controlsLabel.visible = true
                 sampleRow.visible = true
                 featureRow.visible = true
@@ -92,24 +92,33 @@ ApplicationWindow {
             var ind1 = 1
             var ind2 = 1
             get_image(originalDisplay,"data_input_orig",[ind1])
-            get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
+            var size = get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
+            var ratio = size[0]/size[1]
+            if (ratio<1) {
+                displayItem.height = displayItem.width*ratio
+            }
+            else {
+                displayItem.width = displayItem.height/ratio
+            }
             var cond = 1024*pix-margin
-            if (originalDisplay.width>=cond) {
-                displayItem.horizontalPadding = 0.5*margin
+            if (displayItem.width>=cond) {
+                displayPane.horizontalPadding = 0.5*margin
             }
             else {
-                displayItem.horizontalPadding = (1024*pix+margin -
-                                   originalDisplay.width - informationPane.width)/2
+                displayPane.horizontalPadding = (1024*pix+margin -
+                                   displayItem.width - informationPane.width)/2
             }
-            if (originalDisplay.height>=cond) {
-                displayItem.verticalPadding = 0.5*margin
+            if (displayItem.height>=cond) {
+                displayPane.verticalPadding = 0.5*margin
             }
             else {
-                displayItem.verticalPadding = (1024*pix+margin - originalDisplay.height)/2
+                displayPane.verticalPadding = (1024*pix+margin - displayItem.height)/2
             }
-            displayItem.height = originalDisplay.height + 2*displayItem.verticalPadding
-            displayItem.width = originalDisplay.width + 2*displayItem.horizontalPadding
-            sizechangeTimer.prevWidth = displayItem.height
+            displayPane.height = displayItem.height + 2*displayPane.verticalPadding
+            displayPane.width = displayItem.width + 2*displayPane.horizontalPadding
+            displayScrollableItem.width = displayPane.width - 2*displayPane.horizontalPadding
+            displayScrollableItem.height = displayPane.height - 2*displayPane.verticalPadding
+            sizechangeTimer.prevWidth = displayPane.height
             sizechangeTimer.running = true
             controlsLabel.visible = true
             sampleRow.visible = true
@@ -117,6 +126,7 @@ ApplicationWindow {
             typeRow.visible = true
             opacityRow.visible = true
             zoomRow.visible = true
+
         }
     }
     Timer {
@@ -137,74 +147,86 @@ ApplicationWindow {
                 check = check + 1
                 prevWidthChanged = false
             }
-            if (check>0 || displayItem.width!==(validationWindow.width - 580*pix) ||
-                    displayItem.height!==(validationWindow.height)) {
+            if (check>0 || displayPane.width!==(validationWindow.width - 580*pix) ||
+                    displayPane.height!==(validationWindow.height)) {
                 var ind1 = sampleSpinBox.value
                 var ind2 = featureComboBox.currentIndex+1
                 var modif = (validationWindow.width-580*pix)/
-                        (displayItem.width)
+                        (displayPane.width)
                 var new_width = validationWindow.width - 580*pix
-                var new_heigth = Math.min(0.95*Screen.height,displayItem.height*modif)
-                var modif2 = Math.min(new_width/displayItem.width,
-                    new_heigth/displayItem.height)
-                originalDisplay.width = originalDisplay.width*modif2
-                resultDisplay.width = originalDisplay.width
-                originalDisplay.height = originalDisplay.height*modif2
-                resultDisplay.height = originalDisplay.height
-                originalDisplay.contentsScale = originalDisplay.contentsScale*modif2
-                resultDisplay.contentsScale = resultDisplay.contentsScale*modif2
+                var new_heigth = Math.min(Screen.height-0.75*margin,displayPane.height*modif)
+                var modif2 = Math.min(new_width/displayPane.width,
+                    new_heigth/displayPane.height)
+                displayItem.width = displayItem.width*modif2
+                displayItem.height = displayItem.height*modif2
+                displayItem.contentsScale = displayItem.contentsScale*modif2
                 var cond = 1024*pix-margin
-                if (originalDisplay.width>=cond) {
-                    displayItem.horizontalPadding = 0.5*margin
+                if (displayItem.width>=cond) {
+                    displayPane.horizontalPadding = 0.5*margin
                 }
                 else {
-                    displayItem.horizontalPadding = (1024*pix+margin -
-                                       originalDisplay.width - informationPane.width)/2
+                    displayPane.horizontalPadding = (1024*pix+margin -
+                                       displayItem.width - informationPane.width)/2
                 }
-                if (originalDisplay.height>=1024*pix) {
-                    displayItem.verticalPadding = 0.5*margin
+                if (displayItem.height>=cond) {
+                    displayPane.verticalPadding = 0.5*margin
                 }
                 else {
-                    displayItem.verticalPadding = (1024*pix+margin - originalDisplay.height)/2
+                    displayPane.verticalPadding = (1024*pix+margin - displayItem.height)/2
                 }
-                displayItem.height = originalDisplay.height + 2*displayItem.verticalPadding
-                displayItem.width = originalDisplay.width + 2*displayItem.horizontalPadding
-                validationWindow.height = displayItem.height
-                displayItem.x = (validationWindow.width - displayItem.width - informationPane.width)/2
-                check = check + 1
-            }
-            else {
+                displayPane.height = displayItem.height + 2*displayPane.verticalPadding
+                displayPane.width = displayItem.width + 2*displayPane.horizontalPadding
+                displayScrollableItem.width = displayPane.width - 2*displayPane.horizontalPadding
+                displayScrollableItem.height = displayPane.height - 2*displayPane.verticalPadding
+                validationWindow.height = informationPane.height
+                displayPane.x = (validationWindow.width - displayPane.width - informationPane.width)/2
                 check = 0
             }
         }
     }
     Item {
         Pane {
-            id: displayItem
+            id: displayPane
             horizontalPadding: 0.5*margin
             verticalPadding: 0.5*margin
-            height: 1024*pix*margin
-            width: 1024*pix + 0.5*margin
-            clip: true
-            backgroundColor: "red"
-            JuliaDisplay {
-                id: originalDisplay
-                x: 7*pix
-                width: 1024*pix
-                height: 1024*pix
-            }
-            JuliaDisplay {
-                id: resultDisplay
-                x: 7*pix
-                opacity: 0.5
-                width: 1024*pix
-                height: 1024*pix
+            height: 1024*pix + margin
+            width: 1024*pix + margin
+            ScrollableItem {
+                id: displayScrollableItem
+                width : 1024*pix
+                height : 1024*pix
+                contentWidth: displayItem.width
+                contentHeight: displayItem.height
+                showBackground: false
+                backgroundColor: defaultpalette.window
+                //scrollbar: false
+                clip: true
+                Item {
+                    id: displayItem
+                    width: 1024*pix
+                    height: 1024*pix
+                    property double contentsScale: 1.014
+                    JuliaDisplay {
+                        id: originalDisplay
+                        width: displayItem.width
+                        height: displayItem.height
+                        contentsScale: displayItem.contentsScale
+                        x: 1
+                    }
+                    JuliaDisplay {
+                        id: resultDisplay
+                        opacity: 0.5
+                        width: displayItem.width
+                        height: displayItem.height
+                        contentsScale: displayItem.contentsScale
+                    }
+                }
             }
         }
         Pane {
             id: informationPane
             x: validationWindow.width - 580*pix
-            height: Math.max(1024*pix+margin,displayItem.height)
+            height: Math.max(1024*pix+margin,validationWindow.height)
             width: 580*pix
             padding: 0.75*margin
             backgroundColor: defaultpalette.window2
@@ -405,13 +427,34 @@ ApplicationWindow {
                         from: 1
                         value: 1
                         to: 10
+                        property double last_value: 1
+                        property double initial_width: 0
+                        property double initial_height:0
                         onMoved: {
-                            //originalDisplay.width = value*(displayItem.width)
-                            //originalDisplay.height = value*(displayItem.heigth)
-                            //originalDisplay.contentsScale = value*(displayItem.contentsScale)
-                            //resultDisplay.width = originalDisplay.width
-                            //resultDisplay.height = originalDisplay.height
-                            //resultDisplay.contentsScale = originalDisplay.contentsScale
+                            if(initial_width==0) {
+                                initial_width = originalDisplay.width
+                                initial_height = originalDisplay.height
+                            }
+
+                            if (value!==last_value) {
+                                var ratio = value/last_value
+                            }
+                            else {
+                                return
+                            }
+                            originalDisplay.contentsScale = originalDisplay.contentsScale*ratio
+                            resultDisplay.contentsScale = originalDisplay.contentsScale
+                            originalDisplay.x = -(originalDisplay.contentsScale*
+                                    initial_width-initial_width)/2
+                            originalDisplay.y = -(originalDisplay.contentsScale*
+                                    initial_height-initial_height)/2
+                            resultDisplay.x = originalDisplay.x
+                            resultDisplay.y = originalDisplay.y
+                            originalDisplay.width = originalDisplay.width*ratio
+                            resultDisplay.width = originalDisplay.width
+                            originalDisplay.height = originalDisplay.height*ratio
+                            resultDisplay.height = originalDisplay.height
+                            last_value = value
                         }
                     }
                 }
@@ -434,13 +477,7 @@ ApplicationWindow {
     function get_image(display,type,inds) {
         var size = Julia.get_image(["Training_data","Validation_plot_data",type],
             [0,0],inds)
-        var ratio = size[0]/size[1]
-        if (ratio<1) {
-            display.height = display.width*ratio
-        }
-        else {
-            display.width = display.height/ratio
-        }
         Julia.display_image(display)
+        return size
     }
 }
