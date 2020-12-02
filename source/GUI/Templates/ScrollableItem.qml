@@ -47,7 +47,7 @@ Flickable{
                     implicitWidth: 10*pix
                     implicitHeight: parent.height - 4*pix
                     radius: width / 2
-                    visible: contentHeight > flickable.height
+                    visible: (contentHeight-flickable.height)>1
                     color: scrollbar ? defaultpalette.border : "transparent"
                 }
         }
@@ -71,7 +71,7 @@ Flickable{
                     implicitWidth: parent.width - 4*pix
                     implicitHeight: 10*pix
                     radius: height / 2
-                    visible: contentWidth > flickable.width
+                    visible: (contentWidth-flickable.width)>1
                     color: scrollbar ? defaultpalette.border : "transparent"
                 }
         }

@@ -148,37 +148,45 @@ ApplicationWindow {
                 prevWidthChanged = false
             }
             if (check>0 || displayPane.width!==(validationWindow.width - 580*pix) ||
-                    displayPane.height!==(validationWindow.height)) {
+                    (displayPane.height!==(validationWindow.height) && displayPane.x===0)) {
                 var ind1 = sampleSpinBox.value
                 var ind2 = featureComboBox.currentIndex+1
-                var modif = (validationWindow.width-580*pix)/
-                        (displayPane.width)
                 var new_width = validationWindow.width - 580*pix
-                var new_heigth = Math.min(Screen.height-0.75*margin,displayPane.height*modif)
-                var modif2 = Math.min(new_width/displayPane.width,
-                    new_heigth/displayPane.height)
-                displayItem.width = displayItem.width*modif2
-                displayItem.height = displayItem.height*modif2
-                displayItem.contentsScale = displayItem.contentsScale*modif2
+                var modif1 = new_width/displayPane.width
+                var new_heigth = Math.min(Screen.height-1.75*margin,displayScrollableItem.height*modif1)
+                var modif2 = new_heigth/displayScrollableItem.height
+                var modif = Math.min(modif1,modif2)
+                displayItem.width = displayItem.width*modif
+                displayItem.height = displayItem.height*modif
+                displayItem.contentsScale = displayItem.contentsScale*modif
+                displayScrollableItem.width = displayScrollableItem.width*modif
+                displayScrollableItem.height = displayScrollableItem.height*modif
                 var cond = 1024*pix-margin
-                if (displayItem.width>=cond) {
+                if (displayScrollableItem.width>=cond) {
                     displayPane.horizontalPadding = 0.5*margin
                 }
                 else {
                     displayPane.horizontalPadding = (1024*pix+margin -
-                                       displayItem.width - informationPane.width)/2
+                                       displayScrollableItem.width - informationPane.width)/2
                 }
-                if (displayItem.height>=cond) {
+                if (displayScrollableItem.height>=cond) {
                     displayPane.verticalPadding = 0.5*margin
                 }
                 else {
-                    displayPane.verticalPadding = (1024*pix+margin - displayItem.height)/2
+                    displayPane.verticalPadding = (1024*pix+margin - displayScrollableItem.height)/2
                 }
-                displayPane.height = displayItem.height + 2*displayPane.verticalPadding
-                displayPane.width = displayItem.width + 2*displayPane.horizontalPadding
-                displayScrollableItem.width = displayPane.width - 2*displayPane.horizontalPadding
-                displayScrollableItem.height = displayPane.height - 2*displayPane.verticalPadding
-                validationWindow.height = informationPane.height
+                if (validationWindow.width===Screen.width) {
+                    displayPane.height = validationWindow.height
+                    displayPane.width = displayScrollableItem.width
+                            + 2*displayPane.horizontalPadding
+                }
+                else {
+                    displayPane.height = Math.round(displayScrollableItem.height
+                                                    + 2*displayPane.verticalPadding)
+                    displayPane.width = Math.round(displayScrollableItem.width
+                                                   + 2*displayPane.horizontalPadding)
+                    validationWindow.height = displayPane.height
+                }
                 displayPane.x = (validationWindow.width - displayPane.width - informationPane.width)/2
                 check = 0
             }
@@ -226,7 +234,7 @@ ApplicationWindow {
         Pane {
             id: informationPane
             x: validationWindow.width - 580*pix
-            height: Math.max(1024*pix+margin,validationWindow.height)
+            height: Math.max(1024*pix+margin,displayPane.height)
             width: 580*pix
             padding: 0.75*margin
             backgroundColor: defaultpalette.window2
@@ -424,36 +432,39 @@ ApplicationWindow {
                         width: 0.76*buttonWidth
                         height: 12*pix
                         leftPadding: 0
+                        stepSize: 0.5
                         from: 1
                         value: 1
                         to: 10
                         property double last_value: 1
                         property double initial_width: 0
                         property double initial_height:0
+                        property double initial_scale:0
                         onMoved: {
                             if(initial_width==0) {
-                                initial_width = originalDisplay.width
-                                initial_height = originalDisplay.height
+                                initial_width = displayItem.width
+                                initial_height = displayItem.height
+                                initial_scale = displayItem.contentsScale
                             }
-
                             if (value!==last_value) {
                                 var ratio = value/last_value
+                            }
+                            else if(value<1.01) {
+                                displayItem.width = displayScrollableItem.width
+                                displayItem.height = displayScrollableItem.height
+                                displayItem.contentsScale = initial_scale
+                                return
                             }
                             else {
                                 return
                             }
-                            originalDisplay.contentsScale = originalDisplay.contentsScale*ratio
-                            resultDisplay.contentsScale = originalDisplay.contentsScale
-                            originalDisplay.x = -(originalDisplay.contentsScale*
+                            displayItem.contentsScale = displayItem.contentsScale*ratio
+                            displayItem.x = -(displayItem.contentsScale*
                                     initial_width-initial_width)/2
-                            originalDisplay.y = -(originalDisplay.contentsScale*
+                            displayItem.y = -(displayItem.contentsScale*
                                     initial_height-initial_height)/2
-                            resultDisplay.x = originalDisplay.x
-                            resultDisplay.y = originalDisplay.y
-                            originalDisplay.width = originalDisplay.width*ratio
-                            resultDisplay.width = originalDisplay.width
-                            originalDisplay.height = originalDisplay.height*ratio
-                            resultDisplay.height = originalDisplay.height
+                            displayItem.width = displayItem.width*ratio
+                            displayItem.height = displayItem.height*ratio
                             last_value = value
                         }
                     }
