@@ -479,9 +479,6 @@ Component {
                                 Julia.empty_progress_channel("Training")
                                 Julia.empty_results_channel("Training")
                                 Julia.empty_progress_channel("Training modifiers")
-                                trainingTimer.max_value = 0
-                                trainingTimer.value = 0
-                                trainingTimer.done = false
                                 trainingTimer.running = true
                                 Julia.gc()
                                 Julia.prepare_training_data()
@@ -529,9 +526,6 @@ Component {
                                 Julia.empty_progress_channel("Validation")
                                 Julia.empty_results_channel("Validation")
                                 Julia.empty_progress_channel("Validation modifiers")
-                                validationTimer.max_value = 0
-                                validationTimer.value = 0
-                                validationTimer.done = false
                                 validationTimer.running = true
                                 Julia.gc()
                                 Julia.prepare_validation_data()
@@ -593,6 +587,10 @@ Component {
             }
             if (timer.done && Julia.check_progress(action_done)!==false) {
                 timer.running = false
+                timer.step = 0
+                timer.value = 0
+                timer.max_value = 0
+                timer.done = false
                 button.text = stop
                 load_window()
             }
