@@ -6,4 +6,4 @@ using ImageSegmentation, Combinatorics, Distances, ImageMorphology.FeatureTransf
 import Base.string, Base.any, Base.copy!, ImageSegmentation.label_components
 import CUDA, CUDA.CuArray, Flux.outdims
 CUDA.allowscalar(false)
-gc() = GC.gc()
+gc() = @everywhere GC.gc()
