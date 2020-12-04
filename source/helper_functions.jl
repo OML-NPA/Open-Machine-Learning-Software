@@ -6,7 +6,7 @@ function dict_to_struct!(settings,dict::Dict;skip=[])
     if value isa Dict
       dict_to_struct!(getproperty(settings,Symbol(ks[i])),value;skip=skip)
     else
-      if !(ks[i] in skip)
+      if !(ks[i] in skip) && hasfield(Settings,Symbol(ks[i]))
           setproperty!(settings,Symbol(ks[i]),value)
       end
     end

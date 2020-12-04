@@ -15,32 +15,32 @@
 end
 channels = Channels()
 
-@with_kw mutable struct Features
+@with_kw mutable struct Feature
     name::String = ""
-    color::Array = [0,0,0]
+    color::Vector{Float64} = Vector{Float64}(undef,3)
     border::Bool = false
     parent::String = ""
 end
-features = Features()
+feature = Feature()
 
 @with_kw mutable struct Model_data
-    input_size::Tuple = (160,160,1)
+    input_size::Tuple{Int64,Int64,Int64} = (160,160,1)
     model::Chain = Chain()
-    layers::Array = []
-    features::Array{Features} = []
+    layers::Array{Dict{String,Any}} = []
+    features::Array{Feature} = []
     loss::Function = Losses.crossentropy
 end
 model_data = Model_data()
 
 #---
 @with_kw mutable struct Training_plot_data
-    data_input::Array{Array} = []
-    data_labels::Array{Array} = []
-    loss::Array = []
-    accuracy::Array = []
-    test_accuracy::Array = []
-    test_loss::Array = []
-    test_iteration::Array = []
+    data_input::Vector{Array{Float32,2}} = Vector{Array{Float32,2}}(undef,0)
+    data_labels::Vector{<:BitArray} = Vector{BitArray{1}}(undef,0)
+    loss::Array{AbstractFloat} = []
+    accuracy::Array{AbstractFloat} = []
+    test_accuracy::Array{AbstractFloat} = []
+    test_loss::Array{AbstractFloat} = []
+    test_iteration::Array{AbstractFloat} = []
     iteration::Int64 = 0
     epoch::Int64 = 0
     iterations_per_epoch::Int64 = 0
@@ -73,8 +73,8 @@ validation_plot_data = Validation_plot_data()
 @with_kw mutable struct Training_data
     Training_plot_data = training_plot_data
     Validation_plot_data = validation_plot_data
-    url_imgs::Vector = Vector(undef,0)
-    url_labels::Vector = Vector(undef,0)
+    url_imgs::Vector{String} = Vector{String}(undef,0)
+    url_labels::Vector{String} = Vector{String}(undef,0)
 end
 training_data = Training_data()
 
@@ -109,6 +109,9 @@ options = Options()
     min_fr_pix::Float64 = 0.1
 end
 processing_training = Processing_training()
+
+
+["ADAM",5] isa Array{<:Union{String,Int64}}
 
 @with_kw mutable struct Hyperparameters_training
     optimiser::Array = ["ADAM",5]
@@ -192,6 +195,5 @@ visualisation = Visualisation()
     Analysis = analysis
     Visualisation = visualisation
     stop_task::Bool = false
-    image::Array = []
 end
 settings = Settings()

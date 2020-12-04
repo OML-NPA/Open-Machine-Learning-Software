@@ -404,14 +404,14 @@ end
 reset_features() = reset_features_main(model_data)
 
 function append_features_main(model_data,name,colorR,colorG,colorB,border,parent)
-    push!(model_data.features,Features(String(name),
+    push!(model_data.features,Feature(String(name),
         Int64.([colorR,colorG,colorB]),Bool(border),String(parent)))
 end
 append_features(name,colorR,colorG,colorB,border,parent) =
     append_features_main(model_data,name,colorR,colorG,colorB,border,parent)
 
 function update_features_main(model_data,index,name,colorR,colorG,colorB,border,parent)
-    model_data.features[index] = Features(String(name),Int64.([colorR,colorG,colorB]),
+    model_data.features[index] = Feature(String(name),Int64.([colorR,colorG,colorB]),
         Bool(border),String(parent))
 end
 update_features(index,name,colorR,colorG,colorB,border,parent) =
@@ -426,19 +426,3 @@ function get_feature_main(model_data,index,fieldname)
     return getfield(model_data.features[index], Symbol(String(fieldname)))
 end
 get_feature_field(index,fieldname) = get_feature_main(model_data,index,fieldname)
-
-function save_model_main(model_data,url)
-  BSON.@save(String(url),model_data)
-end
-save_model(url) = save_model_main(model_data,url)
-
-function load_model_main(model_data,url)
-  data = BSON.load(String(url))
-  if haskey(data,:model_data)
-      copystruct!(model_data,data[:model_data])
-      return true
-  else
-      return false
-  end
-end
-load_model(url) = load_model_main(model_data,url)

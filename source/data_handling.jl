@@ -336,3 +336,19 @@ function display_image(buffer::Array{UInt32, 1},
     end
     return
 end
+
+function save_model_main(model_data,url)
+  BSON.@save(String(url),model_data)
+end
+save_model(url) = save_model_main(model_data,url)
+
+function load_model_main(model_data,url)
+  data = BSON.load(String(url))
+  if haskey(data,:model_data)
+      copystruct!(model_data,data[:model_data])
+      return true
+  else
+      return false
+  end
+end
+load_model(url) = load_model_main(model_data,url)
