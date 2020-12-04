@@ -55,27 +55,32 @@ training_plot_data = Training_plot_data()
     accuracy::Array{AbstractFloat} = []
     loss_std::AbstractFloat = 0
     accuracy_std::AbstractFloat = 0
-    data_input_orig::Array{Array} = []
-    data_labels_orig::Array{Array} = []
-    data_input::Array{Array} = []
-    data_labels::Array{Array} = []
-    data_predicted::Array{Array} = []
-    data_error::Array{Array} = []
-    data_target::Array{Array} = []
+    data_input_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
+        Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
+    data_labels_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
+        Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
+    data_input::Vector{Array{Float32,2}} = Vector{Array{Float32,2}}(undef,1)
+    data_labels::Vector{<:BitArray} = Vector{BitArray{1}}(undef,1)
+    data_predicted::Vector{Vector{Array{RGB{Float32},2}}} =
+        Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
+    data_error::Vector{Vector{Array{RGB{Float32},2}}} =
+        Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
+    data_target::Vector{Vector{Array{RGB{Float32},2}}} =
+        Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
 end
 validation_plot_data = Validation_plot_data()
 
 @with_kw mutable struct Training_data
     Training_plot_data = training_plot_data
     Validation_plot_data = validation_plot_data
-    url_imgs::Array = []
-    url_labels::Array = []
+    url_imgs::Vector = Vector(undef,0)
+    url_labels::Vector = Vector(undef,0)
 end
 training_data = Training_data()
 
 @with_kw mutable struct Master_data
     Training_data = training_data
-    image::Array = []
+    image::Array{RGB{Float32},2} = Array{RGB{Float32},2}(undef,10,10)
 end
 master_data = Master_data()
 

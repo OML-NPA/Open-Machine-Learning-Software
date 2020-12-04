@@ -1,3 +1,4 @@
+ENV["QSG_RENDER_LOOP"] = "basic"
 using Distributed
 if nprocs() > 2
     rmprocs(workers()[end])
@@ -20,6 +21,7 @@ else
 end
 
 #---
+
 @qmlfunction(
     # Model saving
     reset_layers,
@@ -51,7 +53,6 @@ end
     set_settings,
     save_settings,
     get_image,
-    display_image,
     get_results,
     get_progress,
     check_progress,
@@ -75,5 +76,7 @@ end
     arrange,
     gc
 )
-load("GUI//Main.qml")
+load("GUI//Main.qml",
+    display_image = CxxWrap.@safe_cfunction(display_image, Cvoid,
+                                        (Array{UInt32,1}, Int32, Int32)))
 exec()

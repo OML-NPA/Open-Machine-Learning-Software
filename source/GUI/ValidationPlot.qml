@@ -40,8 +40,9 @@ ApplicationWindow {
         property double mean_loss
         property double accuracy_std
         property double loss_std
+        property bool grabDone: false
         onTriggered: {
-            /*var data = Julia.get_progress("Validation")
+            var data = Julia.get_progress("Validation")
             if (max_iterations===0) {
                 if (data===false) {return}
                 max_iterations = data[0]
@@ -71,61 +72,56 @@ ApplicationWindow {
                 featureComboBox.currentIndex = 0
                 var ind1 = 1
                 var ind2 = 1
-                accuracyLabel.text = mean_accuracy.toFixed(2) + " ± " + accuracy_std.toFixed(2) +
-                    " (" + accuracy[0].toFixed(2) + ")"
-                lossLabel.text = mean_loss.toFixed(2) + " ± " + loss_std.toFixed(2) +
-                        " (" + loss[0].toFixed(2)+")"
-                get_image(originalDisplay,"data_input_orig",[ind1])
-                get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
-                displayPane.height = validationWindow.height - originalDisplay.height
-                displayPane.width = validationWindow.width - originalDisplay.width
+                var size = get_image(originalDisplay,"data_input_orig",[ind1])
+                var ratio = size[1]/size[0]
+                if (ratio>1) {
+                    displayItem.height = displayItem.width/ratio
+                }
+                else {
+                    displayItem.width = displayItem.height*ratio
+                }
+                imagetransferCanvas.height = size[0]
+                imagetransferCanvas.width = size[1]
+                imagetransferCanvas.update()
+                imagetransferCanvas.grabToImage(function(result) {
+                                           originalDisplay.source = result.url
+                                           validationTimer.grabDone = true;
+                                       });
+                function upd() {
+                    get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
+                    imagetransferCanvas.update()
+                    imagetransferCanvas.grabToImage(function(result) {
+                                               resultDisplay.source = result.url;
+                                           });
+                }
+                delay(10, upd)
+                var cond = 1024*pix-margin
+                if (displayItem.width>=cond) {
+                    displayPane.horizontalPadding = 0.5*margin
+                }
+                else {
+                    displayPane.horizontalPadding = (1024*pix+margin -
+                                       displayItem.width - informationPane.width)/2
+                }
+                if (displayItem.height>=cond) {
+                    displayPane.verticalPadding = 0.5*margin
+                }
+                else {
+                    displayPane.verticalPadding = (1024*pix+margin - displayItem.height)/2
+                }
+                displayPane.height = displayItem.height + 2*displayPane.verticalPadding
+                displayPane.width = displayItem.width + 2*displayPane.horizontalPadding
+                displayScrollableItem.width = displayPane.width - 2*displayPane.horizontalPadding
+                displayScrollableItem.height = displayPane.height - 2*displayPane.verticalPadding
+                sizechangeTimer.prevWidth = displayPane.height
+                sizechangeTimer.running = true
                 controlsLabel.visible = true
                 sampleRow.visible = true
                 featureRow.visible = true
                 typeRow.visible = true
                 opacityRow.visible = true
                 zoomRow.visible = true
-            }*/
-            running = false
-            sampleSpinBox.value = 1
-            featureComboBox.currentIndex = 0
-            var ind1 = 1
-            var ind2 = 1
-            get_image(originalDisplay,"data_input_orig",[ind1])
-            var size = get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
-            var ratio = size[0]/size[1]
-            if (ratio<1) {
-                displayItem.height = displayItem.width*ratio
             }
-            else {
-                displayItem.width = displayItem.height/ratio
-            }
-            var cond = 1024*pix-margin
-            if (displayItem.width>=cond) {
-                displayPane.horizontalPadding = 0.5*margin
-            }
-            else {
-                displayPane.horizontalPadding = (1024*pix+margin -
-                                   displayItem.width - informationPane.width)/2
-            }
-            if (displayItem.height>=cond) {
-                displayPane.verticalPadding = 0.5*margin
-            }
-            else {
-                displayPane.verticalPadding = (1024*pix+margin - displayItem.height)/2
-            }
-            displayPane.height = displayItem.height + 2*displayPane.verticalPadding
-            displayPane.width = displayItem.width + 2*displayPane.horizontalPadding
-            displayScrollableItem.width = displayPane.width - 2*displayPane.horizontalPadding
-            displayScrollableItem.height = displayPane.height - 2*displayPane.verticalPadding
-            sizechangeTimer.prevWidth = displayPane.height
-            sizechangeTimer.running = true
-            controlsLabel.visible = true
-            sampleRow.visible = true
-            featureRow.visible = true
-            typeRow.visible = true
-            opacityRow.visible = true
-            zoomRow.visible = true
 
         }
     }
@@ -147,8 +143,8 @@ ApplicationWindow {
                 check = check + 1
                 prevWidthChanged = false
             }
-            if (check>0 || displayPane.width!==(validationWindow.width - 580*pix) ||
-                    (displayPane.height!==(validationWindow.height) && displayPane.x===0)) {
+            if (check>0 || (displayPane.width + 2*displayPane.x)!==(validationWindow.width - 580*pix) ||
+                    displayPane.height!==(validationWindow.height)) {
                 var ind1 = sampleSpinBox.value
                 var ind2 = featureComboBox.currentIndex+1
                 var new_width = validationWindow.width - 580*pix
@@ -158,32 +154,24 @@ ApplicationWindow {
                 var modif = Math.min(modif1,modif2)
                 displayItem.width = displayItem.width*modif
                 displayItem.height = displayItem.height*modif
-                displayItem.contentsScale = displayItem.contentsScale*modif
                 displayScrollableItem.width = displayScrollableItem.width*modif
                 displayScrollableItem.height = displayScrollableItem.height*modif
-                var cond = 1024*pix-margin
-                if (displayScrollableItem.width>=cond) {
-                    displayPane.horizontalPadding = 0.5*margin
-                }
-                else {
-                    displayPane.horizontalPadding = (1024*pix+margin -
-                                       displayScrollableItem.width - informationPane.width)/2
-                }
-                if (displayScrollableItem.height>=cond) {
-                    displayPane.verticalPadding = 0.5*margin
-                }
-                else {
-                    displayPane.verticalPadding = (1024*pix+margin - displayScrollableItem.height)/2
-                }
+                displayScrollableItem.contentX = displayScrollableItem.contentX*modif
+                displayScrollableItem.contentY = displayScrollableItem.contentY*modif
+                var cond = 1024*pix + margin
+                displayPane.horizontalPadding = Math.max(0.5*margin,
+                    (cond - displayScrollableItem.width)/2)
+                displayPane.verticalPadding = Math.max(0.5*margin,
+                    (cond - displayScrollableItem.height)/2)
                 if (validationWindow.width===Screen.width) {
                     displayPane.height = validationWindow.height
                     displayPane.width = displayScrollableItem.width
                             + 2*displayPane.horizontalPadding
                 }
                 else {
-                    displayPane.height = Math.round(displayScrollableItem.height
+                    displayPane.height = Math.floor(displayScrollableItem.height
                                                     + 2*displayPane.verticalPadding)
-                    displayPane.width = Math.round(displayScrollableItem.width
+                    displayPane.width = Math.floor(displayScrollableItem.width
                                                    + 2*displayPane.horizontalPadding)
                     validationWindow.height = displayPane.height
                 }
@@ -207,26 +195,27 @@ ApplicationWindow {
                 contentHeight: displayItem.height
                 showBackground: false
                 backgroundColor: defaultpalette.window
-                //scrollbar: false
                 clip: true
                 Item {
                     id: displayItem
                     width: 1024*pix
                     height: 1024*pix
-                    property double contentsScale: 1.014
-                    JuliaDisplay {
+                    Image {
                         id: originalDisplay
                         width: displayItem.width
                         height: displayItem.height
-                        contentsScale: displayItem.contentsScale
-                        x: 1
+                        autoTransform: true
+                        fillMode: Image.PreserveAspectFit
+                        smooth: false
                     }
-                    JuliaDisplay {
+                    Image {
                         id: resultDisplay
                         opacity: 0.5
                         width: displayItem.width
                         height: displayItem.height
-                        contentsScale: displayItem.contentsScale
+                        autoTransform: true
+                        fillMode: Image.PreserveAspectFit
+                        smooth: false
                     }
                 }
             }
@@ -303,6 +292,8 @@ ApplicationWindow {
                         stepSize: 1
                         editable: false
                         onValueModified: {
+                            originalDisplay.visible = false
+                            resultDisplay.visible = false
                             var ind1 = sampleSpinBox.value
                             var ind2 = featureComboBox.currentIndex+1
                             accuracyLabel.text = validationTimer.mean_accuracy.toFixed(2) + " ± " +
@@ -312,7 +303,20 @@ ApplicationWindow {
                                  validationTimer.loss_std.toFixed(2) +
                                  " (" + validationTimer.loss[ind1-1].toFixed(2)+")"
                             get_image(originalDisplay,"data_input_orig",[ind1])
-                            get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
+                            imagetransferCanvas.update()
+                            imagetransferCanvas.grabToImage(function(result) {
+                                                       originalDisplay.source = result.url
+                                                   });
+                            function upd() {
+                                get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
+                                imagetransferCanvas.update()
+                                imagetransferCanvas.grabToImage(function(result) {
+                                                           resultDisplay.source = result.url;
+                                                           originalDisplay.visible = true
+                                                           resultDisplay.visible = true
+                                                       });
+                            }
+                            delay(10, upd)
                         }
                     }
                 }
@@ -336,6 +340,10 @@ ApplicationWindow {
                             var ind1 = sampleSpinBox.value
                             var ind2 = featureComboBox.currentIndex+1
                             get_image(resultDisplay,typeComboBox.type,[ind1,ind2])
+                            imagetransferCanvas.update()
+                            imagetransferCanvas.grabToImage(function(result) {
+                                                       resultDisplay.source = result.url
+                                                   });
                         }
                         Component.onCompleted: {
                             for (var i=0;i<featureModel.count;i++) {
@@ -390,9 +398,12 @@ ApplicationWindow {
                             else {
                                 type = "data_target"
                             }
-
                             get_image(resultDisplay,type,
                                 [sampleSpinBox.value,featureComboBox.currentIndex+1])
+                            imagetransferCanvas.update()
+                            imagetransferCanvas.grabToImage(function(result) {
+                                                       resultDisplay.source = result.url
+                                                   });
                         }
                     }
                 }
@@ -437,34 +448,24 @@ ApplicationWindow {
                         value: 1
                         to: 10
                         property double last_value: 1
-                        property double initial_width: 0
-                        property double initial_height:0
-                        property double initial_scale:0
                         onMoved: {
-                            if(initial_width==0) {
-                                initial_width = displayItem.width
-                                initial_height = displayItem.height
-                                initial_scale = displayItem.contentsScale
-                            }
                             if (value!==last_value) {
                                 var ratio = value/last_value
                             }
-                            else if(value<1.01) {
+                            else if(value===1) {
                                 displayItem.width = displayScrollableItem.width
                                 displayItem.height = displayScrollableItem.height
-                                displayItem.contentsScale = initial_scale
                                 return
                             }
                             else {
                                 return
                             }
-                            displayItem.contentsScale = displayItem.contentsScale*ratio
-                            displayItem.x = -(displayItem.contentsScale*
-                                    initial_width-initial_width)/2
-                            displayItem.y = -(displayItem.contentsScale*
-                                    initial_height-initial_height)/2
                             displayItem.width = displayItem.width*ratio
                             displayItem.height = displayItem.height*ratio
+                            displayScrollableItem.contentX =
+                                    (displayItem.width-displayScrollableItem.width)/2
+                            displayScrollableItem.contentY =
+                                    (displayItem.height-displayScrollableItem.height)/2
                             last_value = value
                         }
                     }
@@ -488,7 +489,19 @@ ApplicationWindow {
     function get_image(display,type,inds) {
         var size = Julia.get_image(["Training_data","Validation_plot_data",type],
             [0,0],inds)
-        Julia.display_image(display)
+
+
         return size
+    }
+
+    function delay(delayTime, cb) {
+        function Timer() {
+            return Qt.createQmlObject("import QtQuick 2.0; Timer {}", validationWindow);
+        }
+        var timer = new Timer();
+        timer.interval = delayTime;
+        timer.repeat = false;
+        timer.triggered.connect(cb);
+        timer.start();
     }
 }

@@ -37,5 +37,7 @@
         <file>DesignOptions.qml</file>
         <file>ValidationPlot.qml</file>
         <file>Templates/Slider.qml</file>
+        <file>test.qml</file>
+        <file>test2.qml</file>
     </qresource>
 </RCC>

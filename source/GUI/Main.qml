@@ -64,6 +64,14 @@ ApplicationWindow {
         onTriggered: {Julia.yield()}
     }
 
+    JuliaCanvas {
+        id: imagetransferCanvas
+        visible: false
+        paintFunction: display_image
+        width: 1024
+        height: 1024
+    }
+
     GridLayout {
         id: gridLayout
         RowLayout {

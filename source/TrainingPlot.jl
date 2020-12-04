@@ -326,14 +326,14 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
     else
         data_array = predicted_array
     end
-    target_color = []
-    predicted_color = []
-    predicted_error = []
+    predicted_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,0)
+    predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,0)
+    target_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,0)
     num_feat = size(predicted_array[1],3)
     for i = 1:length(predicted_array)
-        target_temp = []
-        predicted_color_temp = []
-        predicted_error_temp = []
+        target_temp = Vector{Array{RGB{Float32},2}}(undef,0)
+        predicted_color_temp = Vector{Array{RGB{Float32},2}}(undef,0)
+        predicted_error_temp = Vector{Array{RGB{Float32},2}}(undef,0)
         for j = 1:length(labels_color)
             if j>num_feat
                 target = set[2][i][:,:,j-num_feat]
@@ -343,7 +343,7 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
             target_img = target.*perm_labels_color[j]
             target_img = permutedims(target_img,[3,1,2])
             target_img = colorview(RGB,target_img)
-            push!(target_temp,target_img)
+            push!(target_temp,collect(target_img))
             truth = target.>0
             temp_bool = data_array[i][:,:,j].>0.5
             correct = temp_bool .& truth
@@ -357,17 +357,19 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
             error_img[:,:,2] = error_img[:,:,2] .| correct
             error_img = Float32.(permutedims(error_img,[3,1,2]))
             error_img = colorview(RGB,error_img)
-            push!(predicted_error_temp,error_img)
+            push!(predicted_error_temp,collect(error_img))
             temp = Float32.(temp_bool)
             temp = cat(temp,temp,temp,dims=3)
             temp = temp.*perm_labels_color[j]
             temp = Float32.(permutedims(temp,[3,1,2]))
             temp = colorview(RGB,temp)
-            push!(predicted_color_temp,temp)
+            push!(predicted_color_temp,collect(temp))
+            GC.safepoint()
         end
-        push!(target_color,target_temp)
         push!(predicted_color,predicted_color_temp)
         push!(predicted_error,predicted_error_temp)
+        push!(target_color,target_temp)
+        GC.gc()
     end
     return predicted_color,predicted_error,target_color
 end
@@ -411,9 +413,8 @@ function validate_main(settings::Settings,training_data::Training_data,
             max_value = max(input_size...)
             ind_max = findfirst(max_value.==input_size)
             ind_split = floor(max_value/num_parts)
-            predicted = []
+            predicted = Vector{Array{Float32}}(undef,0)
             for j = 1:num_parts
-
                 if j==num_parts
                     ind_split = ind_split+rem(max_value,num_parts)
                 end
@@ -454,10 +455,10 @@ function validate_main(settings::Settings,training_data::Training_data,
                 elseif offset_temp<0
                     temp_predicted = pad(temp_predicted,[0,-offset_temp])
                 end
-                push!(predicted,temp_predicted)
+                push!(predicted,cpu(temp_predicted))
                 GC.gc()
             end
-            predicted = cpu(hcat(predicted...))
+            predicted = hcat(predicted...)
         end
         accuracy_array[i] = accuracy(predicted,actual)
         loss_array[i] = loss(predicted,actual)
@@ -472,10 +473,15 @@ function validate_main(settings::Settings,training_data::Training_data,
         put!(channels.validation_progress,data)
         GC.safepoint()
     end
+    validation_plot_data.data_input_orig = Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
+    validation_plot_data.data_labels_orig = Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
+    validation_plot_data.data_input = Vector{Array{Float32,2}}(undef,1)
+    validation_plot_data.data_labels = Vector{BitArray{1}}(undef,1)
+
     data_predicted,data_error,target = output_and_error_images(predicted_array,
         set,model_data)
-    data = (data_predicted,data_error,target,accuracy_array,loss_array,
-        std(accuracy_array),std(loss_array))
+    data = (data_predicted,data_error,target,
+        accuracy_array,loss_array,std(accuracy_array),std(loss_array))
     put!(channels.validation_results,data)
 end
 function validate_main2(settings::Settings,training_data::Training_data,

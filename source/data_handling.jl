@@ -145,23 +145,21 @@ end
 function get_image_main(master_data::Master_data,model_data,fields,
         img_size,inds...)
     image = collect(get_data(fields,inds...))
+    if isempty(image)
+        master_data.image = ARGB32.(image)
+        return [0,0]
+    end
     img_size = fix_QML_types(img_size)
     inds = findall(img_size.!=0)
     if !isempty(inds)
         r = minimum(map(x-> img_size[x]/size(image,x),inds))
         image = imresize(image, ratio=r)
     end
-    master_data.image = image
+    master_data.image = ARGB32.(image)
     return [size(image)...]
 end
 get_image(fields,img_size,inds...) =
     get_image_main(master_data,model_data,fields,img_size,inds...)
-
-function display_image_main(master_data::Master_data,d::JuliaDisplay)
-  display(d, master_data.image)
-end
-display_image(d) = display_image_main(master_data,d)
-
 
 function get_progress_main(channels,field)
     field = fix_QML_types(field)
@@ -324,3 +322,17 @@ function put_channel_main(channels::Channels,field,value)
     end
 end
 put_channel(field,value) = put_channel_main(channels,field,value)
+
+function display_image(buffer::Array{UInt32, 1},
+                      width32::Int32,
+                      height32::Int32)
+    width = width32
+    height = height32
+    buffer = reshape(buffer, width, height)
+    buffer = reinterpret(ARGB32, buffer)
+    image = master_data.image
+    if size(buffer)==reverse(size(image))
+        buffer .= transpose(ARGB32.(image))
+    end
+    return
+end

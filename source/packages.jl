@@ -1,5 +1,5 @@
 
-using QML, JSON, BSON, Printf, Parameters, Dates, FileIO
+using QML, JSON, BSON, Printf, Parameters, Dates, FileIO, CxxWrap
 using Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP
 using Flux, Flux.Losses, Random, CUDAapi, Statistics, Plots
 using ImageSegmentation, Combinatorics, Distances, ImageMorphology.FeatureTransform
