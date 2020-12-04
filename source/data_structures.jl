@@ -34,13 +34,13 @@ model_data = Model_data()
 
 #---
 @with_kw mutable struct Training_plot_data
-    data_input::Vector{Array{Float32,2}} = Vector{Array{Float32,2}}(undef,0)
-    data_labels::Vector{<:BitArray} = Vector{BitArray{1}}(undef,0)
-    loss::Array{AbstractFloat} = []
-    accuracy::Array{AbstractFloat} = []
-    test_accuracy::Array{AbstractFloat} = []
-    test_loss::Array{AbstractFloat} = []
-    test_iteration::Array{AbstractFloat} = []
+    data_input::Vector{Array{Float32}} = Vector{Array{Float32}}(undef,0)
+    data_labels::Vector{BitArray} = Vector{BitArray}(undef,0)
+    loss::Array{Float32} = []
+    accuracy::Array{Float32} = []
+    test_accuracy::Array{Float32} = []
+    test_loss::Array{Float32} = []
+    test_iteration::Array{Float32} = []
     iteration::Int64 = 0
     epoch::Int64 = 0
     iterations_per_epoch::Int64 = 0

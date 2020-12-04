@@ -126,7 +126,7 @@ end
 function prepare_training_data_main(training::Training,training_data::Training_data,
     model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
     # Functions
-    function correct_view(img::Array{Float32,2},label::BitArray{3})
+    function correct_view(img::Array{Float32,2},label::Array{RGB{Normed{UInt8,8}},2})
         field = dilate(imfilter(img.<0.3, Kernel.gaussian(4)).>0.5,20)
         field = .!(areaopen(field,30000))
         field_area = sum(field)
@@ -206,7 +206,6 @@ function prepare_training_data_main(training::Training,training_data::Training_d
             end
             push!(imgs_out,img_temp...)
             push!(labels_out,label_temp...)
-            return
         end
         return (imgs_out,labels_out)
     end
@@ -242,7 +241,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         img = image_to_float(img,gray=true)
         label = labels[k]
         if type_segmentation
-            img,label = correct_view(img,label)
+            #img,label = correct_view(img,label)
             label = label_to_float(label,labels_color,labels_incl,border)
             img,label = augment(k,img,label,num_angles,pix_num,min_fr_pix)
         end

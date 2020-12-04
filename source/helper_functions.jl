@@ -1,16 +1,18 @@
 
-function dict_to_struct!(settings,dict::Dict;skip=[])
-  ks = [keys(dict)...]
-  for i = 1:length(ks)
-    value = dict[ks[i]]
-    if value isa Dict
-      dict_to_struct!(getproperty(settings,Symbol(ks[i])),value;skip=skip)
-    else
-      if !(ks[i] in skip) && hasfield(Settings,Symbol(ks[i]))
-          setproperty!(settings,Symbol(ks[i]),value)
-      end
+function dict_to_struct!(obj,dict::Dict;skip=[])
+    ks = [keys(dict)...]
+    for i = 1:length(ks)
+        ks_cur = ks[i]
+        sym = Symbol(ks_cur)
+        value = dict[ks_cur]
+        if value isa Dict
+            dict_to_struct!(getproperty(obj,sym),value;skip=skip)
+        else
+            if !(ks_cur in skip) && hasfield(typeof(obj),sym)
+                setproperty!(obj,sym,value)
+            end
+        end
     end
-  end
 end
 
 function copy_struct!(struct1,struct2,skip_fields::Vector{Symbol})

@@ -98,6 +98,7 @@ function load_settings!(settings)
     end
     dict_to_struct!(settings,dict)
 end
+load_settings() = load_settings!(settings)
 
 function reset(field)
     var = get_data(field)

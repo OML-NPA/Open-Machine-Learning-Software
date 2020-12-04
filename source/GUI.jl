@@ -17,7 +17,7 @@ end
 if !isfile("config.json")
     save_settings()
 else
-    load_settings!(settings)
+    load_settings()
 end
 
 #---

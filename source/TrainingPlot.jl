@@ -116,17 +116,19 @@ function get_optimiser(training::Training)
     return optimiser(parameters...)
 end
 
-function train!(model::Chain,args,testing_frequency::Int64,loss,
-    channels::Channels,train_set::Tuple,test_set::Tuple,opt,use_GPU::Bool)
+function train!(model::Chain,args::Hyperparameters_training,testing_frequency::Int64,
+    loss::Function,channels::Channels,
+    train_set::Tuple{Vector{<:Array{Float32}},Vector{<:Array{Float32}}},
+    test_set::Tuple{Vector{<:Array{Float32}},Vector{<:Array{Float32}}},opt,use_GPU::Bool)
     # Training loop
     epochs = args.epochs
     batch_size = args.batch_size
 
-    accuracy_array = []
-    loss_array = []
-    test_accuracy = []
-    test_loss = []
-    test_iteration = []
+    accuracy_array = Vector{Float32}(undef,0)
+    loss_array = Vector{Float32}(undef,0)
+    test_accuracy = Vector{Float32}(undef,0)
+    test_loss = Vector{Float32}(undef,0)
+    test_iteration = Vector{Int64}(undef,0)
     max_iterations = 0
     iteration = 0
     epoch_idx = 0
@@ -148,8 +150,8 @@ function train!(model::Chain,args,testing_frequency::Int64,loss,
             put!(channels.training_progress,[epochs,num,max_iterations])
         end
         last_test = 0
+        # Run iteration
         for i=1:num
-            local temp_loss, predicted
             iteration+=1
             if isready(channels.training_modifiers)
                 modifs = fix_QML_types(take!(channels.training_modifiers))
@@ -169,6 +171,8 @@ function train!(model::Chain,args,testing_frequency::Int64,loss,
                 end
             end
             train_minibatch = train_batches[i]
+            # Training part
+            local temp_loss, predicted
             if use_GPU
                 train_minibatch = gpu.(train_minibatch)
             end
@@ -182,6 +186,11 @@ function train!(model::Chain,args,testing_frequency::Int64,loss,
               return temp_loss
             end
             Flux.Optimise.update!(opt,ps,gs)
+            data = [cpu(accuracy(predicted,actual)),cpu(temp_loss)]
+            put!(channels.training_progress,["Training",data...])
+            push!(accuracy_array,data[1])
+            push!(loss_array,data[2])
+            # Testing part
             if run_test
               if ceil(i/testing_frequency)>last_test || iteration==max_iterations
                   data = test(model,loss,channels,test_batches,length(test_batches),use_GPU)
@@ -193,19 +202,15 @@ function train!(model::Chain,args,testing_frequency::Int64,loss,
                   push!(test_iteration,iteration)
               end
             end
-            data = [cpu(accuracy(predicted,actual)),(cpu(temp_loss))]
-            put!(channels.training_progress,["Training",data...])
-            push!(accuracy_array,data[1])
-            push!(loss_array,data[2])
             @everywhere GC.safepoint()
         end
-        @everywhere GC.gc()
+        @everywhere GC.safepoint()
     end
     data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
     return data
 end
 
-function test(model::Chain,loss,channels::Channels,test_batches::Array,
+function test(model::Chain,loss::Function,channels::Channels,test_batches::Array,
     num_test::Int64,use_GPU::Bool)
     test_accuracy = Vector{Float32}(undef,num_test)
     test_loss = Vector{Float32}(undef,num_test)
@@ -332,16 +337,16 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
     else
         data_array = predicted_array
     end
-    predicted_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,0)
-    predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,0)
-    target_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,0)
     array_size = size(predicted_array[1])
     array_size12 = array_size[1:2]
     num_feat = array_size[3]
     num = length(predicted_array)
     num2 = length(labels_color)
     perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color)
-    for i = 1:num
+    predicted_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
+    predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
+    target_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
+    Threads.@threads for i = 1:num
         set_part = set[i]
         data_array_part = data_array[i]
         function compute(num2::Int64,num_feat::Int64,set_part::Array{Float32,4},
@@ -405,10 +410,10 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
         end
         target_temp,predicted_color_temp,predicted_error_temp =
             compute(num2,num_feat,set_part,data_array_part)
-        push!(predicted_color,predicted_color_temp)
-        push!(predicted_error,predicted_error_temp)
-        push!(target_color,target_temp)
-        @everywhere GC.gc()
+        predicted_color[i] = predicted_color_temp
+        predicted_error[i] = predicted_error_temp
+        target_color[i] = target_temp
+        @everywhere GC.safepoint()
     end
     return predicted_color,predicted_error,target_color
 end
@@ -456,9 +461,10 @@ function validate_main(settings::Settings,training_data::Training_data,
                 ind_split = Int64(floor(max_value/num_parts))
                 predicted = Vector{Array{Float32}}(undef,0)
                 for j = 1:num_parts
-                    function prepare_data(input_data::Array{Float32,4},ind_split::Int64)
-                        start_ind = 1 + (j-1)*ind_split
-                        end_ind = start_ind + ind_split
+                    function prepare_data(input_data::Array{Float32,4},
+                            ind_split::Int64,j::Int64)
+                        start_ind = 1 + (j-1)*ind_split-1
+                        end_ind = start_ind + ind_split-1
                         correct_size = end_ind-start_ind+1
                         start_ind = start_ind - offset
                         end_ind = end_ind + offset
@@ -470,8 +476,8 @@ function validate_main(settings::Settings,training_data::Training_data,
                         temp_data = pad(temp_data,[0,offset_add],same)
                         return temp_data,correct_size,offset_add
                     end
-                    function fix_size(temp_predicted::Array{Float32,4},
-                            correct_size::Int64,ind_max::Int64,offset_add::Int64)
+                    function fix_size(temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}},
+                            correct_size::Int64,ind_max::Int64,offset_add::Int64,j::Int64)
                         temp_size = size(temp_predicted,ind_max)
                         offset_temp = (temp_size - correct_size) - offset_add
                         if offset_temp>0
@@ -498,13 +504,12 @@ function validate_main(settings::Settings,training_data::Training_data,
                     if j==num_parts
                         ind_split = ind_split+rem(max_value,num_parts)
                     end
-                    temp_data,correct_size,offset_add = prepare_data(input_data,ind_split)
+                    temp_data,correct_size,offset_add = prepare_data(input_data,ind_split,j)
                     if use_GPU
                         temp_data = gpu(temp_data)
                     end
                     temp_predicted = model(temp_data)
-                    temp_predicted = fix_size(temp_predicted,correct_size,
-                        ind_max,offset_add)
+                    temp_predicted = fix_size(temp_predicted,correct_size,ind_max,offset_add,j)
                     push!(predicted,cpu(temp_predicted))
                     @everywhere GC.safepoint()
                 end
