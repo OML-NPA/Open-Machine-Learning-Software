@@ -448,56 +448,69 @@ function validate_main(settings::Settings,training_data::Training_data,
         if num_parts==1
             predicted = model(input_data)
         else
-            input_size = size(input_data)
-            max_value = max(input_size...)
-            ind_max = findfirst(max_value.==input_size)
-            ind_split = floor(max_value/num_parts)
-            predicted = Vector{Array{Float32}}(undef,0)
-            for j = 1:num_parts
-                if j==num_parts
-                    ind_split = ind_split+rem(max_value,num_parts)
-                end
-                start_ind = 1 + (j-1)*ind_split-1
-                end_ind = start_ind + ind_split-1
-                correct_size = Int64(end_ind-start_ind+1)
-                start_ind = start_ind - offset
-                end_ind = end_ind + offset
-                start_ind = Int64(start_ind<1 ? 1 : start_ind)
-                end_ind = Int64(end_ind>max_value ? max_value : end_ind)
-                temp_data = input_data[:,start_ind:end_ind,:,:]
-                max_dim_size = size(temp_data,ind_max)
-                offset_add = Int64(ceil(max_dim_size/16)*16 - max_dim_size)
-                temp_data = pad(temp_data,[0,offset_add],same)
-                if use_GPU
-                    temp_data = gpu(temp_data)
-                end
-                temp_predicted = model(temp_data)
-                temp_size = size(temp_predicted,ind_max)
-                offset_temp = (temp_size - correct_size) - offset_add
-                if offset_temp>0
-                    div_result = offset_add/2
-                    offset_add1 = Int64(floor(div_result))
-                    offset_add2 = Int64(ceil(div_result))
-                    if j==1
-                        temp_predicted = temp_predicted[:,
-                            (1+offset_add1):(end-offset_temp-offset_add2),:,:]
-                    elseif j==num_parts
-                        temp_predicted = temp_predicted[:,
-                            (1+offset_temp+offset_add1):(end-offset_add2),:,:]
-                    else
-                        temp = (temp_size - correct_size - offset_add)/2
-                        offset_temp = Int64(floor(temp))
-                        offset_temp2 = Int64(ceil(temp))
-                        temp_predicted = temp_predicted[:,
-                            (1+offset_temp+offset_add1):(end-offset_temp2-offset_add2),:,:]
+            function accum_parts(model::Chain,input_data::Array{Float32,4},
+                    num_parts::Int64,use_GPU::Bool)
+                input_size = size(input_data)
+                max_value = max(input_size...)
+                ind_max = findfirst(max_value.==input_size)
+                ind_split = Int64(floor(max_value/num_parts))
+                predicted = Vector{Array{Float32}}(undef,0)
+                for j = 1:num_parts
+                    function prepare_data(input_data::Array{Float32,4},ind_split::Int64)
+                        start_ind = 1 + (j-1)*ind_split
+                        end_ind = start_ind + ind_split
+                        correct_size = end_ind-start_ind+1
+                        start_ind = start_ind - offset
+                        end_ind = end_ind + offset
+                        start_ind = start_ind<1 ? 1 : start_ind
+                        end_ind = end_ind>max_value ? max_value : end_ind
+                        temp_data = input_data[:,start_ind:end_ind,:,:]
+                        max_dim_size = size(temp_data,ind_max)
+                        offset_add = Int64(ceil(max_dim_size/16)*16) - max_dim_size
+                        temp_data = pad(temp_data,[0,offset_add],same)
+                        return temp_data,correct_size,offset_add
                     end
-                elseif offset_temp<0
-                    temp_predicted = pad(temp_predicted,[0,-offset_temp])
+                    function fix_size(temp_predicted::Array{Float32,4},
+                            correct_size::Int64,ind_max::Int64,offset_add::Int64)
+                        temp_size = size(temp_predicted,ind_max)
+                        offset_temp = (temp_size - correct_size) - offset_add
+                        if offset_temp>0
+                            div_result = offset_add/2
+                            offset_add1 = Int64(floor(div_result))
+                            offset_add2 = Int64(ceil(div_result))
+                            if j==1
+                                temp_predicted = temp_predicted[:,
+                                    (1+offset_add1):(end-offset_temp-offset_add2),:,:]
+                            elseif j==num_parts
+                                temp_predicted = temp_predicted[:,
+                                    (1+offset_temp+offset_add1):(end-offset_add2),:,:]
+                            else
+                                temp = (temp_size - correct_size - offset_add)/2
+                                offset_temp = Int64(floor(temp))
+                                offset_temp2 = Int64(ceil(temp))
+                                temp_predicted = temp_predicted[:,
+                                    (1+offset_temp+offset_add1):(end-offset_temp2-offset_add2),:,:]
+                            end
+                        elseif offset_temp<0
+                            temp_predicted = pad(temp_predicted,[0,-offset_temp])
+                        end
+                    end
+                    if j==num_parts
+                        ind_split = ind_split+rem(max_value,num_parts)
+                    end
+                    temp_data,correct_size,offset_add = prepare_data(input_data,ind_split)
+                    if use_GPU
+                        temp_data = gpu(temp_data)
+                    end
+                    temp_predicted = model(temp_data)
+                    temp_predicted = fix_size(temp_predicted,correct_size,
+                        ind_max,offset_add)
+                    push!(predicted,cpu(temp_predicted))
+                    @everywhere GC.safepoint()
                 end
-                push!(predicted,cpu(temp_predicted))
-                @everywhere GC.gc()
+                return hcat(predicted...)
             end
-            predicted = hcat(predicted...)
+            predicted = accum_parts(model,input_data,num_parts,use_GPU)
         end
         accuracy_array[i] = accuracy(predicted,actual)
         loss_array[i] = loss(predicted,actual)
@@ -512,15 +525,10 @@ function validate_main(settings::Settings,training_data::Training_data,
         put!(channels.validation_progress,data)
         @everywhere GC.safepoint()
     end
-    validation_plot_data.data_input_orig =
-        Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
-    validation_plot_data.data_labels_orig =
-        Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
-    validation_plot_data.data_input =
-        Vector{Array{Float32,2}}(undef,1)
-    validation_plot_data.data_labels =
-        Vector{BitArray{1}}(undef,1)
-
+    empty!(validation_plot_data.data_input_orig)
+    empty!(validation_plot_data.data_labels_orig)
+    empty!(validation_plot_data.data_input)
+    empty!(validation_plot_data.data_labels)
     data_predicted,data_error,target = output_and_error_images(predicted_array,
         set[2],model_data)
     data = (data_predicted,data_error,target,
