@@ -197,9 +197,9 @@ function train!(model::Chain,args,testing_frequency::Int64,loss,
             put!(channels.training_progress,["Training",data...])
             push!(accuracy_array,data[1])
             push!(loss_array,data[2])
-            GC.safepoint()
+            @everywhere GC.safepoint()
         end
-        GC.gc()
+        @everywhere GC.gc()
     end
     data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
     return data
@@ -240,6 +240,12 @@ function reset_validation_data(validation_plot_data::Validation_plot_data)
     validation_plot_data.loss = []
     validation_plot_data.loss_std = NaN
     validation_plot_data.accuracy_std = NaN
+    validation_plot_data.data_error =
+        Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
+    validation_plot_data.data_target =
+        Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
+    validation_plot_data.data_predicted =
+        Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
     return nothing
 end
 
@@ -314,7 +320,7 @@ end
 train() = train_main2(settings,training_data,model_data,channels)
 
 function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}},
-        set::Tuple{Array{<:Array{<:AbstractFloat,4},1},Array{<:Array{<:AbstractFloat,4},1}},
+        set::Array{<:Array{<:AbstractFloat,4},1},
         model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     border_colors = labels_color[findall(border)]
@@ -329,47 +335,80 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
     predicted_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,0)
     predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,0)
     target_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,0)
-    num_feat = size(predicted_array[1],3)
-    for i = 1:length(predicted_array)
-        target_temp = Vector{Array{RGB{Float32},2}}(undef,0)
-        predicted_color_temp = Vector{Array{RGB{Float32},2}}(undef,0)
-        predicted_error_temp = Vector{Array{RGB{Float32},2}}(undef,0)
-        for j = 1:length(labels_color)
-            if j>num_feat
-                target = set[2][i][:,:,j-num_feat]
-            else
-                target = set[2][i][:,:,j]
+    array_size = size(predicted_array[1])
+    array_size12 = array_size[1:2]
+    num_feat = array_size[3]
+    num = length(predicted_array)
+    num2 = length(labels_color)
+    perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color)
+    for i = 1:num
+        set_part = set[i]
+        data_array_part = data_array[i]
+        function compute(num2::Int64,num_feat::Int64,set_part::Array{Float32,4},
+                data_array_part::Array{Float32,4})
+            target_temp = Vector{Array{RGB{Float32},2}}(undef,0)
+            predicted_color_temp = Vector{Array{RGB{Float32},2}}(undef,0)
+            predicted_error_temp = Vector{Array{RGB{Float32},2}}(undef,0)
+            function do_target!(target_temp::Vector{Array{RGB{Float32},2}},
+                    target::Array{Float32,2},color::Array{Float32,3})
+                target_img = target.*color
+                target_img2 = permutedims(target_img,[3,1,2])
+                target_img3 = colorview(RGB,target_img2)
+                target_img3 = collect(target_img3)
+                push!(target_temp,target_img3)
             end
-            target_img = target.*perm_labels_color[j]
-            target_img = permutedims(target_img,[3,1,2])
-            target_img = colorview(RGB,target_img)
-            push!(target_temp,collect(target_img))
-            truth = target.>0
-            temp_bool = data_array[i][:,:,j].>0.5
-            correct = temp_bool .& truth
-            false_pos = copy(temp_bool)
-            false_pos[truth] .= false
-            false_neg = copy(truth)
-            false_neg[temp_bool] .= false
-            error_img = zeros(Bool,(size(temp_bool)...,3))
-            error_img[:,:,1:2] .= false_pos
-            error_img[:,:,1] = error_img[:,:,1] .| false_neg
-            error_img[:,:,2] = error_img[:,:,2] .| correct
-            error_img = Float32.(permutedims(error_img,[3,1,2]))
-            error_img = colorview(RGB,error_img)
-            push!(predicted_error_temp,collect(error_img))
-            temp = Float32.(temp_bool)
-            temp = cat(temp,temp,temp,dims=3)
-            temp = temp.*perm_labels_color[j]
-            temp = Float32.(permutedims(temp,[3,1,2]))
-            temp = colorview(RGB,temp)
-            push!(predicted_color_temp,collect(temp))
-            GC.safepoint()
+            function do_predicted_error!(predicted_error_temp::Vector{Array{RGB{Float32},2}},
+                    truth::BitArray{2},predicted_bool::BitArray{2})
+                correct = predicted_bool .& truth
+                false_pos = copy(predicted_bool)
+                false_pos[truth] .= false
+                false_neg = copy(truth)
+                false_neg[predicted_bool] .= false
+                error_img = zeros(Bool,(size(predicted_bool)...,3))
+                error_img[:,:,1:2] .= false_pos
+                error_img[:,:,1] = error_img[:,:,1] .| false_neg
+                error_img[:,:,2] = error_img[:,:,2] .| correct
+                error_img = permutedims(error_img,[3,1,2])
+                error_img2 = convert(Array{Float32,3},error_img)
+                error_img3 = colorview(RGB,error_img2)
+                error_img3 = collect(error_img3)
+                push!(predicted_error_temp,error_img3)
+                return
+            end
+            function do_predicted_color!(predicted_color_temp::Vector{Array{RGB{Float32},2}},
+                    predicted_bool::BitArray{2},color::Array{Float32,3})
+                temp = Float32.(predicted_bool)
+                temp = cat(temp,temp,temp,dims=3)
+                temp = temp.*color
+                temp = permutedims(temp,[3,1,2])
+                temp2 = convert(Array{Float32,3},temp)
+                temp3 = colorview(RGB,temp2)
+                temp3 = collect(temp3)
+                push!(predicted_color_temp,temp3)
+                return
+            end
+            for j = 1:num2
+                if j>num_feat
+                    target = set_part[:,:,j-num_feat]
+                else
+                    target = set_part[:,:,j]
+                end
+                color = perm_labels_color[j]
+                do_target!(target_temp,target,color)
+                truth = target.>0
+                predicted_bool = data_array_part[:,:,j].>0.5
+                do_predicted_error!(predicted_error_temp,truth,predicted_bool)
+                do_predicted_color!(predicted_color_temp,predicted_bool,color)
+                @everywhere GC.safepoint()
+            end
+            return target_temp,predicted_color_temp,predicted_error_temp
         end
+        target_temp,predicted_color_temp,predicted_error_temp =
+            compute(num2,num_feat,set_part,data_array_part)
         push!(predicted_color,predicted_color_temp)
         push!(predicted_error,predicted_error_temp)
         push!(target_color,target_temp)
-        GC.gc()
+        @everywhere GC.gc()
     end
     return predicted_color,predicted_error,target_color
 end
@@ -396,7 +435,7 @@ function validate_main(settings::Settings,training_data::Training_data,
     put!(channels.validation_progress,[num])
     num_parts = 6
     offset = 20
-    GC.gc()
+    @everywhere GC.gc()
     for i = 1:num
         if isready(channels.validation_modifiers)
             if fetch(channels.validation_modifiers)[1]=="stop"
@@ -456,7 +495,7 @@ function validate_main(settings::Settings,training_data::Training_data,
                     temp_predicted = pad(temp_predicted,[0,-offset_temp])
                 end
                 push!(predicted,cpu(temp_predicted))
-                GC.gc()
+                @everywhere GC.gc()
             end
             predicted = hcat(predicted...)
         end
@@ -471,15 +510,19 @@ function validate_main(settings::Settings,training_data::Training_data,
         loss_std = std(temp_loss)
         data = [mean_accuracy,mean_loss,accuracy_std,loss_std]
         put!(channels.validation_progress,data)
-        GC.safepoint()
+        @everywhere GC.safepoint()
     end
-    validation_plot_data.data_input_orig = Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
-    validation_plot_data.data_labels_orig = Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
-    validation_plot_data.data_input = Vector{Array{Float32,2}}(undef,1)
-    validation_plot_data.data_labels = Vector{BitArray{1}}(undef,1)
+    validation_plot_data.data_input_orig =
+        Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
+    validation_plot_data.data_labels_orig =
+        Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
+    validation_plot_data.data_input =
+        Vector{Array{Float32,2}}(undef,1)
+    validation_plot_data.data_labels =
+        Vector{BitArray{1}}(undef,1)
 
     data_predicted,data_error,target = output_and_error_images(predicted_array,
-        set,model_data)
+        set[2],model_data)
     data = (data_predicted,data_error,target,
         accuracy_array,loss_array,std(accuracy_array),std(loss_array))
     put!(channels.validation_results,data)
