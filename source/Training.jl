@@ -69,15 +69,17 @@ function load_labels(training_data::Training_data)
     return labels
 end
 
-function image_to_float(image;gray=true)
+function image_to_float(image::Array{RGB{Normed{UInt8,8}},2};gray=true)
     if gray
-        return channelview(float.(Gray.(image)))
+        return collect(channelview(float.(Gray.(image))))
     else
-        return channelview(float.(image))
+        return collect(channelview(float.(image)))
     end
 end
 
-function label_to_float(labelimg,labels_color,labels_incl,border)
+function label_to_float(labelimg::Array{RGB{Normed{UInt8,8}},2},
+        labels_color::Vector{Vector{Float64}},labels_incl::Vector{Vector{Int64}},
+        border::Vector{Bool})
     colors = map(x->RGB((n0f8.(./(x,255)))...),labels_color)
     num = length(colors)
     num_borders = sum(border)
@@ -100,22 +102,23 @@ function label_to_float(labelimg,labels_color,labels_incl,border)
     return label
 end
 
-function get_feature_data(features)
-    labels_color = []
-    labels_incl = []
-    border = []
-    names = []
-    parents = []
-    for i = 1:length(features)
-        push!(names,features[i].name)
-        push!(parents,features[i].parent)
+function get_feature_data(features::Vector{Feature})
+    num = length(features)
+    labels_color = Vector{Vector{Float64}}(undef,num)
+    labels_incl = Vector{Vector{Int64}}(undef,num)
+    border = Vector{Bool}(undef,num)
+    feature_names = Vector{String}(undef,num)
+    feature_parents = Vector{String}(undef,num)
+    for i = 1:num
+        feature_names[i] = features[i].name
+        feature_parents[i] = features[i].parent
     end
-    for i = 1:length(features)
+    for i = 1:num
         feature = features[i]
-        push!(labels_color,feature.color)
-        push!(border,feature.border)
-        inds = findall(names[i].==parents)
-        push!(labels_incl,inds)
+        labels_color[i] = feature.color
+        border[i] = feature.border
+        inds = findall(feature_names[i].==feature_parents)
+        labels_incl[i] = inds
     end
     return labels_color,labels_incl,border
 end
@@ -123,7 +126,7 @@ end
 function prepare_training_data_main(training::Training,training_data::Training_data,
     model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
     # Functions
-    function correct_view(img,label)
+    function correct_view(img::Array{Float32,2},label::BitArray{3})
         field = dilate(imfilter(img.<0.3, Kernel.gaussian(4)).>0.5,20)
         field = .!(areaopen(field,30000))
         field_area = sum(field)
@@ -143,9 +146,10 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         return img,label
     end
 
-    function augment(k,img,label,angles_num,pix_num,min_fr_pix)
+    function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
+        num_angles::Int64,pix_num::Tuple{Int64,Int64},min_fr_pix::Float64)
 
-        function rotate_img(img,angle)
+        function rotate_img(img::Union{Array{Float32,2},BitArray},angle::Float64)
             if angle!=0
                 img2 = copy(img)
                 for i = 1:size(img,3)
@@ -176,8 +180,8 @@ function prepare_training_data_main(training::Training,training_data::Training_d
             step1 = Int64(floor(size(label2,1)/num1))
             step2 = Int64(floor(size(label2,2)/num2))
             num_batch = 2*(num1-1)*(num2-1)
-            img_temp = Vector{Array}(undef,0)
-            label_temp = Vector{BitArray}(undef,0)
+            img_temp = Vector{Array{Float32}}(undef,0)
+            label_temp = Vector{BitArray{3}}(undef,0)
             for h = 1:2
                 if h==1
                     img3 = img2
@@ -202,6 +206,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
             end
             push!(imgs_out,img_temp...)
             push!(labels_out,label_temp...)
+            return
         end
         return (imgs_out,labels_out)
     end
@@ -222,9 +227,10 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     imgs = load_images(training_data)
     labels = load_labels(training_data)
     num = length(imgs)
-    temp_imgs = Vector{Any}(undef,num)
-    temp_labels = Vector{Any}(undef,num)
+    temp_imgs = Vector{Vector{Array{Float32,3}}}(undef,num)
+    temp_labels = Vector{Vector{BitArray{3}}}(undef,num)
     put!(progress, num+1)
+    type_segmentation = type=="segmentation"
     Threads.@threads for k = 1:num
         if isready(channels.training_data_modifiers)
             if fetch(channels.training_data_modifiers)[1]=="stop"
@@ -235,8 +241,8 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         img = imgs[k]
         img = image_to_float(img,gray=true)
         label = labels[k]
-        if type=="segmentation"
-            #img,label = correct_view(img,label)
+        if type_segmentation
+            img,label = correct_view(img,label)
             label = label_to_float(label,labels_color,labels_incl,border)
             img,label = augment(k,img,label,num_angles,pix_num,min_fr_pix)
         end
@@ -244,7 +250,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         temp_labels[k] = label
         put!(progress, 1)
     end
-    if type=="segmentation"
+    if type_segmentation
         temp_imgs = vcat(temp_imgs...)
         temp_labels = vcat(temp_labels...)
     end
@@ -254,7 +260,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     data_labels .= temp_labels
     put!(results, (data_input,data_labels))
     put!(progress, 1)
-    return nothing
+    return
 end
 function prepare_training_data_main2(training::Training,training_data::Training_data,
     model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
@@ -325,13 +331,14 @@ end
 apply_border_data(data_in) = apply_border_data_main(data_in,model_data)
 
 function get_labels_colors_main(training_data::Training_data)
+    num = length(url_labels)
     url_labels = training_data.url_labels
-    colors_out = Vector{Any}(undef,length(url_labels))
-    labelimgs = []
-    for i=1:length(url_labels)
+    colors_out = Vector{Vector{Vector{Float32}}}(undef,num)
+    labelimgs = Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,0)
+    for i=1:num
         push!(labelimgs,RGB.(load(url_labels[i])))
     end
-    Threads.@threads for i=1:length(url_labels)
+    Threads.@threads for i=1:num
             labelimg = labelimgs[i]
             unique_colors = unique(labelimg)
             ind = findfirst(unique_colors.==RGB.(0,0,0))
@@ -347,7 +354,7 @@ get_labels_colors() = get_labels_colors_main(training_data)
 
 model_count() = length(model_data.layers)
 model_properties(index) = [keys(model_data.layers[index])...]
-function model_get_property_main(model_data,index,property_name)
+function model_get_property_main(model_data::Model_data,index,property_name)
     layer = model_data.layers[index]
     property = layer[property_name]
     if  isa(property,Tuple)
@@ -358,12 +365,12 @@ end
 model_get_property(index,property_name) =
     model_get_property_main(model_data,index,property_name)
 
-function reset_layers_main(model_data)
+function reset_layers_main(model_data::Model_data)
     empty!(model_data.layers)
 end
-reset_layers() = reset_layers_main(model_data)
+reset_layers() = reset_layers_main(model_data::Model_data)
 
-function update_layers_main(model_data,keys,values,ext...)
+function update_layers_main(model_data::Model_data,keys,values,ext...)
     layers = model_data.layers
     keys = fix_QML_types(keys)
     values = fix_QML_types(values)
@@ -395,15 +402,15 @@ function update_layers_main(model_data,keys,values,ext...)
     dict = fixtypes(dict)
     push!(layers, copy(dict))
 end
-update_layers(keys,values,ext...) = update_layers_main(model_data,
+update_layers(keys,values,ext...) = update_layers_main(model_data::Model_data,
     keys,values,ext...)
 
 function reset_features_main(model_data)
     empty!(model_data.features)
 end
-reset_features() = reset_features_main(model_data)
+reset_features() = reset_features_main(model_data::Model_data)
 
-function append_features_main(model_data,name,colorR,colorG,colorB,border,parent)
+function append_features_main(model_data::Model_data,name,colorR,colorG,colorB,border,parent)
     push!(model_data.features,Feature(String(name),
         Int64.([colorR,colorG,colorB]),Bool(border),String(parent)))
 end
@@ -417,12 +424,12 @@ end
 update_features(index,name,colorR,colorG,colorB,border,parent) =
     update_features_main(model_data,index,name,colorR,colorG,colorB,border,parent)
 
-function num_features_main(model_data)
+function num_features_main(model_data::Model_data)
     return length(model_data.features)
 end
-num_features() = num_features_main(model_data)
+num_features() = num_features_main(model_data::Model_data)
 
-function get_feature_main(model_data,index,fieldname)
+function get_feature_main(model_data::Model_data,index,fieldname)
     return getfield(model_data.features[index], Symbol(String(fieldname)))
 end
 get_feature_field(index,fieldname) = get_feature_main(model_data,index,fieldname)
