@@ -22,7 +22,7 @@ ApplicationWindow {
     property double buttonHeight: 0.03*Screen.height
 
     onClosing: {
-        trainingplotLoader.sourceComponent = undefined
+        validationplotLoader.sourceComponent = undefined
         validateButton.text = "Validate"
         progressbar.value = 0
     }
@@ -292,8 +292,6 @@ ApplicationWindow {
                         stepSize: 1
                         editable: false
                         onValueModified: {
-                            originalDisplay.visible = false
-                            resultDisplay.visible = false
                             var ind1 = sampleSpinBox.value
                             var ind2 = featureComboBox.currentIndex+1
                             accuracyLabel.text = validationTimer.mean_accuracy.toFixed(2) + " ± " +
@@ -305,6 +303,7 @@ ApplicationWindow {
                             get_image(originalDisplay,"data_input_orig",[ind1])
                             imagetransferCanvas.update()
                             imagetransferCanvas.grabToImage(function(result) {
+                                                       resultDisplay.visible = false
                                                        originalDisplay.source = result.url
                                                    });
                             function upd() {
@@ -312,7 +311,6 @@ ApplicationWindow {
                                 imagetransferCanvas.update()
                                 imagetransferCanvas.grabToImage(function(result) {
                                                            resultDisplay.source = result.url;
-                                                           originalDisplay.visible = true
                                                            resultDisplay.visible = true
                                                        });
                             }
