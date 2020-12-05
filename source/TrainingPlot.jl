@@ -420,6 +420,7 @@ end
 
 function validate_main(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
+    @time begin
     training = settings.Training
     validation_plot = training_data.Validation_plot_data
     model = model_data.model
@@ -530,15 +531,16 @@ function validate_main(settings::Settings,training_data::Training_data,
         put!(channels.validation_progress,data)
         @everywhere GC.safepoint()
     end
-    empty!(validation_plot_data.data_input_orig)
+    #=empty!(validation_plot_data.data_input_orig)
     empty!(validation_plot_data.data_labels_orig)
     empty!(validation_plot_data.data_input)
-    empty!(validation_plot_data.data_labels)
+    empty!(validation_plot_data.data_labels)=#
     data_predicted,data_error,target = output_and_error_images(predicted_array,
         set[2],model_data)
     data = (data_predicted,data_error,target,
         accuracy_array,loss_array,std(accuracy_array),std(loss_array))
     put!(channels.validation_results,data)
+    end
 end
 function validate_main2(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)

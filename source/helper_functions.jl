@@ -80,7 +80,7 @@ function copystruct!(struct1,struct2)
     end
 end
 
-function areaopen(im::BitArray,area::Real)
+function areaopen(im::BitArray{2},area::Int64)
     im_segm = label_components(im).+1
     im_segm[im] .= 0
     labels_color = unique(im_segm)
@@ -93,8 +93,8 @@ function areaopen(im::BitArray,area::Real)
     return im
 end
 
-function remove_spurs!(img)
-    spurs = imfilter(Float32.(img),centered(ones(Float32,3,3)))
+function remove_spurs!(img::BitArray{2})
+    spurs = imfilter(convert(Float32,img),centered(ones(Float32,3,3)))
     spurs = (spurs.<2) .& (img.!=0)
     inds = findall(spurs)
     for i=1:length(inds)
@@ -115,7 +115,7 @@ function remove_spurs!(img)
     end
 end
 
-function component_intensity(components,image)
+function component_intensity(components::Array{Int64},image::Array{Float32})
     num = maximum(components)
     intensities = Array{typeof(image[1])}(undef,num)
     for i = 1:num
@@ -124,7 +124,7 @@ function component_intensity(components,image)
     return intensities
 end
 
-function erode(array::BitArray,num::Int64)
+function erode(array::BitArray{2},num::Int64)
     array2 = copy(array)
     for i=1:num
         erode!(array2)
@@ -132,7 +132,7 @@ function erode(array::BitArray,num::Int64)
     return(array2)
 end
 
-function dilate(array::BitArray,num::Int64)
+function dilate(array::BitArray{2},num::Int64)
     array2 = copy(array)
     for i=1:num
         dilate!(array2)
@@ -140,7 +140,7 @@ function dilate(array::BitArray,num::Int64)
     return(array2)
 end
 
-function arsplit(ar,dim)
+function arsplit(ar,dim::Int64)
     type = typeof(ar[1])
     dim2 = dim==1 ? 2 : 1
     ar_out = []
@@ -156,7 +156,7 @@ function arsplit(ar,dim)
     return ar_out
 end
 
-function perim(array::BitArray)
+function perim(array::BitArray{2})
     array2 = copy(array)
     array2[1:end,1] .= 0
     array2[1:end,end] .= 0
@@ -166,7 +166,7 @@ function perim(array::BitArray)
     return xor.(array2,er)
 end
 
-function any(array::BitArray,dim)
+function any(array::BitArray,dim::Int64)
     vec = BitArray(undef, size(array,dim), 1)
     if dim==1
         for i=1:length(vec)
@@ -185,7 +185,7 @@ function any(array::BitArray,dim)
 end
 
 function rescale(array,r::Tuple)
-    r = Float32.(r)
+    r = convert(Float32,r)
     min_val = minimum(array)
     max_val = maximum(array)
     array = array.*((r[2]-r[1])/(max_val-min_val)).-min_val.+r[1]
@@ -266,7 +266,8 @@ function pad(array::Array,padding::Vector,fun::Union{typeof(zeros),typeof(ones)}
             array,fun(el_type,size(array,1),rightpad[2]))
     end
 end
-function pad(array::Array,padding::Vector,fun::typeof(same))
+function pad(array::Union{Array{Float32},Array{Float64}},
+        padding::Vector{Int64},fun::Union{typeof(same),typeof(zeros),typeof(ones)})
     el_type = eltype(array)
     div_result = padding./2
     leftpad = Int64.(floor.(div_result))
@@ -285,7 +286,7 @@ function pad(array::Array,padding::Vector,fun::typeof(same))
     end
 end
 
-function pad(array::CUDA.CuArray,padding::Vector,
+function pad(array::Union{CuArray{Float32},CuArray{Float64}},padding::Vector{Int64},
         fun::Union{typeof(zeros),typeof(ones)})
     el_type = eltype(array)
     div_result = padding./2
@@ -323,7 +324,7 @@ function allequal(itr::Union{Array,Tuple})
     return length(itr)==0 || all( ==(itr[1]), itr)
 end
 
-function segment_objects(components::AbstractArray{Int64,2},background::AbstractArray{Bool,2})
+function segment_objects(components::Array{Int64,2},objects::BitArray{2})
     img_size = size(components)[1:2]
     initial_indices = findall(components.!=0)
     operations = [(0,1),(1,0),(0,-1),(-1,0),(1,-1),(-1,1),(-1,-1),(1,1)]
@@ -333,16 +334,16 @@ function segment_objects(components::AbstractArray{Int64,2},background::Abstract
     while length(indices_out)!=0
         indices_in = indices_out
         indices_out = []
-        for i = 1:8
+        for i = 1:4
             new_indices = broadcast((x,y) -> x .+ y,
                 Tuple.(indices_in),repeat([operations[i]],length(indices_in)))
-            background_values = background[indices_in]
+            objects_values = objects[indices_in]
             nonzero_bool = broadcast((x,y) -> all(x .> y),
-                new_indices,repeat(gpu([(0,0)]),length(new_indices)))
+                new_indices,repeat([(0,0)],length(new_indices)))
             correct_size_bool = broadcast((x,y) -> all(x.<img_size),
                 new_indices,repeat([img_size],length(new_indices)))
             remove_incorrect = nonzero_bool .&
-                correct_size_bool .& background_values
+                correct_size_bool .& objects_values
             new_indices = new_indices[remove_incorrect]
             values = new_components[CartesianIndex.(new_indices)]
             new_indices_0_bool = values.==0

@@ -60,7 +60,7 @@ training_plot_data = Training_plot_data()
     data_labels_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
         Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
     data_input::Vector{Array{Float32,2}} = Vector{Array{Float32,2}}(undef,1)
-    data_labels::Vector{<:BitArray} = Vector{BitArray{1}}(undef,1)
+    data_labels::Vector{BitArray} = Vector{BitArray{3}}(undef,1)
     data_predicted::Vector{Vector{Array{RGB{Float32},2}}} =
         Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
     data_error::Vector{Vector{Array{RGB{Float32},2}}} =

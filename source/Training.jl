@@ -6,6 +6,9 @@ function get_urls_imgs_labels_main(training::Training,training_data::Training_da
     empty!(url_labels)
     dir_imgs = training.images
     dir_labels = training.labels
+    if isempty(dir_imgs) || isempty(dir_labels)
+        @info "empty urls"
+    end
     type = settings.Training.type
     dirs_imgs = getdirs(dir_imgs)
     dirs_labels = getdirs(dir_labels)
@@ -272,6 +275,7 @@ prepare_training_data() = prepare_training_data_main2(training,training_data,
 
     function prepare_validation_data_main(training_data::Training_data,
             features::Array,progress::RemoteChannel,results::RemoteChannel)
+        @time begin
         put!(progress,3)
         images = load_images(training_data)
         put!(progress,1)
@@ -287,6 +291,7 @@ prepare_training_data() = prepare_training_data_main2(training,training_data,
         data = (images,labels,data_input,data_labels)
         put!(results,data)
         put!(progress,1)
+        end
         return nothing
     end
     function  prepare_validation_data_main2(training_data::Training_data,
@@ -299,31 +304,33 @@ prepare_training_data() = prepare_training_data_main2(training,training_data,
         model_data.features,channels.validation_data_progress,
         channels.validation_data_results)
 
-function apply_border_data_main(data_in::Array{<:AbstractFloat},model_data::Model_data)
+function apply_border_data_main(data_in::Array{Float32},model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     inds_border = findall(border)
     num_border = length(inds_border)
     num_feat = length(model_data.features)
     data = zeros(typeof(data_in[1]),size(data_in)[1:2]...,num_border)
     for i = 1:num_border
-        ind_border = inds_border[i]
-        ind = num_feat + ind_border
-        data_feat_bool = data_in[:,:,ind_border].>0.5
-        data_feat = Float32.(data_feat_bool)
-        data_border = data_in[:,:,ind]
-        border_bool = (!).(data_border.>0.5)
-        components = label_components(border_bool,conn(4))
+        ind_feat = inds_border[i]
+        ind_border = num_feat + ind_feat
+        data_feat_bool = data_in[:,:,ind_feat].>0.5
+        data_feat = convert(Array{Float32},data_feat_bool)
+        data_border = data_in[:,:,ind_border]
+        border_bool = data_border.>0.5
+        skel = thinning(border_bool)
+        components = label_components((!).(border_bool),conn(4))
         centroids = component_centroids(components)
         intensities = component_intensity(components,data_feat)
         bad_components = findall(intensities.<0.7)
         for i = 1:length(bad_components)
             components[components.==bad_components[i]] .= 0
         end
-        background = data_feat.!=0
-        segmented = segment_objects(components,background)
+        objects = data_feat.!=0
+        objects[skel] .= false
+        segmented = segment_objects(components,objects)
         borders = mapwindow(x->!allequal(x), segmented, (3,3))
         segmented[borders] .= 0
-        data[:,:,ind_border] = Float32.(segmented.>0)
+        data[:,:,ind_feat] = convert(Array{Float32},segmented.>0)
     end
     return data
 end
