@@ -420,7 +420,6 @@ end
 
 function validate_main(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
-    @time begin
     training = settings.Training
     validation_plot = training_data.Validation_plot_data
     model = model_data.model
@@ -540,7 +539,6 @@ function validate_main(settings::Settings,training_data::Training_data,
     data = (data_predicted,data_error,target,
         accuracy_array,loss_array,std(accuracy_array),std(loss_array))
     put!(channels.validation_results,data)
-    end
 end
 function validate_main2(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)

@@ -12,6 +12,7 @@
     validation_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     validation_results::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     validation_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    training_labels_colors::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
 end
 channels = Channels()
 

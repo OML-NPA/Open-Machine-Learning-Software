@@ -336,9 +336,10 @@ function apply_border_data_main(data_in::Array{Float32},model_data::Model_data)
 end
 apply_border_data(data_in) = apply_border_data_main(data_in,model_data)
 
-function get_labels_colors_main(training_data::Training_data)
-    num = length(url_labels)
+function get_labels_colors_main(training_data::Training_data,channels::Channels)
     url_labels = training_data.url_labels
+    num = length(url_labels)
+    put!(channels.training_labels_colors,num)
     colors_out = Vector{Vector{Vector{Float32}}}(undef,num)
     labelimgs = Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,0)
     for i=1:num
@@ -351,12 +352,18 @@ function get_labels_colors_main(training_data::Training_data)
             deleteat!(unique_colors,ind)
             colors = channelview(float.(unique_colors))*255
             colors_out[i] = arsplit(colors,2)
+            put!(channels.training_labels_colors,1)
     end
     colors_out = vcat(colors_out...)
     colors_out = unique(colors_out)
-    return colors_out
+    put!(channels.training_labels_colors,colors_out)
+    return
 end
-get_labels_colors() = get_labels_colors_main(training_data)
+function get_labels_colors_main2(training_data::Training_data,channels::Channels)
+    @everywhere training_data
+    remote_do(get_labels_colors_main,workers()[end],training_data,channels)
+end
+get_labels_colors() = get_labels_colors_main2(training_data,channels)
 
 model_count() = length(model_data.layers)
 model_properties(index) = [keys(model_data.layers[index])...]

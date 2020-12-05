@@ -25,7 +25,6 @@ Component {
         function load_model_features() {
             var num_features = Julia.num_features()
             if (num_features!==0 && featureModel.count==0) {
-                updateButton.visible = false
                 updatemodelButton.visible = true
                 for (var i=0;i<num_features;i++) {
                     var color = Julia.get_feature_field(i+1,"color")
@@ -77,6 +76,50 @@ Component {
                     Julia.save_settings()
                 }
         }
+
+        Timer {
+            id: labelscolorsTimer
+            running: false
+            repeat: true
+            interval: 200
+            property double max_value: 0
+            property double value: 0
+            onTriggered: {
+                var data = Julia.get_results("Labels colors")
+                if (data!==false) {
+                    if (max_value==0) {
+                        max_value = data
+                        return
+                    }
+                    if (value===max_value) {
+                        for (var i=0;i<data.length;i++) {
+                            var feature = {
+                                "name": "feature "+(i+1),
+                                "colorR": data[i][0],
+                                "colorG": data[i][1],
+                                "colorB": data[i][2],
+                                "border": false,
+                                "parent": ""}
+                            featureModel.append(feature)
+                            Julia.append_features(feature.name,
+                                                  feature.colorR,
+                                                  feature.colorG,
+                                                  feature.colorB,
+                                                  feature.border,
+                                                  feature.parent)
+                        }
+                        updatemodelButton.visible = true
+                        max_value: 0
+                        value: 0
+                        running: false
+                    }
+                    else {
+                        value = value + 1
+                    }
+                }
+            }
+        }
+
         Column {
             id: mainColumn
             spacing: 0.7*margin
@@ -338,25 +381,9 @@ Component {
                                                     featureModel.remove(0)
                                                 }
                                                 Julia.get_urls_imgs_labels()
-                                                var colors = Julia.get_labels_colors()
                                                 Julia.reset_features()
-                                                for (i=0;i<colors.length;i++) {
-                                                    var feature = {
-                                                        "name": "feature "+(i+1),
-                                                        "colorR": colors[i][0],
-                                                        "colorG": colors[i][1],
-                                                        "colorB": colors[i][2],
-                                                        "border": false,
-                                                        "parent": ""}
-                                                    featureModel.append(feature)
-                                                    Julia.append_features(feature.name,
-                                                                          feature.colorR,
-                                                                          feature.colorG,
-                                                                          feature.colorB,
-                                                                          feature.border,
-                                                                          feature.parent)
-                                                }
-                                                updateButton.visible = false
+                                                Julia.get_labels_colors()
+                                                labelscolorsTimer.running = true
                                                 updatemodelButton.visible = true
                                             }
                                         }
@@ -366,7 +393,7 @@ Component {
                                     }
                                     TreeButton {
                                         id: updatemodelButton
-                                        anchors.top: featureView.bottom
+                                        anchors.top: updateButton.bottom
                                         width: buttonWidth + 0.5*margin-24*pix
                                         height: buttonHeight-2*pix
                                         hoverEnabled: true

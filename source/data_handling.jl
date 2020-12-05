@@ -255,7 +255,15 @@ function get_results_main(channels,master_data,model_data,field)
         else
             return false
         end
+    elseif field=="Labels colors"
+        if isready(channels.training_labels_colors)
+            data = take!(channels.training_labels_colors)
+            return data
+        else
+            return false
+        end
     end
+    return
 end
 get_results(field) = get_results_main(channels,master_data,model_data,field)
 
