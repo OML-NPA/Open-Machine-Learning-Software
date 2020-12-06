@@ -33,7 +33,7 @@ ApplicationWindow {
         running: true
         repeat: true
         property int iteration: 0
-        property int max_iterations: 0
+        property int max_iterations: -1
         property var accuracy: []
         property var loss: []
         property double mean_accuracy
@@ -42,13 +42,14 @@ ApplicationWindow {
         property double loss_std
         property bool grabDone: false
         onTriggered: {
-            var data = Julia.get_progress("Validation")
-            if (max_iterations===0) {
-                if (data===false) {return}
+            var data = iteration!==max_iterations ? Julia.get_progress("Validation") :
+                                                    Julia.get_results("Validation")
+            if (data===false) {return}
+            console.log(data)
+            if (max_iterations===-1) {
                 max_iterations = data[0]
             }
-            else if (iteration<max_iterations) {
-                if (data===false) {return}
+            else if (iteration<(max_iterations/2)) {
                 var accuracy_temp = data[0]
                 var loss_temp = data[1]
                 var accuracy_std_temp = data[2]
@@ -58,9 +59,11 @@ ApplicationWindow {
                 lossLabel.text = loss_temp.toFixed(2) + " ± " + loss_std_temp.toFixed(2)
                 validationProgressBar.value = iteration/max_iterations
             }
+            else if (iteration>=(max_iterations/2) && iteration!==max_iterations) {
+                iteration += 1
+                validationProgressBar.value = iteration/max_iterations
+            }
             else if (iteration===max_iterations) {
-                data = Julia.get_results("Validation")
-                if (data===false) {return}
                 running = false
                 accuracy = data[0]
                 loss = data[1]
@@ -122,7 +125,6 @@ ApplicationWindow {
                 opacityRow.visible = true
                 zoomRow.visible = true
             }
-
         }
     }
     Timer {

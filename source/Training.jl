@@ -275,7 +275,6 @@ prepare_training_data() = prepare_training_data_main2(training,training_data,
 
     function prepare_validation_data_main(training_data::Training_data,
             features::Array,progress::RemoteChannel,results::RemoteChannel)
-        @time begin
         put!(progress,3)
         images = load_images(training_data)
         put!(progress,1)
@@ -291,7 +290,6 @@ prepare_training_data() = prepare_training_data_main2(training,training_data,
         data = (images,labels,data_input,data_labels)
         put!(results,data)
         put!(progress,1)
-        end
         return nothing
     end
     function  prepare_validation_data_main2(training_data::Training_data,

@@ -326,7 +326,7 @@ train() = train_main2(settings,training_data,model_data,channels)
 
 function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}},
         set::Array{<:Array{<:AbstractFloat,4},1},
-        model_data::Model_data)
+        model_data::Model_data,channels::Channels)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     border_colors = labels_color[findall(border)]
     labels_color = vcat(labels_color,border_colors,border_colors)
@@ -413,6 +413,7 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
         predicted_color[i] = predicted_color_temp
         predicted_error[i] = predicted_error_temp
         target_color[i] = target_temp
+        put!(channels.validation_progress,1)
         @everywhere GC.safepoint()
     end
     return predicted_color,predicted_error,target_color
@@ -437,7 +438,7 @@ function validate_main(settings::Settings,training_data::Training_data,
     accuracy_array = Vector{Float32}(undef,num)
     predicted_array = Vector{Array{Float32}}(undef,num)
     loss_array = Vector{Float32}(undef,num)
-    put!(channels.validation_progress,[num])
+    put!(channels.validation_progress,[2*num])
     num_parts = 6
     offset = 20
     @everywhere GC.gc()
@@ -535,7 +536,7 @@ function validate_main(settings::Settings,training_data::Training_data,
     empty!(validation_plot_data.data_input)
     empty!(validation_plot_data.data_labels)=#
     data_predicted,data_error,target = output_and_error_images(predicted_array,
-        set[2],model_data)
+        set[2],model_data,channels)
     data = (data_predicted,data_error,target,
         accuracy_array,loss_array,std(accuracy_array),std(loss_array))
     put!(channels.validation_results,data)
