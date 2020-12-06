@@ -45,7 +45,6 @@ ApplicationWindow {
             var data = iteration!==max_iterations ? Julia.get_progress("Validation") :
                                                     Julia.get_results("Validation")
             if (data===false) {return}
-            console.log(data)
             if (max_iterations===-1) {
                 max_iterations = data[0]
             }

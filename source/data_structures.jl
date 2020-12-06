@@ -25,10 +25,10 @@ end
 feature = Feature()
 
 @with_kw mutable struct Model_data
-    input_size::Tuple{Int64,Int64,Int64} = (160,160,1)
+    input_size::Tuple = (160,160,1)
     model::Chain = Chain()
-    layers::Array{Dict{String,Any}} = []
-    features::Array{Feature} = []
+    layers::Vector{Dict{String,Any}} = []
+    features::Vector{Feature} = []
     loss::Function = Losses.crossentropy
 end
 model_data = Model_data()
@@ -153,13 +153,6 @@ options_training = Options_training()
     height::Float64 = 100
     min_dist_x::Float64 = 40
     min_dist_y::Float64 = 40
-    hide_name::Bool = false
-    iteration::Int64 = 0
-    epoch::Int64 = 0
-    iterations_per_epoch::Int64 = 0
-    starting_time::String = string(now())
-    max_iterations::Int64 = iterations_per_epoch*hyperparameters_training.epochs
-    training_started::Bool = false
 end
 design = Design()
 
@@ -195,6 +188,5 @@ visualisation = Visualisation()
     Training = training
     Analysis = analysis
     Visualisation = visualisation
-    stop_task::Bool = false
 end
 settings = Settings()

@@ -3,7 +3,7 @@
 struct Parallel
     layers::Tuple
 end
-function Parallel(x::Union{CuArray{<:AbstractFloat},Array{<:AbstractFloat}},
+function Parallel(x::Union{CuArray{Float32},Array{Float32}},
         layers::Tuple)
     result = map(fun -> fun(x), layers)
     return result
@@ -12,16 +12,17 @@ end
 Flux.@functor Parallel
 
 struct Catenation
-    dims::Any
+    dims::Int64
 end
 (m::Catenation)(x) = cat(x..., dims = m.dims)
 
 struct Decatenation
-    outputs::Any
-    dims::Any
+    outputs::Int64
+    dims::Int64
 end
-function Decatenation_func(x, outputs::Int64, dims::Int64)
-    x_out = Array{Array}(undef, outputs)
+function Decatenation_func(x::Union{CuArray{Float32},Array{Float32}},
+        outputs::Int64, dims::Int64)
+    x_out = Array{Union{CuArray{Float32},Array{Float32}}}(undef, outputs)
     step_var = Int64(size(x, dims) / outputs)
     if dims == 1
         for i = 1:outputs
@@ -44,11 +45,12 @@ struct Addition end
 (m::Addition)(x) = sum(x)
 
 struct Upscaling
-    multiplier::Int64
-    new_size::Tuple
-    dims::Any
+    multiplier::Float64
+    new_size::Tuple{Int64,Int64,Int64}
+    dims::Union{Int64,Tuple{Int64,Int64},Tuple{Int64,Int64,Int64}}
 end
-function Upscaling_func(x, multiplier::Int64, new_size::Tuple, dims)
+function Upscaling_func(x::Union{CuArray{Float32},Array{Float32}}, multiplier::Int64,
+        new_size::Union{Int64,Tuple{Int64,Int64},Tuple{Int64,Int64,Int64}}, dims::Int64)
     if dims == 1
         ratio = (multiplier,1,1,1)
     elseif dims == 2
@@ -62,7 +64,7 @@ function Upscaling_func(x, multiplier::Int64, new_size::Tuple, dims)
     end
     return upscale(x,ratio)
 end
-function upscale(x::Array,ratio)
+function upscale(x::Array{Float32},ratio::Float64)
     s = size(x)
     h,w,c,n = s
     y = fill(1.0f0, (ratio[1], 1, ratio[2], 1, ratio[3], 1))
@@ -70,7 +72,7 @@ function upscale(x::Array,ratio)
     new_x = reshape(z, s .* ratio)
     return new_x
 end
-function upscale(x::CuArray,ratio)
+function upscale(x::CuArray{Float32},ratio::Float64)
     s = size(x)
     h,w,c,n = s
     y = gpu(fill(1.0f0, (ratio[1], 1, ratio[2], 1, ratio[3], 1)))
@@ -82,7 +84,7 @@ end
     cpu(m.new_size),cpu( m.dims))
 
 struct Activation
-    f::Any
+    f::Function
 end
 (m::Activation)(x) = m.f.(x)
 
@@ -91,7 +93,7 @@ end
 (m::Identity)(x) = x
 
 # Model constructor
-function getlinear(type::AbstractString, d, in_size::Tuple)
+function getlinear(type::String, d, in_size::Tuple{Int64,Int64,Int64})
     if type == "Convolution"
         layer = Conv(
             d["filtersize"],
@@ -119,7 +121,7 @@ function getlinear(type::AbstractString, d, in_size::Tuple)
     end
 end
 
-function getnorm(type::AbstractString, d, in_size::Tuple)
+function getnorm(type::String, d, in_size::Tuple{Int64,Int64,Int64})
     if type == "Drop-out"
         return Dropout(d["probability"])
     elseif type == "Batch normalisation"
@@ -127,7 +129,7 @@ function getnorm(type::AbstractString, d, in_size::Tuple)
     end
 end
 
-function getactivation(type::AbstractString, d, in_size::Tuple)
+function getactivation(type::String, d, in_size::Tuple{Int64,Int64,Int64})
     if type == "RelU"
         return Activation(relu)
     elseif type == "Laeky RelU"
@@ -141,7 +143,7 @@ function getactivation(type::AbstractString, d, in_size::Tuple)
     end
 end
 
-function getpooling(type::AbstractString, d, in_size::Tuple)
+function getpooling(type::String, d, in_size::Tuple{Int64,Int64,Int64})
     poolsize = d["poolsize"]
     stride = d["stride"]
     temp_layer = MaxPool(poolsize, stride=2)
@@ -155,7 +157,7 @@ function getpooling(type::AbstractString, d, in_size::Tuple)
     return (layer,out)
 end
 
-function getresizing(type::AbstractString, d, in_size)
+function getresizing(type::String, d, in_size::Tuple{Int64,Int64,Int64})
     if type == "Addition"
         out = (in_size[1][1], in_size[1][2], in_size[1][3])
         return (Addition(), out)
@@ -207,7 +209,7 @@ function getresizing(type::AbstractString, d, in_size)
     end
 end
 
-function getlayer(layer, in_size)
+function getlayer(layer, in_size::Tuple{Int64,Int64,Int64})
     if layer["group"] == "linear"
         layer_f, out = getlinear(layer["type"], layer, in_size)
     elseif layer["group"] == "norm"
@@ -256,7 +258,7 @@ function get_loss(name::String)
     end
 end
 
-function getbranch(layer_params,in_size)
+function getbranch(layer_params,in_size::Tuple{Int64,Int64,Int64})
     num = layer_params isa Dict ? 1 : length(layer_params)
     if num==1
         layer, in_size = getlayer(layer_params, in_size)
@@ -295,7 +297,7 @@ function getbranch(layer_params,in_size)
     return layer,in_size
 end
 
-function make_model_main(model_data)
+function make_model_main(model_data::Model_data)
     layers_arranged,inds = get_topology()
     if layers_arranged isa String
         return @info "not supported"
@@ -326,24 +328,28 @@ function allcmp(inds)
     return true
 end
 
-function topology_linear(layers_arranged,inds_arranged,layers,connections,types,ind)
+function topology_linear(layers_arranged::Vector{Dict{String,Any}},
+        inds_arranged::Vector{Union{Int64,Vector{Int64}}},
+        layers::Vector{Dict{String,Any}},connections::Vector{Array{Vector{Int64}}},
+        types::Vector{String},ind)
     push!(layers_arranged,layers[ind])
     push!(inds_arranged,ind)
     ind = connections[ind]
     return ind
 end
 
-function topology_split(layers_arranged,inds_arranged,layers,
-    connections,connections_in,types,ind)
+function topology_split(layers_arranged::Vector,inds_arranged::Vector,
+        layers::Vector{Dict{String,Any}},connections::Vector{Array{Vector{Int64}}},
+        connections_in::Vector{Vector{Int64}},types::Vector{String},ind)
     num = length(ind)
-    par_inds = Array{Array}(undef, num)
+    par_inds = Vector(undef,num)
     fill!(par_inds,[])
     inds_return = Array{Array}(undef, num)
-    par_layers_arranged = Array{Any}(undef, num)
+    par_layers_arranged = Vector(undef,num)
     fill!(par_layers_arranged,[])
     for i = 1:num
-        layers_temp = []
-        inds_temp = []
+        layers_temp = Vector(undef,0)
+        inds_temp = Vector(undef,0)
         ind_temp = [[ind[i]]]
         inds_return[i] = get_topology_branches(layers_temp,inds_temp,layers,
             connections,connections_in,types,ind_temp)[1]
@@ -363,17 +369,16 @@ function topology_split(layers_arranged,inds_arranged,layers,
     return inds_return
 end
 
-function get_topology_branches(layers_arranged,inds_arranged,
-    layers,connections,connections_in,types,ind)
+function get_topology_branches(layers_arranged::Vector,inds_arranged::Vector,
+        layers::Vector{Dict{String,Any}},connections::Vector{Array{Vector{Int64}}},
+        connections_in::Vector{Vector{Int64}},types::Vector{String},ind)
     while !isempty.([ind])[1]
-    #for i = 1
         numk = length(ind)
         if any(map(x -> x.=="Catenation" ||
                 x.=="Addition",types[vcat(vcat(ind...)...)]))
             if all(length.(ind).==1) && allcmp(ind) &&
                     length(ind)==length(connections_in[ind[1][1][1]])
                 prev_ind = ind[1][1][1]
-                #@info ind,inds_arranged[end-1],inds_arranged[end]
                 to_arrange_inds = map(x->x[end],inds_arranged[end])
                 inds_zero = findall(map(x-> x[1]==0,to_arrange_inds))
                 if length(inds_zero)>0
@@ -413,14 +418,16 @@ function get_topology_branches(layers_arranged,inds_arranged,
     return ind
 end
 
-function get_topology_main(model_data)
+function get_topology_main(model_data::Model_data)
     layers = model_data.layers
     types = [layers[i]["type"] for i = 1:length(layers)]
     groups = [layers[i]["group"] for i = 1:length(layers)]
-    connections = [layers[i]["connections_down"] for i = 1:length(layers)]
-    connections_in = [layers[i]["connections_up"] for i = 1:length(layers)]
-    x = [layers[i]["x"] for i = 1:length(layers)]
-    y = [layers[i]["y"] for i = 1:length(layers)]
+    connections = Vector{Array{Vector{Int64}}}(undef,0)
+    connections_in = Vector{Vector{Int64}}(undef,0)
+    for i = 1:length(layers)
+        push!(connections,layers[i]["connections_down"])
+        push!(connections_in,layers[i]["connections_up"])
+    end
     ind = findfirst(types .== "Input")
     if isempty(ind)
         @info "no input layer"
@@ -434,8 +441,8 @@ function get_topology_main(model_data)
         @info "more than one output layer"
         return "more than one output layer"
     end
-    layers_arranged = []
-    inds_arranged = []
+    layers_arranged = Vector(undef,0)
+    inds_arranged = Vector(undef,0)
     push!(layers_arranged,layers[ind])
     push!(inds_arranged,ind)
     ind = connections[ind]
@@ -455,7 +462,8 @@ function arrange_layer(coordinates::Array,coordinate::Array{Float64},
     return coordinate
 end
 
-function arrange_branches(coordinates,coordinate,parameters,layers_arranged)
+function arrange_branches(coordinates,coordinate::Vector{Float64},
+        parameters::Design,layers_arranged)
     num = layers_arranged isa Dict ? 1 : length(layers_arranged)
     if num==1
         coordinate = arrange_layer(coordinates,coordinate,parameters)
@@ -502,7 +510,7 @@ function get_values!(values::Array,array::Array,cond_fun)
     return nothing
 end
 
-function arrange_main(design)
+function arrange_main(design::Design)
     parameters = design
     layers_arranged,inds_arranged = get_topology()
     coordinates = []
