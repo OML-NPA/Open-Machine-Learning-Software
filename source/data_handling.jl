@@ -285,6 +285,8 @@ function empty_progress_channel_main(channels::Channels,field)
         channel_temp = channels.training_modifiers
     elseif field=="Validation modifiers"
         channel_temp = channels.validation_modifiers
+    elseif field=="Labels colors"
+        channel_temp = channels.training_labels_colors
     end
     while true
         if isready(channel_temp)

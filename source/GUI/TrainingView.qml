@@ -81,11 +81,30 @@ Component {
             id: labelscolorsTimer
             running: false
             repeat: true
-            interval: 200
+            interval: 300
             property double max_value: 0
             property double value: 0
+            property double loading_state: 1
             onTriggered: {
                 var data = Julia.get_results("Labels colors")
+                if (loading_state===0) {
+                    progressRepeater.itemAt(2).visible = false
+                    progressRepeater.itemAt(1).visible = false
+                    progressRepeater.itemAt(0).visible = false
+                    loading_state+=1
+                }
+                else if (loading_state===1) {
+                    progressRepeater.itemAt(2).visible = true
+                    loading_state+=1
+                }
+                else if (loading_state===2) {
+                    progressRepeater.itemAt(1).visible = true
+                    loading_state+=1
+                }
+                else {
+                    progressRepeater.itemAt(0).visible = true
+                    loading_state = 0
+                }
                 if (data!==false) {
                     if (max_value==0) {
                         max_value = data
@@ -108,10 +127,15 @@ Component {
                                                   feature.border,
                                                   feature.parent)
                         }
+                        max_value = 0
+                        value = 0
+                        loading_state = 1
+                        running = false
+                        progressRepeater.itemAt(0).visible = false
+                        progressRepeater.itemAt(1).visible = false
+                        progressRepeater.itemAt(2).visible = false
+                        updateButton.visible = true
                         updatemodelButton.visible = true
-                        max_value: 0
-                        value: 0
-                        running: false
                     }
                     else {
                         value = value + 1
@@ -350,6 +374,7 @@ Component {
                         }
                     }
                     Frame {
+                        id: featuresFrame
                         height: 0.2*Screen.height
                         width: buttonWidth + 0.5*margin
                         backgroundColor: "white"
@@ -380,11 +405,14 @@ Component {
                                                 for (var i=0;i<count;i++) {
                                                     featureModel.remove(0)
                                                 }
+                                                Julia.empty_progress_channel("Labels colors")
                                                 Julia.get_urls_imgs_labels()
                                                 Julia.reset_features()
                                                 Julia.get_labels_colors()
+                                                updateButton.visible = false
+                                                updatemodelButton.visible = false
                                                 labelscolorsTimer.running = true
-                                                updatemodelButton.visible = true
+
                                             }
                                         }
                                         Component.onCompleted: {
@@ -448,6 +476,21 @@ Component {
                                         }
                                     }
                                 }
+                            }
+                        }
+                        Repeater {
+                            id: progressRepeater
+                            model: 3
+                            property var offsets: [-30*pix,0,30*pix]
+                            Rectangle {
+                                id: progress1Rectangle
+                                x: featuresFrame.width/2 - width/2 - progressRepeater.offsets[index]
+                                y: buttonHeight/2 - height/2
+                                color: defaultcolors.dark
+                                visible: false
+                                width: 15*pix
+                                height: width
+                                radius: width
                             }
                         }
                     }
