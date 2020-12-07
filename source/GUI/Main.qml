@@ -117,7 +117,7 @@ ApplicationWindow {
                 }
             }
             ColumnLayout {
-                id: columnLayout
+                id: viewLayout
                 Layout.margins: margin
                 StackView {
                     id: stack
@@ -216,13 +216,6 @@ ApplicationWindow {
     function rgbtohtml(colorRGB) {
         return(Qt.rgba(colorRGB[0]/255,colorRGB[1]/255,colorRGB[2]/255))
     }
-
-    function updatefolder(path) {
-            currentfolder = path
-            folderModel.folder = currentfolder
-            folderView.model = folderModel
-            Julia.browsefolder(folderDialog.folder)
-        }
 
     function importmodel(model,url) {
         model.length = 0

@@ -7,28 +7,36 @@ import Qt.labs.platform 1.1
 import QtQml.Models 2.15
 import Qt.labs.folderlistmodel 2.15
 import "Templates"
-//import org.julialang 1.0
+import org.julialang 1.0
 
 Component {
     ColumnLayout {
-        id: gridLayout
+        id: mainLayout
         property bool optionsOpen: false
         property bool localtrainingOpen: false
 
         property string currentfolder: Qt.resolvedUrl(".")
 
-        FolderListModel {
-                id: folderModel
-                showFiles: false
-                folder: currentfolder
+        Component.onCompleted: {
+            var url = "file:///"+Julia.get_settings(["Analysis","folder_url"])
+            if (url!=="") {
+                currentfolder = url
+                folderModel.folder = currentfolder
+                folderView.model = folderModel
             }
+        }
+
+        FolderListModel {
+            id: folderModel
+            showFiles: false
+            folder: currentfolder
+        }
         FolderDialog {
-                id: folderDialog
-                currentFolder: currentfolder
-                onAccepted: {
-                    updatefolder(folderDialog.folder)
-                    Julia.returnfolder()
-                }
+            id: folderDialog
+            currentFolder: currentfolder
+            onAccepted: {
+                updateFolder(folderDialog.folder)
+            }
         }
 
         Loader { id: analysisoptionsLoader }
@@ -47,10 +55,7 @@ Component {
                         text: "Up"
                         Layout.preferredWidth: buttonWidth/2
                         Layout.preferredHeight: buttonHeight
-                        onClicked: {currentfolder = folderModel.parentFolder;
-                                    folderModel.folder = currentfolder;
-                                    folderView.model = folderModel
-                        }
+                        onClicked: {updateFolder(folderModel.parentFolder)}
                     }
                     Button {
                         id: browse
@@ -121,9 +126,9 @@ Component {
                                     model: folderModel
                                     delegate: TreeButton {
                                         id: control
-                                        width: buttonWidth + 0.5*margin-4
-                                        height: buttonHeight-2
-                                        onDoubleClicked: { updatefolder(currentfolder+"/"+name.text) }
+                                        width: buttonWidth + 0.5*margin - 24*pix
+                                        height: buttonHeight-2*pix
+                                        onDoubleClicked: { updateFolder(currentfolder+"/"+name.text) }
                                         RowLayout {
                                             spacing: 0
                                             CheckBox {
@@ -175,8 +180,8 @@ Component {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: featureModel}
                                     delegate: Rectangle {
-                                        width: buttonWidth + 0.5*margin-4
-                                        height: buttonHeight-2
+                                        width: buttonWidth + 0.5*margin-24*pix
+                                        height: buttonHeight-2*pix
                                         RowLayout {
                                             anchors.fill: parent.fill
                                             Rectangle {
@@ -218,10 +223,10 @@ Component {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
-                       if (analysisoptionsLoader.sourceComponent === null) {
-                           analysisoptionsLoader.source = "AnalysisOptions.qml"
+                    if (analysisoptionsLoader.sourceComponent === null) {
+                       analysisoptionsLoader.source = "AnalysisOptions.qml"
 
-                       }
+                    }
                 }
             }
             Button {
@@ -232,6 +237,14 @@ Component {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
             }
+        }
+
+        function updateFolder(path) {
+            currentfolder = path
+            folderModel.folder = currentfolder
+            folderView.model = folderModel
+            path = String(path).substring(8)
+            Julia.set_settings(["Analysis","folder_url"],path)
         }
     }
 }

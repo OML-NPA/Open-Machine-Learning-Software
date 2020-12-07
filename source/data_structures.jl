@@ -171,7 +171,7 @@ training = Training()
 
 # Analysis
 @with_kw mutable struct Analysis
-    a::Int = 0
+    folder_url::String = "."
 end
 analysis = Analysis()
 
