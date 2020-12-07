@@ -82,7 +82,7 @@ ApplicationWindow {
                 Layout.preferredWidth: 2.125*buttonWidth
                 StackView {
                     id: stack
-                    initialItem: processingView
+                    initialItem: generalView
                     pushEnter: Transition {
                         PropertyAnimation {
                             from: 0
