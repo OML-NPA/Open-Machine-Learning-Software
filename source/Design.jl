@@ -49,8 +49,10 @@ struct Upscaling
     new_size::Tuple{Int64,Int64,Int64}
     dims::Union{Int64,Tuple{Int64,Int64},Tuple{Int64,Int64,Int64}}
 end
-function Upscaling_func(x::Union{CuArray{Float32},Array{Float32}}, multiplier::Int64,
-        new_size::Union{Int64,Tuple{Int64,Int64},Tuple{Int64,Int64,Int64}}, dims::Int64)
+function Upscaling_func(x::Union{CuArray{Float32},Array{Float32}}, multiplier::Float64,
+        new_size::Tuple{Int64,Int64,Int64},
+        dims::Union{Int64,Tuple{Int64,Int64},Tuple{Int64,Int64,Int64}})
+    multiplier = Int64(multiplier)
     if dims == 1
         ratio = (multiplier,1,1,1)
     elseif dims == 2
@@ -64,7 +66,7 @@ function Upscaling_func(x::Union{CuArray{Float32},Array{Float32}}, multiplier::I
     end
     return upscale(x,ratio)
 end
-function upscale(x::Array{Float32},ratio::Float64)
+function upscale(x::Array{Float32},ratio::Tuple{Int64,Int64,Int64,Int64})
     s = size(x)
     h,w,c,n = s
     y = fill(1.0f0, (ratio[1], 1, ratio[2], 1, ratio[3], 1))
@@ -72,7 +74,7 @@ function upscale(x::Array{Float32},ratio::Float64)
     new_x = reshape(z, s .* ratio)
     return new_x
 end
-function upscale(x::CuArray{Float32},ratio::Float64)
+function upscale(x::CuArray{Float32},ratio::Tuple{Int64,Int64,Int64,Int64})
     s = size(x)
     h,w,c,n = s
     y = gpu(fill(1.0f0, (ratio[1], 1, ratio[2], 1, ratio[3], 1)))

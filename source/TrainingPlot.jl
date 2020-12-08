@@ -324,8 +324,8 @@ function train_main2(settings::Settings,training_data::Training_data,
 end
 train() = train_main2(settings,training_data,model_data,channels)
 
-function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}},
-        set::Array{<:Array{<:AbstractFloat,4},1},
+function output_and_error_images(predicted_array::Vector{BitArray},
+        set::Array{Array{Float32,4},1},
         model_data::Model_data,channels::Channels)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     border_colors = labels_color[findall(border)]
@@ -350,7 +350,7 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
         set_part = set[i]
         data_array_part = data_array[i]
         function compute(num2::Int64,num_feat::Int64,set_part::Array{Float32,4},
-                data_array_part::Array{Float32,4})
+                data_array_part::BitArray{4})
             target_temp = Vector{Array{RGB{Float32},2}}(undef,0)
             predicted_color_temp = Vector{Array{RGB{Float32},2}}(undef,0)
             predicted_error_temp = Vector{Array{RGB{Float32},2}}(undef,0)
@@ -401,7 +401,7 @@ function output_and_error_images(predicted_array::Array{<:Array{<:AbstractFloat}
                 color = perm_labels_color[j]
                 do_target!(target_temp,target,color)
                 truth = target.>0
-                predicted_bool = data_array_part[:,:,j].>0.5
+                predicted_bool = data_array_part[:,:,j]
                 do_predicted_error!(predicted_error_temp,truth,predicted_bool)
                 do_predicted_color!(predicted_color_temp,predicted_bool,color)
                 @everywhere GC.safepoint()
@@ -436,7 +436,7 @@ function validate_main(settings::Settings,training_data::Training_data,
     # Validate
     num = length(set[1])
     accuracy_array = Vector{Float32}(undef,num)
-    predicted_array = Vector{Array{Float32}}(undef,num)
+    predicted_array = Vector{BitArray}(undef,num)
     loss_array = Vector{Float32}(undef,num)
     put!(channels.validation_progress,[2*num])
     num_parts = 6
@@ -520,7 +520,7 @@ function validate_main(settings::Settings,training_data::Training_data,
         end
         accuracy_array[i] = accuracy(predicted,actual)
         loss_array[i] = loss(predicted,actual)
-        predicted_array[i] = predicted
+        predicted_array[i] = predicted.>0.5
         temp_accuracy = accuracy_array[1:i]
         temp_loss = loss_array[1:i]
         mean_accuracy = mean(temp_accuracy)
