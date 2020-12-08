@@ -546,5 +546,4 @@ function validate_main2(settings::Settings,training_data::Training_data,
     @everywhere settings,training_data,model_data
     remote_do(validate_main,workers()[end],settings,training_data,model_data,channels)
 end
-validate() = remote_do(validate_main,workers()[end],settings,training_data,
-model_data,channels)
+validate() = validate_main2(settings,training_data,model_data,channels)
