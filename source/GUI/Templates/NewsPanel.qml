@@ -39,16 +39,23 @@ T.Button {
             id: headinglabel
             x: 20*pix
             y: 20*pix
+            width: control.width - 30*pix
             font.pointSize: 10
+            font.family: "Proxima Nova"
             font.bold: true
             text: control.heading
         }
-        Label {
-            id: bodylabel
-            x: 20*pix
+        TextArea {
+            id: bodyTextArea
+            x: 15*pix
             y: 80*pix
+            width: control.width - 30*pix
             font.pointSize: 10
-            text: control.body
+            font.family: "Proxima Nova"
+            readOnly: true
+            wrapMode: TextEdit.WordWrap
+            horizontalAlignment: TextEdit.AlignJustify
+            text: body
         }
         Rectangle {
                 y: 1*pix
