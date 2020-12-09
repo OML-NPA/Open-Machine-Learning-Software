@@ -93,16 +93,17 @@ Component {
                                 boundsBehavior: Flickable.StopAtBounds
                                 model: ListModel {id: newsModel
                                     Component.onCompleted: {
-                                        for (var i=0;i<10;i++) {
-                                        newsModel.append({"headingText": "00.00.00 Heading",
-                                                    "bodyText": "I am text body"})
+                                        for (var i=0;i<1;i++) {
+                                        newsModel.append({"headingText": "09.12.20 Welcome!",
+                                                    "bodyText": "I am an example of a news block. "+
+                                                     "Hopefully, there will be more of me soon. :)"})
                                         }
                                     }
                                 }
                                 delegate: NewsPanel {
                                     id: control
                                     hoverEnabled: false
-                                    width: newsFrame.width-24*pix
+                                    width: newsFrame.width-26*pix
                                     height: 3*buttonHeight
                                     heading: headingText
                                     body: bodyText
