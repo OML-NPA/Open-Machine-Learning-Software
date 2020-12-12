@@ -159,7 +159,7 @@ function getpooling(type::String, d, in_size::Tuple{Int64,Int64,Int64})
     return (layer,out)
 end
 
-function getresizing(type::String, d, in_size::Tuple{Int64,Int64,Int64})
+function getresizing(type::String, d, in_size)
     if type == "Addition"
         out = (in_size[1][1], in_size[1][2], in_size[1][3])
         return (Addition(), out)
@@ -211,7 +211,7 @@ function getresizing(type::String, d, in_size::Tuple{Int64,Int64,Int64})
     end
 end
 
-function getlayer(layer, in_size::Tuple{Int64,Int64,Int64})
+function getlayer(layer, in_size)
     if layer["group"] == "linear"
         layer_f, out = getlinear(layer["type"], layer, in_size)
     elseif layer["group"] == "norm"
@@ -260,7 +260,7 @@ function get_loss(name::String)
     end
 end
 
-function getbranch(layer_params,in_size::Tuple{Int64,Int64,Int64})
+function getbranch(layer_params,in_size)
     num = layer_params isa Dict ? 1 : length(layer_params)
     if num==1
         layer, in_size = getlayer(layer_params, in_size)
@@ -330,8 +330,7 @@ function allcmp(inds)
     return true
 end
 
-function topology_linear(layers_arranged::Vector{Dict{String,Any}},
-        inds_arranged::Vector{Union{Int64,Vector{Int64}}},
+function topology_linear(layers_arranged::Vector,inds_arranged::Vector,
         layers::Vector{Dict{String,Any}},connections::Vector{Array{Vector{Int64}}},
         types::Vector{String},ind)
     push!(layers_arranged,layers[ind])

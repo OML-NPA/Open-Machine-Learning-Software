@@ -1479,9 +1479,9 @@ ApplicationWindow {
 
     function adjustcolor(colorRGB) {
         var tempRGB = copy(colorRGB)
-        tempRGB[0] = 240 + tempRGB[0]/255*15
-        tempRGB[1] = 240 + tempRGB[1]/255*15
-        tempRGB[2] = 240 + tempRGB[2]/255*15
+        tempRGB[0] = 225 + tempRGB[0]/255*30
+        tempRGB[1] = 225 + tempRGB[1]/255*30
+        tempRGB[2] = 225 + tempRGB[2]/255*30
         return(Qt.rgba(tempRGB[0]/255,tempRGB[1]/255,tempRGB[2]/255))
     }
 
