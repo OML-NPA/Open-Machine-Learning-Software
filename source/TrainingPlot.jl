@@ -529,7 +529,7 @@ function validate_main(settings::Settings,training_data::Training_data,
         loss_std = std(temp_loss)
         data = [mean_accuracy,mean_loss,accuracy_std,loss_std]
         put!(channels.validation_progress,data)
-        @everywhere GC.safepoint()
+        @everywhere GC.gc()
     end
     #=empty!(validation_plot_data.data_input_orig)
     empty!(validation_plot_data.data_labels_orig)
