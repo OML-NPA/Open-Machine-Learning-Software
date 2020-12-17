@@ -177,6 +177,17 @@ ApplicationWindow {
 
 //--Functions---------------------------------------------------------
 
+    function delay(delayTime, cb) {
+        function Timer() {
+            return Qt.createQmlObject("import QtQuick 2.0; Timer {}", window);
+        }
+        var timer = new Timer();
+        timer.interval = delayTime;
+        timer.repeat = false;
+        timer.triggered.connect(cb);
+        timer.start();
+    }
+
     function listProperty(item)
     {
         for (var p in item)
@@ -251,5 +262,9 @@ ApplicationWindow {
             }
         }
         Julia.set_settings(["Training","template"],url)
+    }
+
+    function stripURL(url) {
+        return file.toString().replace("file:///","")
     }
 }

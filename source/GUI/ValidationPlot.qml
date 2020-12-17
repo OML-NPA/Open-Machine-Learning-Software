@@ -492,15 +492,4 @@ ApplicationWindow {
 
         return size
     }
-
-    function delay(delayTime, cb) {
-        function Timer() {
-            return Qt.createQmlObject("import QtQuick 2.0; Timer {}", validationWindow);
-        }
-        var timer = new Timer();
-        timer.interval = delayTime;
-        timer.repeat = false;
-        timer.triggered.connect(cb);
-        timer.start();
-    }
 }
