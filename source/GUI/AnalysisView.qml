@@ -12,10 +12,9 @@ import org.julialang 1.0
 Component {
     ColumnLayout {
         id: mainLayout
-        property bool optionsOpen: false
-        property bool localtrainingOpen: false
-
+        property int indTree: 0
         property string currentfolder: Qt.resolvedUrl(".")
+        property string modelName: "yeast"
 
         Component.onCompleted: {
             var url = "file:///"+Julia.get_settings(["Analysis","folder_url"])
@@ -40,6 +39,7 @@ Component {
         }
 
         Loader { id: analysisoptionsLoader }
+        Loader { id: analysisfeaturedialogLoader}
         Loader { id: selectneuralnetworkLoader }
         RowLayout {
             id: rowLayout
@@ -80,7 +80,6 @@ Component {
                             id: nnselectLabel
                             anchors.verticalCenter: parent.verticalCenter
                             leftPadding: 15*pix
-
                             text: "Select neural network"
                         }
                         Image {
@@ -111,7 +110,7 @@ Component {
                         Frame {
                             Layout.row: 1
                             Layout.column: 2
-                            height: 0.2*Screen.height
+                            height: 432*pix
                             width: buttonWidth + 0.5*margin
                             backgroundColor: "white"
                             ScrollView {
@@ -135,6 +134,20 @@ Component {
                                                 padding: 0
                                                 Layout.leftMargin: -0.175*margin
                                                 Layout.topMargin: 0.125*margin
+                                                onClicked: {
+                                                    var url = currentfolder+"/"+name.text
+                                                    var checkedFolders = []
+                                                    for (var i=0;i<folderModel.count;i++) {
+                                                         var treeButton = folderView.itemAtIndex(i)
+                                                         var checkBox = treeButton.children[0].children[0]
+                                                         if (checkBox.checked) {
+                                                            var fileName = folderModel.get(i, "fileName")
+                                                            checkedFolders.push(fileName)
+                                                         }
+                                                    }
+                                                    Julia.set_settings(["Analysis","checked_folders"],
+                                                                       checkedFolders)
+                                                }
                                             }
                                             Label {
                                                 id: name
@@ -144,8 +157,10 @@ Component {
                                             }
                                         }
                                     }
+                                    Component.onCompleted: {
+                                        initialize_checked()
+                                    }
                                 }
-
                             }
                         }
                     }
@@ -164,7 +179,7 @@ Component {
                             }
                         }
                         Frame {
-                            height: 0.2*Screen.height
+                            height: 432*pix
                             width: buttonWidth + 0.5*margin
                             backgroundColor: defaultcolors.light
                             ScrollView {
@@ -178,10 +193,21 @@ Component {
                                     height: childrenRect.height
                                     spacing: 0
                                     boundsBehavior: Flickable.StopAtBounds
-                                    model: ListModel {id: featureModel}
-                                    delegate: Rectangle {
+                                    model: ListModel {id: analysisfeatureModel}
+                                    Component.onCompleted: {
+                                        load_model_features(analysisfeatureModel)
+                                    }
+                                    delegate: TreeButton {
+                                        id: analysisfeatureButton
+                                        hoverEnabled: true
                                         width: buttonWidth + 0.5*margin-24*pix
                                         height: buttonHeight-2*pix
+                                        onClicked: {
+                                            if (analysisfeaturedialogLoader.sourceComponent === null) {
+                                                indTree = index
+                                                analysisfeaturedialogLoader.source = "OutputDialog.qml"
+                                            }
+                                        }
                                         RowLayout {
                                             anchors.fill: parent.fill
                                             Rectangle {
@@ -245,6 +271,46 @@ Component {
             folderView.model = folderModel
             path = String(path).substring(8)
             Julia.set_settings(["Analysis","folder_url"],path)
+        }
+
+        function initialize_checked() {
+            if (folderModel.status!==1) {
+                delay(10, initialize_checked)
+            }
+            var folders = Julia.get_settings(["Analysis","checked_folders"])
+            var num = folders.length
+            if (num===0) {
+                return
+            }
+            else {
+                for (var i=0;i<num;i++) {
+                    for (var j=0;j<folderModel.count;j++) {
+                        var folderName = folderModel.get(j,"fileName")
+                        if (folders[i]===folderName) {
+                            var treeButton = folderView.itemAtIndex(j)
+                            var checkBox = treeButton.children[0].children[0]
+                            checkBox.checkState = Qt.Checked
+                        }
+                    }
+                }
+            }
+        }
+
+        function load_model_features(model) {
+            var num_features = Julia.num_features()
+            if (num_features!==0 && model.count===0) {
+                for (var i=0;i<num_features;i++) {
+                    var color = Julia.get_feature_field(i+1,"color")
+                    var feature = {
+                        "name": Julia.get_feature_field(i+1,"name"),
+                        "colorR": color[0],
+                        "colorG": color[1],
+                        "colorB": color[2],
+                        "border": Julia.get_feature_field(i+1,"border"),
+                        "parent": Julia.get_feature_field(i+1,"parent")}
+                    model.append(feature)
+                }
+            }
         }
     }
 }

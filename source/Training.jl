@@ -1,5 +1,5 @@
 
-function get_urls_imgs_labels_main(training::Training,training_data::Training_data)
+function get_urls_training_main(training::Training,training_data::Training_data)
     url_imgs = training_data.url_imgs
     url_labels = training_data.url_labels
     empty!(url_imgs)
@@ -39,8 +39,8 @@ function get_urls_imgs_labels_main(training::Training,training_data::Training_da
     end
     return nothing
 end
-get_urls_imgs_labels() =
-    get_urls_imgs_labels_main(training,training_data)
+get_urls_training() =
+    get_urls_training_main(training,training_data)
 
 function get_image(url_img::String)
     img = RGB.(load(url_img))
@@ -52,8 +52,8 @@ function get_label(url_label::String)
     return label
 end
 
-function load_images(training_data::Training_data)
-    url_imgs = training_data.url_imgs
+function load_images(source::Union{Training_data,Analysis_data})
+    url_imgs = source.url_imgs
     num = length(url_imgs)
     imgs = Array{Any}(undef,num)
     for i = 1:num
@@ -273,34 +273,34 @@ end
 prepare_training_data() = prepare_training_data_main2(training,training_data,
     model_data,channels.training_data_progress,channels.training_data_results)
 
-    function prepare_validation_data_main(training_data::Training_data,
-            features::Array,progress::RemoteChannel,results::RemoteChannel)
-        put!(progress,3)
-        images = load_images(training_data)
-        put!(progress,1)
-        labels = load_labels(training_data)
-        put!(progress,1)
-        if isempty(features)
-            @info "empty features"
-            return false
-        end
-        labels_color,labels_incl,border = get_feature_data(features)
-        data_input = map(x->image_to_float(x,gray=true),images)
-        data_labels = map(x->label_to_float(x,labels_color,labels_incl,border),labels)
-        data = (images,labels,data_input,data_labels)
-        put!(results,data)
-        put!(progress,1)
-        return nothing
+function prepare_validation_data_main(training_data::Training_data,
+        features::Array,progress::RemoteChannel,results::RemoteChannel)
+    put!(progress,3)
+    images = load_images(training_data)
+    put!(progress,1)
+    labels = load_labels(training_data)
+    put!(progress,1)
+    if isempty(features)
+        @info "empty features"
+        return false
     end
-    function  prepare_validation_data_main2(training_data::Training_data,
-            features::Array,progress::RemoteChannel,results::RemoteChannel)
-        @everywhere training_data
-        remote_do(prepare_validation_data_main,workers()[end],training_data,
-        features,progress,results)
-    end
-    prepare_validation_data() = prepare_validation_data_main2(training_data,
-        model_data.features,channels.validation_data_progress,
-        channels.validation_data_results)
+    labels_color,labels_incl,border = get_feature_data(features)
+    data_input = map(x->image_to_float(x,gray=true),images)
+    data_labels = map(x->label_to_float(x,labels_color,labels_incl,border),labels)
+    data = (images,labels,data_input,data_labels)
+    put!(results,data)
+    put!(progress,1)
+    return nothing
+end
+function  prepare_validation_data_main2(training_data::Training_data,
+        features::Array,progress::RemoteChannel,results::RemoteChannel)
+    @everywhere training_data
+    remote_do(prepare_validation_data_main,workers()[end],training_data,
+    features,progress,results)
+end
+prepare_validation_data() = prepare_validation_data_main2(training_data,
+    model_data.features,channels.validation_data_progress,
+    channels.validation_data_results)
 
 function apply_border_data_main(data_in::BitArray{4},model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)

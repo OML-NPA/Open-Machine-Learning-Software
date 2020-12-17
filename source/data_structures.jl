@@ -13,14 +13,48 @@
     validation_results::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     validation_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     training_labels_colors::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    analysis_data_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    analysis_data_results::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    analysis_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    analysis_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    analysis_results::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
 end
 channels = Channels()
+
+@with_kw mutable struct Output_mask
+    mask::Bool = true
+end
+output_mask = Output_mask()
+
+@with_kw mutable struct Output_area
+    area_distribution::Bool = false
+    individual_obj_area::Bool = false
+    num_bins::Int64 = 10
+    max_area::Int64 = 10
+end
+output_area = Output_area()
+
+@with_kw mutable struct Output_volume
+    volume_distribution::Bool = false
+    individual_obj_volume::Bool = false
+    num_bins::Int64 = 10
+    max_volume::Int64 = 10
+end
+output_volume = Output_volume()
+
+@with_kw mutable struct Output_options
+    Mask::Output_mask = output_mask
+    Area::Output_area = output_area
+    Volume::Output_volume = output_volume
+end
+output_options = Output_options()
 
 @with_kw mutable struct Feature
     name::String = ""
     color::Vector{Float64} = Vector{Float64}(undef,3)
     border::Bool = false
     parent::String = ""
+    Output::Output_options = output_options
 end
 feature = Feature()
 
@@ -72,15 +106,22 @@ end
 validation_plot_data = Validation_plot_data()
 
 @with_kw mutable struct Training_data
-    Training_plot_data = training_plot_data
-    Validation_plot_data = validation_plot_data
+    Training_plot_data::Training_plot_data = training_plot_data
+    Validation_plot_data::Validation_plot_data = validation_plot_data
     url_imgs::Vector{String} = Vector{String}(undef,0)
     url_labels::Vector{String} = Vector{String}(undef,0)
 end
 training_data = Training_data()
 
+@with_kw mutable struct Analysis_data
+    url_imgs::Vector{String} = Vector{String}(undef,0)
+    data_input::Vector{Array{Float32}} = Vector{Array{Float32}}(undef,1)
+end
+analysis_data = Analysis_data()
+
 @with_kw mutable struct Master_data
-    Training_data = training_data
+    Training_data::Training_data = training_data
+    Analysis_data::Analysis_data = analysis_data
     image::Array{RGB{Float32},2} = Array{RGB{Float32},2}(undef,10,10)
 end
 master_data = Master_data()
@@ -99,7 +140,7 @@ main = Main_s()
 end
 hardware_resources = Hardware_resources()
 @with_kw mutable struct Options
-    Hardware_resources = hardware_resources
+    Hardware_resources::Hardware_resources = hardware_resources
 end
 options = Options()
 
@@ -142,9 +183,9 @@ end
 general_training = General_training()
 
 @with_kw mutable struct Options_training
-    General = general_training
-    Processing = processing_training
-    Hyperparameters = hyperparameters_training
+    General::General_training = general_training
+    Processing::Processing_training = processing_training
+    Hyperparameters::Hyperparameters_training = hyperparameters_training
 end
 options_training = Options_training()
 
@@ -157,8 +198,8 @@ end
 design = Design()
 
 @with_kw mutable struct Training
-    Options = options_training
-    Design = design
+    Options::Options_training = options_training
+    Design::Design = design
     problem_type::Array{Union{String,Int64}} = ["Classification",0]
     input_type::Array{Union{String,Int64}} = ["Image",0]
     template::String = ""
@@ -171,7 +212,8 @@ training = Training()
 
 # Analysis
 @with_kw mutable struct Analysis
-    folder_url::String = "."
+    folder_url::String = ""
+    checked_folders::Array{String} = []
 end
 analysis = Analysis()
 
@@ -183,10 +225,10 @@ visualisation = Visualisation()
 
 # Settings
 @with_kw mutable struct Settings
-    Main = main
-    Options = options
-    Training = training
-    Analysis = analysis
-    Visualisation = visualisation
+    Main::Main_s = main
+    Options::Options = options
+    Training::Training = training
+    Analysis::Analysis = analysis
+    Visualisation::Visualisation = visualisation
 end
 settings = Settings()

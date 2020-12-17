@@ -36,7 +36,7 @@ function set_data_main(master_data::Master_data,fields::QML.QListAllocated,args.
         value[args[1]][args[2]] = args[3]
     end
     setproperty!(data, Symbol(fields[end]), value)
-    return nothing
+    return
 end
 set_data(fields,value,args...) = set_data_main(master_data,fields,value,args...)
 
@@ -78,7 +78,7 @@ function set_settings_main(settings::Settings,fields::QML.QListAllocated,args...
         value[args[1]][args[2]] = args[3]
     end
     setproperty!(data, Symbol(fields[end]), value)
-    return nothing
+    return
 end
 set_settings(fields,value,args...) = set_settings_main(settings,fields,value,args...)
 
@@ -142,6 +142,32 @@ function fix_QML_types(var)
         return var
     end
 end
+
+function set_output_main(model_data::Model_data,fields::QML.QListAllocated,ind,value)
+    ind = fix_QML_types(ind)
+    value = fix_QML_types(value)
+    fields = fix_QML_types(fields)
+    data = model_data.features[ind].Output
+    for i = 1:length(fields)-1
+        field = Symbol(fields[i])
+        data = getproperty(data,field)
+    end
+    setproperty!(data, Symbol(fields[end]), value)
+    return
+end
+set_output(fields,ind,value) = set_output_main(model_data,fields,ind,value)
+
+function get_output_main(model_data::Model_data,fields::QML.QListAllocated,ind)
+    ind = fix_QML_types(ind)
+    fields = fix_QML_types(fields)
+    data = model_data.features[ind].Output
+    for i = 1:length(fields)
+        field = Symbol(fields[i])
+        data = getproperty(data,field)
+    end
+    return data
+end
+get_output(fields,ind) = get_output_main(model_data,fields,ind)
 
 function get_image_main(master_data::Master_data,model_data,fields,
         img_size,inds...)
@@ -255,6 +281,15 @@ function get_results_main(channels,master_data,model_data,field)
         else
             return false
         end
+    elseif field=="Analysis data preparation"
+        if isready(channels.analysis_data_results)
+            data = take!(channels.analysis_data_results)
+            analysis_data = master_data.Analysis_data
+            analysis_data.data_input = data
+            return true
+        else
+            return false
+        end
     elseif field=="Labels colors"
         if isready(channels.training_labels_colors)
             data = take!(channels.training_labels_colors)
@@ -292,7 +327,7 @@ function empty_progress_channel_main(channels::Channels,field)
         if isready(channel_temp)
             take!(channel_temp)
         else
-            return nothing
+            return
         end
     end
 end

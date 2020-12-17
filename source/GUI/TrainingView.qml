@@ -375,7 +375,7 @@ Component {
                     }
                     Frame {
                         id: featuresFrame
-                        height: 0.2*Screen.height
+                        height: 432*pix
                         width: buttonWidth + 0.5*margin
                         backgroundColor: "white"
                         ScrollView {
@@ -406,7 +406,7 @@ Component {
                                                     featureModel.remove(0)
                                                 }
                                                 Julia.empty_progress_channel("Labels colors")
-                                                Julia.get_urls_imgs_labels()
+                                                Julia.get_urls_training()
                                                 Julia.reset_features()
                                                 Julia.get_labels_colors()
                                                 updateButton.visible = false
@@ -542,7 +542,7 @@ Component {
                             }
                             if (starttrainingButton.text==="Train") {
                                 starttrainingButton.text = "Stop data preparation"
-                                Julia.get_urls_imgs_labels()
+                                Julia.get_urls_training()
                                 Julia.empty_progress_channel("Training data preparation")
                                 Julia.empty_results_channel("Training data preparation")
                                 Julia.empty_progress_channel("Training data preparation modifiers")
@@ -589,7 +589,7 @@ Component {
                             }
                             if (validateButton.text==="Validate") {
                                 validateButton.text = "Stop data preparation"
-                                Julia.get_urls_imgs_labels()
+                                Julia.get_urls_training()
                                 Julia.empty_progress_channel("Validation data preparation")
                                 Julia.empty_results_channel("Validation data preparation")
                                 Julia.empty_progress_channel("Validation data preparation modifiers")
