@@ -116,18 +116,47 @@ ApplicationWindow {
                     Column {
                         spacing: 0.2*margin
                         Label {
-                            text: "Outputs:"
+                            text: "Save masks:"
                         }
                         CheckBox {
-                            id: maskCheckBox
-                            text: "Mask"
+                            text: "Output mask"
                             Component.onCompleted: {
-                                maskCheckBox.checkState =
-                                        Julia.get_output(["Mask","mask"],indTree+1) ? Qt.Checked : Qt.Unchecked
+                                checkState = Julia.get_output(["Mask","mask"],indTree+1)
+                                    ? Qt.Checked : Qt.Unchecked
                             }
                             onClicked: {
                                 var value = checkState===Qt.Checked ? true : false
                                 Julia.set_output(["Mask","mask"],indTree+1,value)
+                            }
+                        }
+                        CheckBox {
+                            visible: false
+                            text: "Border mask"
+                            Component.onCompleted: {
+                                if (Julia.get_feature_field(indTree+1,"border")) {
+                                    visible = true
+                                    checkState = Julia.get_output(["Mask","mask_border"],indTree+1)
+                                        ? Qt.Checked : Qt.Unchecked
+                                }
+                            }
+                            onClicked: {
+                                var value = checkState===Qt.Checked ? true : false
+                                Julia.set_output(["Mask","mask_border"],indTree+1,value)
+                            }
+                        }
+                        CheckBox {
+                            visible: false
+                            text: "Applied border mask"
+                            Component.onCompleted: {
+                                if (Julia.get_feature_field(indTree+1,"border")) {
+                                    visible = true
+                                    checkState = Julia.get_output(["Mask","mask_applied_border"],indTree+1)
+                                        ? Qt.Checked : Qt.Unchecked
+                                }
+                            }
+                            onClicked: {
+                                var value = checkState===Qt.Checked ? true : false
+                                Julia.set_output(["Mask","mask_applied_border"],indTree+1,value)
                             }
                         }
                     }
@@ -174,56 +203,110 @@ ApplicationWindow {
                         RowLayout {
                             spacing: 0.3*margin
                             ColumnLayout {
-                                spacing: 0.55*margin
+                                spacing: 0.5*margin
                                 Label {
                                     id: label
-                                    text: "Number of bins:"
+                                    text: "Binning method:"
                                 }
                                 Label {
-                                    text: "Maximum Area:"
-                                    bottomPadding: 0.05*margin
+                                    id: valueareaLabel
+                                    text: "Value:"
+                                }
+                                Label {
+                                    text: "Normalisation:"
                                 }
                             }
                             ColumnLayout {
-                                TextField {
-                                    id: areanumbinsTextField
-                                    Layout.preferredWidth: 0.25*buttonWidth
-                                    Layout.preferredHeight: buttonHeight
-                                    maximumLength: 5
-                                    validator: IntValidator { bottom: 1; top: 99999;}
+                                ComboBox {
+                                    id: binningareaComboBox
+                                    function changeLabel() {
+                                        if (currentIndex===0) {
+                                            valueareaLabel.visible = false
+                                            widthvalueareaTextField.visible = false
+                                            numvalueareaTextField.visible = false
+
+                                        }
+                                        else if (currentIndex===1) {
+                                            valueareaLabel.visible = true
+                                            widthvalueareaTextField.visible = true
+                                            numvalueareaTextField.visible = false
+                                        }
+                                        else {
+                                            valueareaLabel.visible = true
+                                            widthvalueareaTextField.visible = false
+                                            numvalueareaTextField.visible = true
+                                        }
+                                    }
+                                    editable: false
+                                    width: 0.69*buttonWidth-1*pix
+                                    currentIndex: 0
+                                    model: ListModel {
+                                        id: binningModel
+                                        ListElement {text: "Automatic"}
+                                        ListElement {text: "Number of bins"}
+                                        ListElement {text: "Bin width"}
+                                    }
                                     Component.onCompleted: {
-                                        areanumbinsTextField.text = Julia.get_output(
-                                            ["Area","num_bins"],indTree+1)
+                                        currentIndex = Julia.get_output(
+                                            ["Area","binning"],indTree+1)
+                                        changeLabel()
+                                    }
+                                    onActivated: {
+                                        Julia.set_output(["Area","binning"],indTree+1,currentIndex)
+                                        changeLabel()
+                                    }
+                                }
+                                TextField {
+                                    id: numvalueareaTextField
+                                    Layout.preferredWidth: 0.35*buttonWidth
+                                    Layout.preferredHeight: buttonHeight
+                                    text: "10"
+                                    maximumLength: 5
+                                    validator: IntValidator { bottom: 1; top: 99999}
+                                    Component.onCompleted: {
+                                        text = Julia.get_output(
+                                            ["Area","value"],indTree+1)
                                     }
                                     onEditingFinished: {
                                         var value = parseFloat(text)
-                                        Julia.set_output(["Area","num_bins"],indTree+1,value)
+                                        Julia.set_output(["Area","value"],indTree+1,value)
                                     }
                                 }
                                 TextField {
-                                    id: maxareaTextField
-                                    Layout.preferredWidth: 0.25*buttonWidth
+                                    id: widthvalueareaTextField
+                                    Layout.preferredWidth: 0.35*buttonWidth
                                     Layout.preferredHeight: buttonHeight
+                                    text: "1"
                                     maximumLength: 5
-                                    validator: IntValidator { bottom: 1; top: 99999;}
+                                    validator: DoubleValidator { bottom: 0.001; top: 99999}
                                     Component.onCompleted: {
-                                        maxareaTextField.text =
-                                            Julia.get_output(["Area","max_area"],indTree+1)
+                                        text = Julia.get_output(
+                                            ["Area","value"],indTree+1)
                                     }
                                     onEditingFinished: {
                                         var value = parseFloat(text)
-                                        Julia.set_output(["Area","max_area"],indTree+1,value)
+                                        Julia.set_output(["Area","value"],indTree+1,value)
                                     }
                                 }
-                            }
-                            ColumnLayout {
-                                spacing: 0.6*margin
-                                Label {
-                                    Layout.alignment : Qt.AlignLeft
-                                }
-                                Label {
-                                    Layout.alignment : Qt.AlignLeft
-                                    text: "m\u00B2"
+                                ComboBox {
+                                    id: normalisationareaComboBox
+                                    editable: false
+                                    width: 0.69*buttonWidth-1*pix
+                                    currentIndex: 0
+                                    model: ListModel {
+                                        id: normalisationModel
+                                        ListElement {text: "pdf"}
+                                        ListElement {text: "Density"}
+                                        ListElement {text: "Probability"}
+                                        ListElement {text: "None"}
+                                    }
+                                    Component.onCompleted: {
+                                        currentIndex = Julia.get_output(
+                                            ["Area","normalisation"],indTree+1)
+                                    }
+                                    onActivated: {
+                                        Julia.set_output(["Area","normalisation"],indTree+1,currentIndex)
+                                    }
                                 }
                             }
                         }
@@ -272,114 +355,115 @@ ApplicationWindow {
                         RowLayout {
                             spacing: 0.3*margin
                             ColumnLayout {
-                                spacing: 0.55*margin
+                                spacing: 0.5*margin
                                 Label {
                                     id: label
-                                    text: "Number of bins:"
+                                    text: "Binning method:"
                                 }
                                 Label {
-                                    text: "Maximum volume:"
-                                    bottomPadding: 0.05*margin
+                                    id: valuevolumeLabel
+                                    text: "Value:"
+                                }
+                                Label {
+                                    text: "Normalisation:"
                                 }
                             }
                             ColumnLayout {
-                                TextField {
-                                    id: volumenumbinsTextField
-                                    Layout.preferredWidth: 0.25*buttonWidth
-                                    Layout.preferredHeight: buttonHeight
-                                    maximumLength: 5
-                                    validator: IntValidator { bottom: 1; top: 99999;}
+                                ComboBox {
+                                    id: binningvolumeComboBox
+                                    function changeLabel() {
+                                        if (currentIndex===0) {
+                                            valuevolumeLabel.visible = false
+                                            widthvaluevolumeTextField.visible = false
+                                            numvaluevolumeTextField.visible = false
+                                        }
+                                        else if (currentIndex===1) {
+                                            valuevolumeLabel.visible = true
+                                            widthvaluevolumeTextField.visible = true
+                                            numvaluevolumeTextField.visible = false
+                                        }
+                                        else {
+                                            valuevolumeLabel.visible = true
+                                            widthvaluevolumeTextField.visible = false
+                                            numvaluevolumeTextField.visible = true
+                                        }
+                                    }
+                                    editable: false
+                                    width: 0.69*buttonWidth-1*pix
+                                    currentIndex: 0
+                                    model: ListModel {
+                                        id: binningModel
+                                        ListElement {text: "Automatic"}
+                                        ListElement {text: "Number of bins"}
+                                        ListElement {text: "Bin width"}
+                                    }
                                     Component.onCompleted: {
-                                        volumenumbinsTextField.text = Julia.get_output(
-                                            ["Volume","num_bins"],indTree+1)
+                                        currentIndex = Julia.get_output(
+                                            ["Volume","binning"],indTree+1)
+                                        changeLabel()
+                                    }
+                                    onActivated: {
+                                        Julia.set_output(["Volume","binning"],indTree+1,currentIndex)
+                                        changeLabel()
+                                    }
+                                }
+                                TextField {
+                                    id: numvaluevolumeTextField
+                                    Layout.preferredWidth: 0.35*buttonWidth
+                                    Layout.preferredHeight: buttonHeight
+                                    text: "10"
+                                    maximumLength: 5
+                                    validator: IntValidator { bottom: 1; top: 99999}
+                                    Component.onCompleted: {
+                                        text = Julia.get_output(
+                                            ["Volume","value"],indTree+1)
                                     }
                                     onEditingFinished: {
                                         var value = parseFloat(text)
-                                        Julia.set_output(["Volume","num_bins"],indTree+1,value)
+                                        Julia.set_output(["Volume","value"],indTree+1,value)
                                     }
                                 }
                                 TextField {
-                                    id: maxvolumeTextField
-                                    Layout.preferredWidth: 0.25*buttonWidth
+                                    id: widthvaluevolumeTextField
+                                    Layout.preferredWidth: 0.35*buttonWidth
                                     Layout.preferredHeight: buttonHeight
+                                    text: "1"
                                     maximumLength: 5
-                                    validator: IntValidator { bottom: 1; top: 99999;}
+                                    validator: DoubleValidator { bottom: 0.001; top: 99999}
                                     Component.onCompleted: {
-                                        maxvolumeTextField.text = Julia.get_output(
-                                            ["Volume","max_volume"],indTree+1)
+                                        text = Julia.get_output(
+                                            ["Volume","value"],indTree+1)
                                     }
                                     onEditingFinished: {
                                         var value = parseFloat(text)
-                                        Julia.set_output(["Volume","max_volume"],indTree+1,value)
+                                        Julia.set_output(["Volume","value"],indTree+1,value)
                                     }
                                 }
-                            }
-                            ColumnLayout {
-                                spacing: 0.6*margin
-                                Label {
-                                    Layout.alignment : Qt.AlignLeft
-                                }
-                                Label {
-                                    Layout.alignment : Qt.AlignLeft
-                                    text: "µm\u00B3"
+                                ComboBox {
+                                    id: normalisationvolumeComboBox
+                                    editable: false
+                                    width: 0.69*buttonWidth-1*pix
+                                    currentIndex: 0
+                                    model: ListModel {
+                                        id: normalisationModel
+                                        ListElement {text: "pdf"}
+                                        ListElement {text: "Density"}
+                                        ListElement {text: "Probability"}
+                                        ListElement {text: "None"}
+                                    }
+                                    Component.onCompleted: {
+                                        currentIndex = Julia.get_output(
+                                            ["Volume","normalisation"],indTree+1)
+                                    }
+                                    onActivated: {
+                                        Julia.set_output(["Volume","normalisation"],indTree+1,currentIndex)
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                /*Component {
-                    id: motherdaugtherassignmentView
-                    Column {
-                        spacing: 0.2*margin
-                        Label {
-                            text: "Outputs:"
-                        }
-                        CheckBox {
-                            text: "Mother and daugther assignment"
-                        }
-                        CheckBox {
-                            text: "Mother and daugther volume"
-                        }
-                        CheckBox {
-                            text: "Mother and daugther circularity"
-                        }
-                        Rectangle {
-                            height: 0.2*margin
-                            width: 0.2*margin
-                            color: defaultpalette.window
-                        }
-
-                        Label {
-                            text: "Bud definition:"
-                        }
-                        RowLayout {
-                            spacing: 0.3*margin
-                            Label {
-                                Layout.alignment : Qt.AlignRight
-                                Layout.row: 1
-                                wrapMode: Label.WordWrap
-                                text: "Maximum percentage of mother volume:"
-                                bottomPadding: 0.05*margin
-                            }
-                            TextField {
-                                Layout.row: 2
-                                Layout.preferredWidth: 0.15*buttonWidth
-                                Layout.preferredHeight: buttonHeight
-                                maximumLength: 2
-                                validator: RegularExpressionValidator { regularExpression: /[0-9]+/ }
-                            }
-                            Label {
-                                Layout.alignment : Qt.AlignLeft
-                                Layout.row: 1
-                                wrapMode: Label.WordWrap
-                                text: "%"
-                                bottomPadding: 0.05*margin
-                            }
-
-                        }
-                    }
-               }*/
-           }
+            }
         }
         MouseArea {
             id: backgroundMouseArea

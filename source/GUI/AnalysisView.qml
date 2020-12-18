@@ -75,7 +75,6 @@ Component {
                                 selectneuralnetworkLoader.source = "SelectNeuralNetwork.qml"
                             }
                         }
-
                         Label {
                             id: nnselectLabel
                             anchors.verticalCenter: parent.verticalCenter
@@ -108,8 +107,6 @@ Component {
                             }
                         }
                         Frame {
-                            Layout.row: 1
-                            Layout.column: 2
                             height: 432*pix
                             width: buttonWidth + 0.5*margin
                             backgroundColor: "white"
@@ -181,7 +178,7 @@ Component {
                         Frame {
                             height: 432*pix
                             width: buttonWidth + 0.5*margin
-                            backgroundColor: defaultcolors.light
+                            backgroundColor: "white"
                             ScrollView {
                                 clip: true
                                 anchors.fill: parent
@@ -213,7 +210,7 @@ Component {
                                             Rectangle {
                                                 id: colorRectangle
                                                 Layout.leftMargin: 0.2*margin
-                                                Layout.bottomMargin: 2*pix
+                                                Layout.bottomMargin: 3*pix
                                                 Layout.alignment: Qt.AlignBottom
                                                 height: 30*pix
                                                 width: 30*pix

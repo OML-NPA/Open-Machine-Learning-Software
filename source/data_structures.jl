@@ -22,23 +22,27 @@ end
 channels = Channels()
 
 @with_kw mutable struct Output_mask
-    mask::Bool = true
+    mask::Bool = false
+    mask_border::Bool = false
+    mask_applied_border::Bool = false
 end
 output_mask = Output_mask()
 
 @with_kw mutable struct Output_area
     area_distribution::Bool = false
     individual_obj_area::Bool = false
-    num_bins::Int64 = 10
-    max_area::Int64 = 10
+    binning::Int64 = 0
+    value::Float64 = 10
+    normalisation::Int64 = 0
 end
 output_area = Output_area()
 
 @with_kw mutable struct Output_volume
     volume_distribution::Bool = false
     individual_obj_volume::Bool = false
-    num_bins::Int64 = 10
-    max_volume::Int64 = 10
+    binning::Int64 = 0
+    value::Float64 = 10
+    normalisation::Int64 = 0
 end
 output_volume = Output_volume()
 
