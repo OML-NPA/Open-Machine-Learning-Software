@@ -458,7 +458,7 @@ Component {
                                                 Rectangle {
                                                     id: colorRectangle
                                                     Layout.leftMargin: 0.2*margin
-                                                    Layout.bottomMargin: 2*pix
+                                                    Layout.bottomMargin: 3*pix
                                                     Layout.alignment: Qt.AlignBottom
                                                     height: 30*pix
                                                     width: 30*pix
