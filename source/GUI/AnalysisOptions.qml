@@ -12,7 +12,7 @@ ApplicationWindow {
     id: window
     visible: true
     title: qsTr("  Deep Data Analysis Software")
-    minimumWidth: gridLayout.width
+    minimumWidth: 1480*pix
     minimumHeight: 800*pix
     maximumWidth: gridLayout.width
     maximumHeight: gridLayout.height
@@ -27,14 +27,6 @@ ApplicationWindow {
 
     property bool terminate: false
 
-    FolderDialog {
-            id: folderDialog
-            onAccepted: {
-                Julia.browsefolder(folderDialog.folder)
-                Qt.quit()
-            }
-    }
-
     onClosing: { analysisoptionsLoader.sourceComponent = null }
 
     GridLayout {
@@ -45,7 +37,7 @@ ApplicationWindow {
                 id: menuPane
                 spacing: 0
                 padding: -1
-                width: 1.3*buttonWidth
+                width: buttonWidth
                 height: window.height
                 topPadding: tabmargin/2
                 bottomPadding: tabmargin/2
@@ -60,7 +52,7 @@ ApplicationWindow {
                         model: [{"name": "General", "stackview": generalView}]
                         delegate : MenuButton {
                             id: general
-                            width: 1.5*buttonWidth
+                            width: buttonWidth
                             height: 1.25*buttonHeight
                             onClicked: {
                                 stack.push(modelData.stackview);
@@ -124,39 +116,70 @@ ApplicationWindow {
                                 spacing: 0.3*margin
                                 ColumnLayout {
                                     Layout.alignment : Qt.AlignHCenter
-                                    spacing: 0.6*margin
+                                    spacing: 0.5*margin
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 1
+                                        text: "Save path:"
+                                    }
+                                    Label {
+                                        Layout.alignment : Qt.AlignLeft
                                         text: "Output data type:"
                                     }
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 1
                                         text: "Output image type:"
                                     }
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 1
                                         text: "Downsize images:"
                                         bottomPadding: 0.05*margin
                                     }
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
-                                        Layout.row: 1
                                         text: "Reduce framerate (video):"
                                         bottomPadding: 0.05*margin
                                     }
                                 }
-                                ColumnLayout {
+                                Column {
+                                    spacing: 0.15*margin
+                                    Row {
+                                        spacing: 0.25*margin
+                                        TextField {
+                                            id: savepathTextField
+                                            width: buttonWidth
+                                            height: buttonHeight
+                                            readOnly: true
+                                            Component.onCompleted: {
+                                                text = Julia.get_settings(["Analysis","Options","savepath"])
+                                                analysisoptionsFolderDialog.currentFolder = text
+                                            }
+                                            FolderDialog {
+                                                id: analysisoptionsFolderDialog
+                                                onAccepted: {
+                                                    var url = stripURL(folder)
+                                                    Julia.set_settings(["Analysis","Options","savepath"],url)
+                                                    savepathTextField.text = url
+                                                }
+                                            }
+                                        }
+                                        Button {
+                                            id: savepathButton
+                                            text: "Browse"
+                                            width: buttonWidth/2
+                                            height: buttonHeight
+                                            onClicked: {analysisoptionsFolderDialog.open()}
+                                        }
+                                    }
                                     ComboBox {
-                                        editable: false
+                                        width: 0.5*buttonWidth
                                         model: ListModel {
                                             id: modelData
                                             ListElement { text: "CSV" }
                                             ListElement { text: "XLSX" }
                                             ListElement { text: "XLS" }
                                             ListElement { text: "TXT" }
+                                            ListElement { text: "JSON" }
+                                            ListElement { text: "BSON" }
                                         }
                                         Component.onCompleted: {
                                             currentIndex =
@@ -167,11 +190,13 @@ ApplicationWindow {
                                         }
                                     }
                                     ComboBox {
-                                        editable: false
+                                        width: 0.5*buttonWidth
                                         model: ListModel {
                                             id: modelImages
                                             ListElement { text: "PNG" }
                                             ListElement { text: "TIFF" }
+                                            ListElement { text: "JSON" }
+                                            ListElement { text: "BSON" }
                                         }
                                         Component.onCompleted: {
                                             currentIndex =
@@ -182,7 +207,7 @@ ApplicationWindow {
                                         }
                                     }
                                     ComboBox {
-                                        editable: false
+                                        width: 0.5*buttonWidth
                                         model: ListModel {
                                             id: resizeModel
                                             ListElement { text: "Disable" }
@@ -201,7 +226,7 @@ ApplicationWindow {
                                         }
                                     }
                                     ComboBox {
-                                        editable: false
+                                        width: 0.5*buttonWidth
                                         model: ListModel {
                                             id: skipframesModel
                                             ListElement { text: "Disable" }
