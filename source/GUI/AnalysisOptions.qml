@@ -221,10 +221,6 @@ ApplicationWindow {
                                 validator: DoubleValidator { bottom: 0.0001; top: 999999;
                                     decimals: 4; notation: DoubleValidator.StandardNotation}
                             }
-                            Label {
-                                text: "pixels per µm"
-                                bottomPadding: 0.05*margin
-                            }
                         }
                     }
                 }
