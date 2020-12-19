@@ -215,7 +215,14 @@ end
 training = Training()
 
 # Analysis
+
+@with_kw mutable struct Options_analysis
+    scaling::Float64 = 1
+end
+options_analysis = Options_analysiss()
+
 @with_kw mutable struct Analysis
+    options_analysis::Options_analysis = options_analysis
     folder_url::String = ""
     checked_folders::Array{String} = []
 end

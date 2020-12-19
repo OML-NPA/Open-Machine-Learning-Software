@@ -1,12 +1,57 @@
 
-function analyse_main(settings::Settings,training_data::Training_data,
+function get_urls_analysis_main(analysis::Analysis,analysis_data::Analysis_data)
+    url_imgs = analysis_data.url_imgs
+    empty!(url_imgs)
+    main_dir = analysis.folder_url
+    dirs = analysis.checked_folders
+    if isempty(main_dir) || isempty(dirs)
+        @info "empty main dir"
+    end
+    for k = 1:length(dirs)
+        files_imgs = getfiles(string(main_dir,"/",dirs[k]))
+        for l = 1:length(files_imgs)
+            push!(url_imgs,string(main_dir,"/",dirs[k],"/",files_imgs[l]))
+        end
+    end
+    return nothing
+end
+get_urls_analysis() =
+    get_urls_analysis_main(analysis,analysis_data)
+
+function prepare_analysis_data_main(analysis_data::Analysis_data,
+        features::Array,progress::RemoteChannel,results::RemoteChannel)
+    put!(progress,2)
+    images = load_images(analysis_data)
+    put!(progress,1)
+    if isempty(features)
+        @info "empty features"
+        return false
+    end
+    labels_color,labels_incl,border = get_feature_data(features)
+    data_input = map(x->image_to_float(x,gray=true),images)
+    data = data_input
+    put!(results,data)
+    put!(progress,1)
+    return nothing
+end
+function  prepare_analysis_data_main2(analysis_data::Analysis_data,
+        features::Array,progress::RemoteChannel,results::RemoteChannel)
+    @everywhere analysis_data
+    remote_do(prepare_analysis_data_main,workers()[end],analysis_data,
+    features,progress,results)
+end
+prepare_analysis_data() = prepare_analysis_data_main2(analysis_data,
+    model_data.features,channels.analysis_data_progress,
+    channels.analysis_data_results)
+
+function analyse_main(settings::Settings,analysis_data::Analysis_data,
         model_data::Model_data,channels::Channels)
-    training = settings.Training
-    analysis = training_data.Analysis_data
+    analysis = settings.Analysis
     model = model_data.model
     loss = model_data.loss
     # Preparing set
     set = analysis_data.data_input
+    make_masks = false
     # Load model onto GPU, if enabled
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     if use_GPU
@@ -14,9 +59,7 @@ function analyse_main(settings::Settings,training_data::Training_data,
     end
     # Validate
     num = length(set)
-    accuracy_array = Vector{Float32}(undef,num)
-    predicted_array = Vector{Array{Float32}}(undef,num)
-    loss_array = Vector{Float32}(undef,num)
+    predicted_array = Vector{BitArray{4}}(undef,num)
     put!(channels.analysis_progress,[2*num])
     num_parts = 6
     offset = 20
@@ -24,11 +67,11 @@ function analyse_main(settings::Settings,training_data::Training_data,
     for i = 1:num
         if isready(channels.analysis_modifiers)
             if fetch(channels.analysis_modifiers)[1]=="stop"
-                take!(channels.validation_modifiers)
+                take!(channels.analysis_modifiers)
                 break
             end
         end
-        input_data = set[i]
+        input_data = set[i][:,:,:,:]
         if num_parts==1
             predicted = model(input_data)
         else
@@ -96,121 +139,178 @@ function analyse_main(settings::Settings,training_data::Training_data,
             end
             predicted = accum_parts(model,input_data,num_parts,use_GPU)
         end
-        accuracy_array[i] = accuracy(predicted,actual)
-        loss_array[i] = loss(predicted,actual)
-        predicted_array[i] = predicted
+        predicted_array[i] = predicted.>0.5
         put!(channels.analysis_progress,1)
         @everywhere GC.safepoint()
     end
-    #=empty!(validation_plot_data.data_input_orig)
-    empty!(validation_plot_data.data_labels_orig)
-    empty!(validation_plot_data.data_input)
-    empty!(validation_plot_data.data_labels)=#
-    data_predicted,data_error,target = output_and_error_images(predicted_array,
-        set[2],model_data,channels)
-    data = (data_predicted,data_error,target,
-        accuracy_array,loss_array,std(accuracy_array),std(loss_array))
-    put!(channels.validation_results,data)
+    _,_,border = get_feature_data(model_data.features)
+    if any(border)
+        border_array = map(x->apply_border_data_main(x,model_data),predicted_array)
+        predicted_array = cat.(predicted_array,border_array,dims=3)
+    end
+    features = model_data.features
+    num_feat = length(border)
+    num_border = sum(border)
+    scaling = settings.Analysis.options_analysis.scaling
+    area_histograms = Array{Any}(undef,num,num_feat)
+    volume_histograms = Array{Any}(undef,num,num_feat)
+    obj_areas = Array{Any}(undef,num,num_feat)
+    obj_volumes = Array{Any}(undef,num,num_feat)
+    for i = 1:num
+        masks = predicted_array[i]
+        if mask_options.mask || mask_options.mask_border || mask_options.mask_applied_border
+            imgs_masks = masks_to_imgs(masks,features)
+        end
+        for j = 1:num_feat
+            output_options = features[j].Output
+            area_dist_cond = output_options.Area.area_distribution
+            area_obj_cond = output_options.Area.individual_obj_area
+            volume_dist_cond = output_options.Area.area_distribution
+            volume_obj_cond = output_options.Area.individual_obj_area
+            ind = j
+            if border[j]==true
+                ind = j + num_border + num_feat
+            end
+            mask_current = masks[:,:,ind]
+            components = label_components(mask_current,conn(4))
+            if area_dist_cond || area_obj_cond
+                area_options = output_options.Area
+                area_values = objects_area(components,scaling)
+                if area_dist_cond
+                    area_histograms[i,j] = make_histogram(area_values,area_options)
+                end
+                if area_obj_cond
+                    obj_areas[i,j] = area_values
+                end
+            end
+            if volume_dist_cond || volume_obj_cond
+                volume_options = output_options.Volume
+                volume_values = objects_volume(components,mask_current,scaling)
+                if volume_dist_cond
+                    volume_histograms[i,j] = make_histogram(volume_values,volume_options)
+                end
+                if volume_obj_cond
+                    obj_volumes[i,j] = volume_values
+                end
+            end
+        end
+    end
+    return nothing
 end
 function analyse_main2(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
     @everywhere settings,training_data,model_data
     remote_do(validate_main,workers()[end],settings,training_data,model_data,channels)
 end
-analyse() = remote_do(analyse_main2,workers()[end],settings,training_data,
+analyse() = remote_do(analyse_main,workers()[end],settings,training_data,
 model_data,channels)
 
-function process_masks(predicted_array::Array{<:Array{<:AbstractFloat}},
-        set::Array{<:Array{<:AbstractFloat,4},1},
-        model_data::Model_data,channels::Channels)
-    labels_color,labels_incl,border = get_feature_data(model_data.features)
+function make_histogram(values::Vector{<:Real}, options::Union{Output_area,Output_volume})
+    if options.binning==0
+        h = fit(Histogram, values)
+    elseif options.binning==1
+        h = fit(Histogram, values, nbins=options.value)
+    else
+        num = round(maximum(values)/options.value)
+        h = fit(Histogram, values, nbins=num)
+    end
+    if options.normalisation==0
+        h = normalize(h, mode=:pdf)
+    elseif area_options.normalisation==1
+        h = normalize(h, mode=:density)
+    elseif area_options.normalisation==2
+        h = normalize(h, mode=:probability)
+    else
+        h = normalize(h, mode=:none)
+    end
+end
+
+function masks_to_imgs(data::BitArray{4},features::Vector{Feature})
+    labels_color,labels_incl,border = get_feature_data(features)
+    num_feat = length(border)
+    num_border = sum(border)
+    num_dims = size(masks)[3]
+    logical_inds = BitArray{1}(undef,num_dims)
+    for a = 1:num_feat
+        feature = features[a]
+        if feature.Output.Mask.mask
+            logical_inds[a] = true
+        end
+        if feature.border
+            if features[a].Output.Mask.mask
+                ind = a + num_feat
+                logical_inds[ind] = true
+            end
+            if features[a].Output.Mask.mask
+                ind = num_feat + num_border + a
+                logical_inds[ind] = true
+            end
+        end
+    end
+    if !any(logical_inds)
+        return nothing
+    end
     border_colors = labels_color[findall(border)]
     labels_color = vcat(labels_color,border_colors,border_colors)
     perm_labels_color = map(x -> permutedims(x[:,:,:]/255,[3,2,1]),labels_color)
-    if any(border)
-        border_array = map(x->apply_border_data_main(x,model_data),predicted_array)
-        data_array = cat.(predicted_array,border_array,dims=3)
-    else
-        data_array = predicted_array
-    end
-    array_size = size(predicted_array[1])
-    array_size12 = array_size[1:2]
-    num_feat = array_size[3]
-    num = length(predicted_array)
+
     num2 = length(labels_color)
     perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color)
-    predicted_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
-    predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
-    target_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
-    Threads.@threads for i = 1:num
-        set_part = set[i]
-        data_array_part = data_array[i]
-        function compute(num2::Int64,num_feat::Int64,set_part::Array{Float32,4},
-                data_array_part::Array{Float32,4})
-            target_temp = Vector{Array{RGB{Float32},2}}(undef,0)
-            predicted_color_temp = Vector{Array{RGB{Float32},2}}(undef,0)
-            predicted_error_temp = Vector{Array{RGB{Float32},2}}(undef,0)
-            function do_target!(target_temp::Vector{Array{RGB{Float32},2}},
-                    target::Array{Float32,2},color::Array{Float32,3})
-                target_img = target.*color
-                target_img2 = permutedims(target_img,[3,1,2])
-                target_img3 = colorview(RGB,target_img2)
-                target_img3 = collect(target_img3)
-                push!(target_temp,target_img3)
-            end
-            function do_predicted_error!(predicted_error_temp::Vector{Array{RGB{Float32},2}},
-                    truth::BitArray{2},predicted_bool::BitArray{2})
-                correct = predicted_bool .& truth
-                false_pos = copy(predicted_bool)
-                false_pos[truth] .= false
-                false_neg = copy(truth)
-                false_neg[predicted_bool] .= false
-                error_img = zeros(Bool,(size(predicted_bool)...,3))
-                error_img[:,:,1:2] .= false_pos
-                error_img[:,:,1] = error_img[:,:,1] .| false_neg
-                error_img[:,:,2] = error_img[:,:,2] .| correct
-                error_img = permutedims(error_img,[3,1,2])
-                error_img2 = convert(Array{Float32,3},error_img)
-                error_img3 = colorview(RGB,error_img2)
-                error_img3 = collect(error_img3)
-                push!(predicted_error_temp,error_img3)
-                return
-            end
-            function do_predicted_color!(predicted_color_temp::Vector{Array{RGB{Float32},2}},
-                    predicted_bool::BitArray{2},color::Array{Float32,3})
-                temp = Float32.(predicted_bool)
-                temp = cat(temp,temp,temp,dims=3)
-                temp = temp.*color
-                temp = permutedims(temp,[3,1,2])
-                temp2 = convert(Array{Float32,3},temp)
-                temp3 = colorview(RGB,temp2)
-                temp3 = collect(temp3)
-                push!(predicted_color_temp,temp3)
-                return
-            end
-            for j = 1:num2
-                if j>num_feat
-                    target = set_part[:,:,j-num_feat]
-                else
-                    target = set_part[:,:,j]
-                end
-                color = perm_labels_color[j]
-                do_target!(target_temp,target,color)
-                truth = target.>0
-                predicted_bool = data_array_part[:,:,j].>0.5
-                do_predicted_error!(predicted_error_temp,truth,predicted_bool)
-                do_predicted_color!(predicted_color_temp,predicted_bool,color)
-                @everywhere GC.safepoint()
-            end
-            return target_temp,predicted_color_temp,predicted_error_temp
-        end
-        target_temp,predicted_color_temp,predicted_error_temp =
-            compute(num2,num_feat,set_part,data_array_part)
-        predicted_color[i] = predicted_color_temp
-        predicted_error[i] = predicted_error_temp
-        target_color[i] = target_temp
-        put!(channels.validation_progress,1)
-        @everywhere GC.safepoint()
+
+    inds = findall(logical_inds)
+    predicted_color = Vector{Array{RGB{Float32},2}}(undef,0)
+    for j in inds
+        color = perm_labels_color[j]
+        predicted_bool = data[:,:,j].>0.5
+        temp = Float32.(predicted_bool)
+        temp = cat(temp,temp,temp,dims=3)
+        temp = temp.*color
+        temp = permutedims(temp,[3,1,2])
+        temp2 = convert(Array{Float32,3},temp)
+        temp3 = colorview(RGB,temp2)
+        temp3 = collect(temp3)
+        push!(predicted_color,temp3)
     end
-    return predicted_color,predicted_error,target_color
+    return predicted_color
+end
+
+function objects_area(components::Array{Int64,2},scaling::Float64)
+    area = convert(Float64,component_lengths(components))
+    return area[2:end].*scaling
+end
+
+function objects_count(components::Array{Int64,2})
+    return maximum(components)
+end
+
+function func2D_to_3D(objects_mask::BitArray{2})
+    D = Float32.(distance_transform(feature_transform((!).(objects_mask))))
+    w = zeros(Float32,(size(D)...,8))
+    inds = vcat(1:4,6:9)
+    for i = 1:8
+      u = zeros(Float32,(9,1))
+      u[inds[i]] = 1
+      u = reshape(u,(3,3))
+      w[:,:,i] = imfilter(D,centered(u))
+    end
+    pks = all(D.>=w,dims=3)[:,:] .& objects_mask
+    mask2 = BitArray(undef,size(objects_mask))
+    fill!(mask2,true)
+    mask2[pks] .= false
+    D2 = Float32.(distance_transform(feature_transform((!).(mask2))))
+    D2[(!).(objects_mask)] .= 0
+    mask_out = sqrt.((D+D2).^2-D2.^2)
+    return mask_out
+end
+
+function objects_volume(components::Array{Int64},objects_mask::BitArray{2},scaling::Float64)
+    volume_model = func2D_to_3D(objects_mask)
+    num = maximum(components)
+    volumes = Vector{Float64}(undef,num)
+    scaling = scaling^3
+    for i = 1:num
+        logical_inds = components.==i
+        pixels = volume_model[logical_inds]
+        volumes[i] = 2*sum(pixels)/scaling
+    end
 end

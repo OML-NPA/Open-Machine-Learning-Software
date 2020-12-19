@@ -4,7 +4,7 @@ if !@isdefined master_data
 end
 
 @qmlfunction(
-    # Model saving
+    # Model functions
     reset_layers,
     update_layers,
     make_model,
@@ -15,6 +15,8 @@ end
     append_features,
     update_features,
     get_feature_field,
+    set_output,
+    get_output,
     # Model design
     arrange,
     # Model loading
@@ -23,7 +25,8 @@ end
     model_properties,
     model_get_property,
     # Data loading
-    get_urls_imgs_labels,
+    get_urls_training,
+    get_urls_analysis,
     get_labels_colors,
     prepare_training_data,
     prepare_validation_data,

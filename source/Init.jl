@@ -13,6 +13,8 @@ end
 @everywhere include("Training.jl")
 @everywhere include("Design.jl")
 @everywhere include("TrainingPlot.jl")
+@everywhere include("Analysis.jl")
+
 CUDA.allowscalar(false)
 gc() = @everywhere GC.gc()
 
