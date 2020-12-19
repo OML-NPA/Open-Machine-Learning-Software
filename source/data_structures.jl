@@ -217,12 +217,16 @@ training = Training()
 # Analysis
 
 @with_kw mutable struct Options_analysis
+    data_type::Int64 = 0
+    image_type::Int64 = 0
+    downsize::Int64 = 0
+    skip_frames::Int64 = 0
     scaling::Float64 = 1
 end
-options_analysis = Options_analysiss()
+options_analysis = Options_analysis()
 
 @with_kw mutable struct Analysis
-    options_analysis::Options_analysis = options_analysis
+    Options::Options_analysis = options_analysis
     folder_url::String = ""
     checked_folders::Array{String} = []
 end

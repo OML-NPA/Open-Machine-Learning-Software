@@ -5,7 +5,7 @@ import QtQuick.Window 2.2
 import QtQuick.Layouts 1.2
 import Qt.labs.platform 1.1
 import "Templates"
-//import org.julialang 1.0
+import org.julialang 1.0
 
 
 ApplicationWindow {
@@ -41,7 +41,6 @@ ApplicationWindow {
         id: gridLayout
         RowLayout {
             id: rowlayout
-            //spacing: margin
             Pane {
                 id: menuPane
                 spacing: 0
@@ -154,14 +153,17 @@ ApplicationWindow {
                                         editable: false
                                         model: ListModel {
                                             id: modelData
+                                            ListElement { text: "CSV" }
                                             ListElement { text: "XLSX" }
                                             ListElement { text: "XLS" }
-                                            ListElement { text: "CSV" }
                                             ListElement { text: "TXT" }
                                         }
+                                        Component.onCompleted: {
+                                            currentIndex =
+                                                Julia.get_settings(["Analysis","Options","data_type"])
+                                        }
                                         onAccepted: {
-                                            if (find(editText) === -1)
-                                                model.append({text: editText})
+                                            Julia.set_settings(["Analysis","Options","data_type"],currentIndex)
                                         }
                                     }
                                     ComboBox {
@@ -171,39 +173,50 @@ ApplicationWindow {
                                             ListElement { text: "PNG" }
                                             ListElement { text: "TIFF" }
                                         }
+                                        Component.onCompleted: {
+                                            currentIndex =
+                                                Julia.get_settings(["Analysis","Options","image_type"])
+                                        }
                                         onAccepted: {
-                                            if (find(editText) === -1)
-                                                model.append({text: editText})
+                                            Julia.set_settings(["Analysis","Options","image_type"],currentIndex)
                                         }
                                     }
                                     ComboBox {
-                                    editable: false
-                                    model: ListModel {
-                                        id: resizeModel
-                                        ListElement { text: "Disable" }
-                                        ListElement { text: "1.5x" }
-                                        ListElement { text: "2x" }
-                                        ListElement { text: "3x" }
-                                        ListElement { text: "4x" }
-                                    }
-                                    onAccepted: {
-                                        if (find(editText) === -1)
-                                            model.append({text: editText})
-                                    }
+                                        editable: false
+                                        model: ListModel {
+                                            id: resizeModel
+                                            ListElement { text: "Disable" }
+                                            ListElement { text: "1.5x" }
+                                            ListElement { text: "2x" }
+                                            ListElement { text: "3x" }
+                                            ListElement { text: "4x" }
+                                        }
+                                        Component.onCompleted: {
+                                            currentIndex =
+                                                Julia.get_settings(["Analysis","Options","downsize"])
+                                        }
+                                        onAccepted: {
+                                            Julia.set_settings(
+                                                ["Analysis","Options","downsize"],currentIndex)
+                                        }
                                     }
                                     ComboBox {
-                                    editable: false
-                                    model: ListModel {
-                                        id: skipframesModel
-                                        ListElement { text: "Disable" }
-                                        ListElement { text: "2x" }
-                                        ListElement { text: "3x" }
-                                        ListElement { text: "4x" }
-                                    }
-                                    onAccepted: {
-                                        if (find(editText) === -1)
-                                            model.append({text: editText})
-                                    }
+                                        editable: false
+                                        model: ListModel {
+                                            id: skipframesModel
+                                            ListElement { text: "Disable" }
+                                            ListElement { text: "2x" }
+                                            ListElement { text: "3x" }
+                                            ListElement { text: "4x" }
+                                        }
+                                        Component.onCompleted: {
+                                            currentIndex =
+                                                Julia.get_settings(["Analysis","Options","skip_frames"])
+                                        }
+                                        onAccepted: {
+                                            Julia.set_settings(
+                                                ["Analysis","Options","skip_frames"],currentIndex)
+                                        }
                                     }
                                 }
                             }
@@ -220,6 +233,13 @@ ApplicationWindow {
                                 maximumLength: 6
                                 validator: DoubleValidator { bottom: 0.0001; top: 999999;
                                     decimals: 4; notation: DoubleValidator.StandardNotation}
+                                Component.onCompleted: {
+                                    text = Julia.get_settings(["Analysis","Options","scaling"])
+                                }
+                                onAccepted: {
+                                    var value = parseFloat(text)
+                                    Julia.set_settings(["Analysis","Options","scaling"],value)
+                                }
                             }
                         }
                     }
