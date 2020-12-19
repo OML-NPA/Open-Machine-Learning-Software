@@ -9,6 +9,7 @@ end
     update_layers,
     make_model,
     save_model,
+    load_model,
     # Handle features
     num_features,
     reset_features,
@@ -17,13 +18,11 @@ end
     get_feature_field,
     set_output,
     get_output,
-    # Model design
-    arrange,
-    # Model loading
-    load_model,
     model_count,
     model_properties,
     model_get_property,
+    # Model design
+    arrange,
     # Data loading
     get_urls_training,
     get_urls_analysis,

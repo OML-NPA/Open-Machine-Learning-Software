@@ -265,6 +265,6 @@ ApplicationWindow {
     }
 
     function stripURL(url) {
-        return file.toString().replace("file:///","")
+        return url.toString().replace("file:///","")
     }
 }

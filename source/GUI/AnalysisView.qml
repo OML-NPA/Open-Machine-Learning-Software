@@ -37,6 +37,16 @@ Component {
                 updateFolder(folderDialog.folder)
             }
         }
+        FileDialog {
+            id: neuralnetworkFileDialog
+            folder: Qt.resolvedUrl(".")
+            onAccepted: {
+                var url = stripURL(file)
+                Julia.load_model(url)
+                analysisfeatureModel.clear()
+                load_model_features(analysisfeatureModel)
+            }
+        }
 
         Loader { id: analysisoptionsLoader }
         Loader { id: analysisfeaturedialogLoader}
@@ -71,9 +81,10 @@ Component {
                         Layout.leftMargin: 0.5*margin
                         backgroundRadius: 0
                         onClicked: {
-                            if (selectneuralnetworkLoader.sourceComponent === null) {
+                            neuralnetworkFileDialog.open()
+                            /*if (selectneuralnetworkLoader.sourceComponent === null) {
                                 selectneuralnetworkLoader.source = "SelectNeuralNetwork.qml"
-                            }
+                            }*/
                         }
                         Label {
                             id: nnselectLabel
