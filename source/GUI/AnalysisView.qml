@@ -38,7 +38,7 @@ Component {
             }
         }
         FileDialog {
-            id: neuralnetworkFileDialog
+            id: modelFileDialog
             folder: Qt.resolvedUrl(".")
             onAccepted: {
                 var url = stripURL(file)
@@ -75,13 +75,13 @@ Component {
                         Layout.preferredHeight: buttonHeight
                         onClicked: {folderDialog.open()}
                     }
-                   Button {
+                    Button {
                         Layout.preferredWidth: buttonWidth + 0.5*margin
                         Layout.preferredHeight: buttonHeight
                         Layout.leftMargin: 0.5*margin
                         backgroundRadius: 0
                         onClicked: {
-                            neuralnetworkFileDialog.open()
+                            modelFileDialog.open()
                             /*if (selectneuralnetworkLoader.sourceComponent === null) {
                                 selectneuralnetworkLoader.source = "SelectNeuralNetwork.qml"
                             }*/
@@ -90,7 +90,7 @@ Component {
                             id: nnselectLabel
                             anchors.verticalCenter: parent.verticalCenter
                             leftPadding: 15*pix
-                            text: "Select neural network"
+                            text: "Select an ML model"
                         }
                         Image {
                                 anchors.right: parent.right
