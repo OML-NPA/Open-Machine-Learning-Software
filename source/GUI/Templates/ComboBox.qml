@@ -9,12 +9,11 @@ T.ComboBox {
     id: control
     property double defaultWidth: 0.1*Screen.width
     property double defaultHeight: 0.03*Screen.height
+    property bool wasDown: false
     implicitWidth: defaultWidth
     implicitHeight: defaultHeight
-
     leftPadding: padding + (!control.mirrored || !indicator || !indicator.visible ? 0 : indicator.width + spacing)
     rightPadding: padding + (control.mirrored || !indicator || !indicator.visible ? 0 : indicator.width + spacing)
-
     delegate: ItemDelegate {
         width: control.width
         text: control.textRole ? (Array.isArray(control.model) ? modelData[control.textRole] : model[control.textRole]) : modelData
@@ -24,6 +23,8 @@ T.ComboBox {
         highlighted: control.highlightedIndex === index
         hoverEnabled: control.hoverEnabled
     }
+    onFocusReasonChanged: if (down) {wasDown = true}
+
     contentItem: T.TextField {
         leftPadding: !control.mirrored ? 12 : control.editable && activeFocus ? 3 : 1
         rightPadding: control.mirrored ? 12 : control.editable && activeFocus ? 3 : 1
@@ -78,6 +79,12 @@ T.ComboBox {
         height: Math.min(contentItem.implicitHeight, control.Window.height - topMargin - bottomMargin)
         topMargin: 6
         bottomMargin: 6
+        onOpened: {
+            if (wasDown) {
+                close()
+                wasDown = false
+            }
+        }
 
         contentItem: ListView {
             clip: true
