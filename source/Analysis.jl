@@ -51,7 +51,6 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     loss = model_data.loss
     # Preparing set
     set = analysis_data.data_input
-    make_masks = false
     # Load model onto GPU, if enabled
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     if use_GPU
@@ -151,16 +150,15 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     features = model_data.features
     num_feat = length(border)
     num_border = sum(border)
-    scaling = settings.Analysis.options_analysis.scaling
-    area_histograms = Array{Any}(undef,num,num_feat)
-    volume_histograms = Array{Any}(undef,num,num_feat)
-    obj_areas = Array{Any}(undef,num,num_feat)
-    obj_volumes = Array{Any}(undef,num,num_feat)
+    scaling = settings.Analysis.Options.scaling
+    mask_imgs = Vector{Vector{Array{RGBA{Float32},2}}}(undef,num)
+    area_histograms = Array{Histogram}(undef,num,num_feat)
+    volume_histograms = Array{Histogram}(undef,num,num_feat)
+    obj_areas = Array{Vector{Float64}}(undef,num,num_feat)
+    obj_volumes = Array{Vector{Float64}}(undef,num,num_feat)
     for i = 1:num
         masks = predicted_array[i]
-        if mask_options.mask || mask_options.mask_border || mask_options.mask_applied_border
-            imgs_masks = masks_to_imgs(masks,features)
-        end
+        mask_imgs[i] = masks_to_imgs(masks,features)
         for j = 1:num_feat
             output_options = features[j].Output
             area_dist_cond = output_options.Area.area_distribution
@@ -195,8 +193,18 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
             end
         end
     end
+    file_names = get_file_names(analysis_data.url_imgs)
     return nothing
 end
+
+function get_file_names(data::Vector{String})
+    data = split.(data,"/")
+    data = map(x->x[end],data)
+    data = split.(data,".")
+    data = map(x->string(x[1:end-1]...),data)
+    return data
+end
+
 function analyse_main2(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
     @everywhere settings,training_data,model_data
@@ -258,16 +266,16 @@ function masks_to_imgs(data::BitArray{4},features::Vector{Feature})
     perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color)
 
     inds = findall(logical_inds)
-    predicted_color = Vector{Array{RGB{Float32},2}}(undef,0)
+    predicted_color = Vector{Array{RGBA{Float32},2}}(undef,0)
     for j in inds
         color = perm_labels_color[j]
         predicted_bool = data[:,:,j].>0.5
-        temp = Float32.(predicted_bool)
-        temp = cat(temp,temp,temp,dims=3)
-        temp = temp.*color
-        temp = permutedims(temp,[3,1,2])
-        temp2 = convert(Array{Float32,3},temp)
-        temp3 = colorview(RGB,temp2)
+        temp = convert(Array{Float32,2},predicted_bool)
+        temp2 = cat(temp,temp,temp,dims=3)
+        temp2 = temp.*color
+        temp2 = cat(temp2,temp,dims=3)
+        temp2 = permutedims(temp2,[3,1,2])
+        temp3 = colorview(RGBA,temp2)
         temp3 = collect(temp3)
         push!(predicted_color,temp3)
     end
@@ -275,8 +283,9 @@ function masks_to_imgs(data::BitArray{4},features::Vector{Feature})
 end
 
 function objects_area(components::Array{Int64,2},scaling::Float64)
-    area = convert(Float64,component_lengths(components))
-    return area[2:end].*scaling
+    area = component_lengths(components)[2:end]
+    area = convert(Vector{Float64},area).*scaling
+    return area
 end
 
 function objects_count(components::Array{Int64,2})
@@ -312,5 +321,30 @@ function objects_volume(components::Array{Int64},objects_mask::BitArray{2},scali
         logical_inds = components.==i
         pixels = volume_model[logical_inds]
         volumes[i] = 2*sum(pixels)/scaling
+    end
+    return volumes
+end
+
+function export_output(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
+        area_histograms::Array{Histogram},volume_histograms::Array{Histogram},
+        obj_areas::Array{Vector{Float64},2},obj_volumes::Array{Vector{Float64},2},
+        file_names::Vector{String},options::Options_analysis)
+    inds_bool = map(x->isassigned(mask_imgs, x),1:length(mask_imgs))
+    if any(inds_bool)
+        inds = findall(inds_bool)
+    end
+    inds_bool = map(x->isassigned(area_histograms, x),1:length(area_histograms))
+    if any(inds_bool)
+        inds = findall(inds_bool)
+    end
+end
+
+function export_images(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
+        file_names::Vector{String},options::Options_analysis)
+    for i = 1:length(mask_imgs)
+        current_img = mask_imgs[i]
+        for j = 1:length(current_img)
+
+        end
     end
 end
