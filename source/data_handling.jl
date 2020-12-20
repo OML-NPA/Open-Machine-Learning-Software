@@ -250,6 +250,15 @@ function get_results_main(channels,master_data,model_data,field)
         else
             return false
         end
+    elseif field=="Analysis data preparation"
+        if isready(channels.analysis_data_results)
+            data = take!(channels.analysis_data_results)
+            analysis_data = master_data.Analysis_data
+            analysis_data.data_input = data
+            return true
+        else
+            return false
+        end
     elseif field=="Training"
         if isready(channels.training_results)
             data = take!(channels.training_results)
@@ -278,15 +287,6 @@ function get_results_main(channels,master_data,model_data,field)
             validation_plot_data.accuracy_std = data[6]
             validation_plot_data.loss_std = data[7]
             return [data[4],data[5],mean(data[4]),mean(data[5]),data[6],data[7]]
-        else
-            return false
-        end
-    elseif field=="Analysis data preparation"
-        if isready(channels.analysis_data_results)
-            data = take!(channels.analysis_data_results)
-            analysis_data = master_data.Analysis_data
-            analysis_data.data_input = data
-            return true
         else
             return false
         end
