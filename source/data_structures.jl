@@ -63,7 +63,7 @@ end
 feature = Feature()
 
 @with_kw mutable struct Model_data
-    input_size::Tuple = (160,160,1)
+    input_size::Tuple{Int64,Int64,Int64} = (160,160,1)
     model::Chain = Chain()
     layers::Vector{Dict{String,Any}} = []
     features::Vector{Feature} = []
@@ -73,8 +73,8 @@ model_data = Model_data()
 
 #---
 @with_kw mutable struct Training_plot_data
-    data_input::Vector{Array{Float32}} = Vector{Array{Float32}}(undef,0)
-    data_labels::Vector{BitArray} = Vector{BitArray}(undef,0)
+    data_input::Vector{Array{Float32,3}} = Vector{Array{Float32,3}}(undef,0)
+    data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,0)
     loss::Array{Float32} = []
     accuracy::Array{Float32} = []
     test_accuracy::Array{Float32} = []

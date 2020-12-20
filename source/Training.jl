@@ -9,7 +9,7 @@ function get_urls_training_main(training::Training,training_data::Training_data)
     if isempty(dir_imgs) || isempty(dir_labels)
         @info "empty urls"
     end
-    type = settings.Training.type
+    type::String = settings.Training.type
     dirs_imgs = getdirs(dir_imgs)
     dirs_labels = getdirs(dir_labels)
     dirs = intersect(dirs_imgs,dirs_labels)
@@ -43,19 +43,19 @@ get_urls_training() =
     get_urls_training_main(training,training_data)
 
 function get_image(url_img::String)
-    img = RGB.(load(url_img))
+    img::Array{RGB{N0f8},2} = load(url_img)
     return img
 end
 
 function get_label(url_label::String)
-    label = RGB.(load(url_label))
+    label::Array{RGB{N0f8},2} = load(url_label)
     return label
 end
 
 function load_images(source::Union{Training_data,Analysis_data})
     url_imgs = source.url_imgs
     num = length(url_imgs)
-    imgs = Array{Any}(undef,num)
+    imgs = Vector{Array{RGB{N0f8},2}}(undef,num)
     for i = 1:num
         imgs[i] = get_image(url_imgs[i])
     end
@@ -65,7 +65,7 @@ end
 function load_labels(training_data::Training_data)
     url_labels = training_data.url_labels
     num = length(url_labels)
-    labels = Array{Any}(undef,num)
+    labels = Vector{Array{RGB{N0f8},2}}(undef,num)
     for i = 1:num
         labels[i] = get_label(url_labels[i])
     end
@@ -126,99 +126,99 @@ function get_feature_data(features::Vector{Feature})
     return labels_color,labels_incl,border
 end
 
+# Functions
+function correct_view(img::Array{Float32,2},label::Array{RGB{Normed{UInt8,8}},2})
+    field = dilate(imfilter(img.<0.3, Kernel.gaussian(4)).>0.5,20)
+    field = .!(areaopen(field,30000))
+    field_area = sum(field)
+    field_perim = sum(perim(field))/1.25
+    circularity = (4*pi*field_area)/(field_perim^2)
+    if circularity>0.9
+        row_bool = any(field,1)
+        col_bool = any(field,2)
+        col1 = findfirst(col_bool)[1]
+        col2 = findlast(col_bool)[1]
+        row1 = findfirst(row_bool)[1]
+        row2 = findlast(row_bool)[1]
+        img = img[row1:row2,col1:col2]
+        label = label[row1:row2,col1:col2]
+    end
+    img = rescale(img,(0,1))
+    return img,label
+end
+
+function rotate_img(img::Union{Array{Float32,2},BitArray},angle::Float64)
+    if angle!=0
+        img2 = copy(img)
+        for i = 1:size(img,3)
+            temp = imrotate(img[:,:,i],angle,
+                axes(img[:,:,i]))
+            replace_nan!(temp)
+            if img2 isa BitArray
+                img[:,:,i] = temp.>0
+            end
+        end
+        return(img2)
+    else
+        return(img)
+    end
+end
+
+function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
+    num_angles::Int64,pix_num::Tuple{Int64,Int64},min_fr_pix::Float64)
+
+    lim = prod(pix_num)*min_fr_pix
+    angles = range(0,stop=2*pi,length=num_angles+1)
+    angles = angles[1:end-1]
+    num = length(angles)
+    imgs_out = Vector{Vector{Array{Float32,3}}}(undef,num)
+    labels_out = Vector{Vector{BitArray{3}}}(undef,num)
+    for g = 1:num
+        img2 = rotate_img(img,angles[g])
+        label2 = rotate_img(label,angles[g])
+        num1 = Int64(floor(size(label2,1)/(pix_num[1]*0.9)))
+        num2 = Int64(floor(size(label2,2)/(pix_num[2]*0.9)))
+        step1 = Int64(floor(size(label2,1)/num1))
+        step2 = Int64(floor(size(label2,2)/num2))
+        num_batch = 2*(num1-1)*(num2-1)
+        img_temp = Vector{Array{Float32}}(undef,0)
+        label_temp = Vector{BitArray{3}}(undef,0)
+        for h = 1:2
+            if h==1
+                img3 = img2
+                label3 = label2
+            elseif h==2
+                img3 = reverse(img2, dims = 2)
+                label3 = reverse(label2, dims = 2)
+            end
+            for i = 1:num1-1
+                for j = 1:num2-1
+                    ymin = (i-1)*step1+1;
+                    xmin = (j-1)*step2+1;
+                    I1 = label3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
+                    if sum(I1)<lim
+                        continue
+                    end
+                    I2 = img3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
+                    push!(label_temp,I1)
+                    push!(img_temp,I2)
+                end
+            end
+        end
+        imgs_out[g] = img_temp
+        labels_out[g] = label_temp
+    end
+    data_out::Tuple{Vector{Array{Float32,3}},Vector{BitArray{3}}} =
+        (vcat(imgs_out...),vcat(labels_out...))
+    return data_out
+end
+
 function prepare_training_data_main(training::Training,training_data::Training_data,
     model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
-    # Functions
-    function correct_view(img::Array{Float32,2},label::Array{RGB{Normed{UInt8,8}},2})
-        field = dilate(imfilter(img.<0.3, Kernel.gaussian(4)).>0.5,20)
-        field = .!(areaopen(field,30000))
-        field_area = sum(field)
-        field_perim = sum(perim(field))/1.25
-        circularity = (4*pi*field_area)/(field_perim^2)
-        if circularity>0.9
-            row_bool = any(field,1)
-            col_bool = any(field,2)
-            col1 = findfirst(col_bool)[1]
-            col2 = findlast(col_bool)[1]
-            row1 = findfirst(row_bool)[1]
-            row2 = findlast(row_bool)[1]
-            img = img[row1:row2,col1:col2]
-            label = label[row1:row2,col1:col2]
-        end
-        img = rescale(img,(0,1))
-        return img,label
-    end
-
-    function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
-        num_angles::Int64,pix_num::Tuple{Int64,Int64},min_fr_pix::Float64)
-
-        function rotate_img(img::Union{Array{Float32,2},BitArray},angle::Float64)
-            if angle!=0
-                img2 = copy(img)
-                for i = 1:size(img,3)
-                    temp = imrotate(img[:,:,i],angle,
-                        axes(img[:,:,i]))
-                    replace_nan!(temp)
-                    if img2 isa BitArray
-                        img[:,:,i] = temp.>0
-                    end
-                end
-                return(img2)
-            else
-                return(img)
-            end
-        end
-
-        lim = prod(pix_num)*min_fr_pix
-        angles = range(0,stop=2*pi,length=num_angles+1)
-        angles = angles[1:end-1]
-        imgs_out = []
-        labels_out = []
-        num = length(angles)
-        for g = 1:num
-            img2 = rotate_img(img,angles[g])
-            label2 = rotate_img(label,angles[g])
-            num1 = Int64(floor(size(label2,1)/(pix_num[1]*0.9)))
-            num2 = Int64(floor(size(label2,2)/(pix_num[2]*0.9)))
-            step1 = Int64(floor(size(label2,1)/num1))
-            step2 = Int64(floor(size(label2,2)/num2))
-            num_batch = 2*(num1-1)*(num2-1)
-            img_temp = Vector{Array{Float32}}(undef,0)
-            label_temp = Vector{BitArray{3}}(undef,0)
-            for h = 1:2
-                if h==1
-                    img3 = img2
-                    label3 = label2
-                elseif h==2
-                    img3 = reverse(img2, dims = 2)
-                    label3 = reverse(label2, dims = 2)
-                end
-                for i = 1:num1-1
-                    for j = 1:num2-1
-                        ymin = (i-1)*step1+1;
-                        xmin = (j-1)*step2+1;
-                        I1 = label3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                        if sum(I1)<lim
-                            continue
-                        end
-                        I2 = img3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                        push!(label_temp,I1)
-                        push!(img_temp,I2)
-                    end
-                end
-            end
-            push!(imgs_out,img_temp...)
-            push!(labels_out,label_temp...)
-        end
-        return (imgs_out,labels_out)
-    end
-
     # Code
     if isempty(model_data.features)
         put!(results, "Empty features")
     end
-    data_input = []
-    data_labels = []
     features = model_data.features
     type = training.type
     options = training.Options
@@ -229,10 +229,9 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     imgs = load_images(training_data)
     labels = load_labels(training_data)
     num = length(imgs)
-    temp_imgs = Vector{Vector{Array{Float32,3}}}(undef,num)
-    temp_labels = Vector{Vector{BitArray{3}}}(undef,num)
+    data_input = Vector{Vector{Array{Float32,3}}}(undef,num)
+    data_labels = Vector{Vector{BitArray{3}}}(undef,num)
     put!(progress, num+1)
-    type_segmentation = type=="segmentation"
     Threads.@threads for k = 1:num
         if isready(channels.training_data_modifiers)
             if fetch(channels.training_data_modifiers)[1]=="stop"
@@ -243,24 +242,14 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         img = imgs[k]
         img = image_to_float(img,gray=true)
         label = labels[k]
-        if type_segmentation
-            #img,label = correct_view(img,label)
-            label = label_to_float(label,labels_color,labels_incl,border)
-            img,label = augment(k,img,label,num_angles,pix_num,min_fr_pix)
-        end
-        temp_imgs[k] = img
-        temp_labels[k] = label
+        #img,label = correct_view(img,label)
+        label = label_to_float(label,labels_color,labels_incl,border)
+        data_input[k],data_labels[k] = augment(k,img,label,num_angles,pix_num,min_fr_pix)
         put!(progress, 1)
     end
-    if type_segmentation
-        temp_imgs = vcat(temp_imgs...)
-        temp_labels = vcat(temp_labels...)
-    end
-    resize!(data_input,length(temp_imgs))
-    resize!(data_labels,length(temp_labels))
-    data_input .= temp_imgs
-    data_labels .= temp_labels
-    put!(results, (data_input,data_labels))
+    data_out_input::Vector{Array{Float32,3}} = vcat(data_input...)
+    data_out_labels::Vector{BitArray{3}} = vcat(data_labels...)
+    put!(results, (data_out_input,data_out_labels))
     put!(progress, 1)
     return
 end
@@ -305,6 +294,9 @@ prepare_validation_data() = prepare_validation_data_main2(training_data,
 function apply_border_data_main(data_in::BitArray{4},model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     inds_border = findall(border)
+    if inds_border==nothing
+        return data_in
+    end
     num_border = length(inds_border)
     num_feat = length(model_data.features)
     data = zeros(typeof(data_in[1]),size(data_in)[1:2]...,num_border)
@@ -338,7 +330,7 @@ function get_labels_colors_main(training_data::Training_data,channels::Channels)
     url_labels = training_data.url_labels
     num = length(url_labels)
     put!(channels.training_labels_colors,num)
-    colors_out = Vector{Vector{Vector{Float32}}}(undef,num)
+    colors_array = Vector{Vector{Vector{Float32}}}(undef,num)
     labelimgs = Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,0)
     for i=1:num
         push!(labelimgs,RGB.(load(url_labels[i])))
@@ -349,12 +341,12 @@ function get_labels_colors_main(training_data::Training_data,channels::Channels)
             ind = findfirst(unique_colors.==RGB.(0,0,0))
             deleteat!(unique_colors,ind)
             colors = channelview(float.(unique_colors))*255
-            colors_out[i] = arsplit(colors,2)
+            colors_array[i] = arsplit(colors,2)
             put!(channels.training_labels_colors,1)
     end
-    colors_out = vcat(colors_out...)
-    colors_out = unique(colors_out)
-    put!(channels.training_labels_colors,colors_out)
+    colors_out::Vector{Vector{Float32}} = vcat(colors_array...)
+    unique_colors = unique(colors_out)
+    put!(channels.training_labels_colors,unique_colors)
     return
 end
 function get_labels_colors_main2(training_data::Training_data,channels::Channels)
