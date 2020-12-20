@@ -74,7 +74,10 @@ function accuracy_main(training::Training,predicted::Union{Array,CuArray},
         num_batch = size(actual,4)
         actual_bool = actual.>0
         predicted_bool = predicted.>0.5
-        comparison_bool = predicted_bool.==actual_bool
+        comp_bool = predicted_bool .& actual_bool
+        dif_bool = xor.(predicted_bool,actual_bool)
+        comp_background_bool = (!).(dif_bool .| actual_bool)
+        dif_background_bool = dif_bool-actual_bool
         numel = cpu(prod(size(actual[:,:,1,1])))
         feature_counts = cpu(sum(actual_bool,dims=(1,2,4))[:])
         fr = feature_counts./numel./num_batch
@@ -85,11 +88,23 @@ function accuracy_main(training::Training,predicted::Union{Array,CuArray},
         weights2 = weights2./weights_sum
         weights_adj = weights./feature_counts
         weights2_adj = weights2./(numel*num_batch .- feature_counts)
-        features = map(i->weights_adj[i]*cpu(sum(comparison_bool[:,:,i,:]
-            .& actual_bool[:,:,i,:])),1:num_feat)
-        background = map(i->weights2_adj[i]*cpu(sum(comparison_bool[:,:,i,:]
-            .& (!).(actual_bool[:,:,i,:]))),1:num_feat)
-        acc = sum(features+background)/num_feat
+        features_correct = Vector{Float32}(undef,num_feat)
+        background_correct = Vector{Float32}(undef,num_feat)
+        for i = 1:num_feat
+            sum_comp = cpu(sum(comp_bool[:,:,i,:]))
+            sum_dif = cpu(sum(dif_bool[:,:,i,:]))
+            sum_comb = sum_comp*sum_comp/(sum_comp+sum_dif)
+            features_correct[i] = weights_adj[i]*sum_comb
+            sum_comp = cpu(sum(comp_background_bool[:,:,i,:]))
+            sum_dif = cpu(sum(dif_background_bool[:,:,i,:]))
+            sum_comb = sum_comp*sum_comp/(sum_comp+sum_dif)
+            background_correct[i] = weights2_adj[i]*sum_comb
+        end
+        acc = mean(features_correct+background_correct)
+        if acc>1 || acc<0 || isnan(acc)
+            @info acc
+        end
+        if acc>1.0 acc=1.0 end
     else
         dif = predicted - actual
         acc = 1-mean(mean.(map(x->abs.(x),dif)))
@@ -187,6 +202,7 @@ function train!(model::Chain,args::Hyperparameters_training,testing_frequency::I
             end
             Flux.Optimise.update!(opt,ps,gs)
             data = [cpu(accuracy(predicted,actual)),cpu(temp_loss)]
+            CUDA.unsafe_free!(predicted)
             put!(channels.training_progress,["Training",data...])
             push!(accuracy_array,data[1])
             push!(loss_array,data[2])
@@ -204,7 +220,7 @@ function train!(model::Chain,args::Hyperparameters_training,testing_frequency::I
             end
             @everywhere GC.safepoint()
         end
-        @everywhere GC.safepoint()
+        @everywhere GC.gc()
     end
     data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
     return data
@@ -439,7 +455,7 @@ function validate_main(settings::Settings,training_data::Training_data,
     predicted_array = Vector{BitArray}(undef,num)
     loss_array = Vector{Float32}(undef,num)
     put!(channels.validation_progress,[2*num])
-    num_parts = 6
+    num_parts = 10
     offset = 20
     @everywhere GC.gc()
     for i = 1:num
@@ -455,30 +471,33 @@ function validate_main(settings::Settings,training_data::Training_data,
             predicted = model(input_data)
         else
             function accum_parts(model::Chain,input_data::Array{Float32,4},
-                    num_parts::Int64,use_GPU::Bool)
+                    num_parts::Int64,offset::Int64,use_GPU::Bool)
                 input_size = size(input_data)
                 max_value = max(input_size...)
-                ind_max = findfirst(max_value.==input_size)
-                ind_split = Int64(floor(max_value/num_parts))
-                predicted = Vector{Array{Float32}}(undef,0)
+                ind_max::Int64 = findfirst(max_value.==input_size)
+                ind_split = convert(Int64,floor(max_value/num_parts))
+                predicted = Vector{Array{Float32,4}}(undef,0)
                 for j = 1:num_parts
                     function prepare_data(input_data::Array{Float32,4},
-                            ind_split::Int64,j::Int64)
-                        start_ind = 1 + (j-1)*ind_split-1
-                        end_ind = start_ind + ind_split-1
+                            max_value::Int64,offset::Int64,ind_split::Int64,j::Int64)
+                        start_ind::Int64 = 1 + (j-1)*ind_split-1
+                        end_ind::Int64 = start_ind + ind_split-1
                         correct_size = end_ind-start_ind+1
                         start_ind = start_ind - offset
                         end_ind = end_ind + offset
                         start_ind = start_ind<1 ? 1 : start_ind
                         end_ind = end_ind>max_value ? max_value : end_ind
                         temp_data = input_data[:,start_ind:end_ind,:,:]
-                        max_dim_size = size(temp_data,ind_max)
+                        max_dim_size::Int64 = size(temp_data,ind_max)
                         offset_add = Int64(ceil(max_dim_size/16)*16) - max_dim_size
                         temp_data = pad(temp_data,[0,offset_add],same)
-                        return temp_data,correct_size,offset_add
+                        data::Tuple{Array{Float32,4},Int64,Int64} =
+                            (temp_data,correct_size,offset_add)
+                        return data
                     end
                     function fix_size(temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}},
-                            correct_size::Int64,ind_max::Int64,offset_add::Int64,j::Int64)
+                            num_parts::Int64,correct_size::Int64,ind_max::Int64,
+                            offset_add::Int64,j::Int64)
                         temp_size = size(temp_predicted,ind_max)
                         offset_temp = (temp_size - correct_size) - offset_add
                         if offset_temp>0
@@ -505,18 +524,21 @@ function validate_main(settings::Settings,training_data::Training_data,
                     if j==num_parts
                         ind_split = ind_split+rem(max_value,num_parts)
                     end
-                    temp_data,correct_size,offset_add = prepare_data(input_data,ind_split,j)
+                    temp_data,correct_size,offset_add =
+                        prepare_data(input_data,max_value,offset,ind_split,j)
                     if use_GPU
                         temp_data = gpu(temp_data)
                     end
-                    temp_predicted = model(temp_data)
-                    temp_predicted = fix_size(temp_predicted,correct_size,ind_max,offset_add,j)
+                    temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}} = model(temp_data)
+                    temp_predicted =
+                        fix_size(temp_predicted,num_parts,correct_size,ind_max,offset_add,j)
                     push!(predicted,cpu(temp_predicted))
-                    @everywhere GC.safepoint()
+                    CUDA.unsafe_free!(temp_predicted)
                 end
-                return hcat(predicted...)
+                predicted_out::Array{Float32,4} = hcat(predicted...)
+                return predicted_out
             end
-            predicted = accum_parts(model,input_data,num_parts,use_GPU)
+            predicted = accum_parts(model,input_data,num_parts,offset,use_GPU)
         end
         accuracy_array[i] = accuracy(predicted,actual)
         loss_array[i] = loss(predicted,actual)
@@ -529,8 +551,9 @@ function validate_main(settings::Settings,training_data::Training_data,
         loss_std = std(temp_loss)
         data = [mean_accuracy,mean_loss,accuracy_std,loss_std]
         put!(channels.validation_progress,data)
-        @everywhere GC.gc()
+        @everywhere GC.safepoint()
     end
+
     #=empty!(validation_plot_data.data_input_orig)
     empty!(validation_plot_data.data_labels_orig)
     empty!(validation_plot_data.data_input)
