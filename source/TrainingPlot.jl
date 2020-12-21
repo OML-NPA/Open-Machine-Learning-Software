@@ -207,8 +207,7 @@ function train!(model::Chain,args::Hyperparameters_training,testing_frequency::I
             # Training part
             local temp_loss::Float32,predicted::Union{Array{Float32,4},CuArray{Float32,4}}
             if use_GPU
-                train_minibatch::Tuple{CuArray{Float32,4},
-                    CuArray{Float32,4}} = gpu.(train_minibatch)
+                train_minibatch = CuArray.(train_minibatch)
             end
             input = train_minibatch[1]
             actual = train_minibatch[2]
@@ -251,7 +250,7 @@ function test(model::Chain,loss::Function,channels::Channels,test_batches::Array
     for j=1:num_test
         test_minibatch = test_batches[j]
         if use_GPU
-            test_minibatch = gpu.(test_minibatch)
+            test_minibatch = CuArray.(test_minibatch)
         end
         predicted = model(test_minibatch[1])
         actual = test_minibatch[2]
@@ -331,7 +330,6 @@ function train_main(settings::Settings,training_data::Training_data,
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     if use_GPU
         model = move(model,gpu)
-        loss = gpu(loss)
     end
     reset_training_data(training_plot_data)
     # Use ADAM optimiser
@@ -422,7 +420,6 @@ function accum_parts(model::Chain,input_data::Array{Float32,4},
         temp_predicted =
             fix_size(temp_predicted,num_parts,correct_size,ind_max,offset_add,j)
         push!(predicted,temp_predicted)
-        GC.gs()
     end
     predicted_out::Array{Float32,4} = vcat(predicted...)
     return predicted_out
@@ -585,8 +582,8 @@ function validate_main(settings::Settings,training_data::Training_data,
         input_data = set[1][i]
         actual = set[2][i]
         if use_GPU
-            input_data::CuArray{Float32,4} = gpu(input_data)
-            actual::CuArray{Float32,4} = gpu(actual)
+            input_data = CuArray(input_data)
+            actual = CuArray(actual)
         end
         if num_parts==1
             predicted = model(input_data)

@@ -34,7 +34,7 @@ function prepare_analysis_data_main(analysis_data::Analysis_data,
     put!(progress,1)
     return nothing
 end
-function  prepare_analysis_data_main2(analysis_data::Analysis_data,
+function prepare_analysis_data_main2(analysis_data::Analysis_data,
         features::Vector{Feature},progress::RemoteChannel,results::RemoteChannel)
     @everywhere analysis_data
     remote_do(prepare_analysis_data_main,workers()[end],analysis_data,
@@ -127,7 +127,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
                     end
                     temp_data,correct_size,offset_add = prepare_data(input_data,ind_split,j)
                     if use_GPU
-                        temp_data = gpu(temp_data)
+                        temp_data = CuArray(temp_data)
                     end
                     temp_predicted = model(temp_data)[:,:,:]
                     temp_predicted = fix_size(temp_predicted,correct_size,ind_max,offset_add,j)
