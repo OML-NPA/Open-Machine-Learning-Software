@@ -131,11 +131,11 @@ function get_accuracy_func(training::Training)
 end
 
 function get_optimiser(training::Training)
-    optimisers = [Descent,Momentum,Nesterov,RMSProp,ADAM,
-        RADAM,AdaMax,ADAGrad,ADADelta,AMSGrad,NADAM,ADAMW]
-    optimiser_ind = training.Options.Hyperparameters.optimiser[2]
-    parameters = training.Options.Hyperparameters.
-        optimiser_params[optimiser_ind]
+    optimisers = (Descent,Momentum,Nesterov,RMSProp,ADAM,
+        RADAM,AdaMax,ADAGrad,ADADelta,AMSGrad,NADAM,ADAMW)
+    optimiser_ind::Int64 = training.Options.Hyperparameters.optimiser[2]
+    parameters::Vector{Union{Float64,Tuple{Float64,Float64}}} =
+        training.Options.Hyperparameters.optimiser_params[optimiser_ind]
     learning_rate = training.Options.Hyperparameters.learning_rate
     if length(parameters)==1
         parameters = [learning_rate,parameters[1]]
@@ -144,8 +144,9 @@ function get_optimiser(training::Training)
     elseif length(parameters)==3
         parameters = [learning_rate,(parameters[1],parameters[2]),parameters[3]]
     end
-    optimiser = optimisers[optimiser_ind]
-    return optimiser(parameters...)
+    optimiser_func = optimisers[optimiser_ind]
+    optimiser = optimiser_func(parameters...)
+    return optimiser
 end
 
 function train!(model::Chain,args::Hyperparameters_training,testing_frequency::Int64,
@@ -185,9 +186,10 @@ function train!(model::Chain,args::Hyperparameters_training,testing_frequency::I
         for i=1:num
             iteration+=1
             if isready(channels.training_modifiers)
+                modifs::Union{Vector{String},Vector{String,Float64},
+                    Vector{String,Int64}} = fix_QML_types(take!(channels.training_modifiers))
                 while isready(channels.training_modifiers)
-                    modifs::Union{Vector{String},Vector{String,Float64},Vector{String,Int64}} =
-                        fix_QML_types(take!(channels.training_modifiers))
+                    modifs = fix_QML_types(take!(channels.training_modifiers))
                 end
                 modif1::String = modifs[1]
                 if modif1=="stop"
@@ -335,7 +337,7 @@ function train_main(settings::Settings,training_data::Training_data,
     # Use ADAM optimiser
     opt = get_optimiser(training)
     if isready(channels.training_modifiers)
-        stop_cond = fetch(channels.training_modifiers)[1]
+        stop_cond::String = fetch(channels.training_modifiers)[1]
         if stop_cond=="stop"
             take!(channels.training_modifiers)
             return nothing
@@ -429,7 +431,7 @@ function accum_parts(model::Chain,input_data::Array{Float32,4},
 end
 
 function output_and_error_images(predicted_array::Vector{BitArray{4}},
-        actual::Array{Array{Float32,4},1},
+        actual_array::Array{Array{Float32,4},1},
         model_data::Model_data,channels::Channels)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     border_colors = labels_color[findall(border)]
@@ -455,7 +457,7 @@ function output_and_error_images(predicted_array::Vector{BitArray{4}},
     predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
     target_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
     Threads.@threads for i = 1:num
-        set_part = actual[i]
+        set_part = actual_array[i]
         data_array_part = data_array[i]
         function compute(num2::Int64,num_feat::Int64,set_part::Array{Float32,4},
                 data_array_part::BitArray{4})
@@ -560,7 +562,7 @@ function validate_main(settings::Settings,training_data::Training_data,
             end
         end
         input_data = set[1][i]
-        actual_data = set[2][i]
+        actual = set[2][i]
         if num_parts==1
             predicted = model(input_data)
         else

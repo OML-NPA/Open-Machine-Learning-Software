@@ -129,7 +129,8 @@ end
 # Functions
 function correct_view(img::Array{Float32,2},label::Array{RGB{Normed{UInt8,8}},2})
     field = dilate(imfilter(img.<0.3, Kernel.gaussian(4)).>0.5,20)
-    field = .!(areaopen(field,30000))
+    areaopen!(field,30000)
+    field = .!(field)
     field_area = sum(field)
     field_perim = sum(perim(field))/1.25
     circularity = (4*pi*field_area)/(field_perim^2)

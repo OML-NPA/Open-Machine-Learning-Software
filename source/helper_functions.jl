@@ -80,21 +80,22 @@ function copystruct!(struct1,struct2)
     end
 end
 
-function areaopen(im::BitArray{2},area::Int64)
-    im_segm = label_components(im).+1
-    im_segm[im] .= 0
-    labels_color = unique(im_segm)
-    labels_color = labels_color[labels_color.!=0]
-    for i=1:length(labels_color)
-        if sum(.==(im,labels_color[i]))<area
-            im[im_segm==labels_color(i)] = false
+function areaopen!(im::BitArray{2},area::Int64)
+    im_segm = label_components(im)
+    num = maximum(im_segm)
+    for i=1:num
+        mask = im_segm.==i
+        if sum(mask)<area
+            im[mask] .= false
         end
     end
-    return im
+    return
 end
 
 function remove_spurs!(img::BitArray{2})
-    spurs = imfilter(convert(Float32,img),centered(ones(Float32,3,3)))
+    img_float = convert(Array{Float32,2},img)
+    kernel = centered(ones(Float32,3,3))
+    spurs = imfilter(img_float,kernel)
     spurs = (spurs.<2) .& (img.!=0)
     inds = findall(spurs)
     for i=1:length(inds)
@@ -117,7 +118,7 @@ end
 
 function component_intensity(components::Array{Int64},image::Array{Float32})
     num = maximum(components)
-    intensities = Array{typeof(image[1])}(undef,num)
+    intensities = Vector{Float32}(undef,num)
     for i = 1:num
         intensities[i] = mean(image[components.==i])
     end
@@ -333,15 +334,18 @@ function segment_objects(components::Array{Int64,2},objects::BitArray{2})
 
     while length(indices_out)!=0
         indices_in = indices_out
-        indices_out = []
+        indices_accum = Vector{Vector{CartesianIndex{2}}}(undef,0)
         for i = 1:4
+            target = repeat([operations[i]],length(indices_in))
             new_indices = broadcast((x,y) -> x .+ y,
-                Tuple.(indices_in),repeat([operations[i]],length(indices_in)))
+                Tuple.(indices_in),target)
             objects_values = objects[indices_in]
+            target = repeat([(0,0)],length(new_indices))
             nonzero_bool = broadcast((x,y) -> all(x .> y),
-                new_indices,repeat([(0,0)],length(new_indices)))
+                new_indices,target)
+            target = repeat([img_size],length(new_indices))
             correct_size_bool = broadcast((x,y) -> all(x.<img_size),
-                new_indices,repeat([img_size],length(new_indices)))
+                new_indices,target)
             remove_incorrect = nonzero_bool .&
                 correct_size_bool .& objects_values
             new_indices = new_indices[remove_incorrect]
@@ -352,9 +356,9 @@ function segment_objects(components::Array{Int64,2},objects::BitArray{2})
             indices_prev = indices_in[remove_incorrect][new_indices_0_bool]
             prev_values = new_components[CartesianIndex.(indices_prev)]
             new_components[new_indices_0] .= prev_values
-            push!(indices_out,new_indices_0)
+            push!(indices_accum,new_indices_0)
         end
-        indices_out = vcat(indices_out...)
+        indices_out::Array{CartesianIndex{2},1} = vcat(indices_accum...)
     end
     return new_components
 end
