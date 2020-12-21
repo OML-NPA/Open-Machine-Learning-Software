@@ -72,12 +72,12 @@ function load_labels(training_data::Training_data)
     return labels
 end
 
-function image_to_float(image::Array{RGB{Normed{UInt8,8}},2};gray=true)
-    if gray
-        return collect(channelview(float.(Gray.(image))))
-    else
-        return collect(channelview(float.(image)))
-    end
+function image_to_gray_float(image::Array{RGB{Normed{UInt8,8}},2})
+    return collect(channelview(float.(Gray.(image))))
+end
+
+function image_to_rgb_float(image::Array{RGB{Normed{UInt8,8}},2})
+    return collect(channelview(float.(image)))
 end
 
 function label_to_float(labelimg::Array{RGB{Normed{UInt8,8}},2},
@@ -87,7 +87,7 @@ function label_to_float(labelimg::Array{RGB{Normed{UInt8,8}},2},
     num = length(colors)
     num_borders = sum(border)
     inds_borders = findall(border)
-    label = fill!(BitArray(undef, size(labelimg)...,
+    label = fill!(BitArray{3}(undef, size(labelimg)...,
         num + num_borders),0)
     for i=1:num
         label[:,:,i] = .==(labelimg,colors[i])
@@ -241,7 +241,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
             end
         end
         img = imgs[k]
-        img = image_to_float(img,gray=true)
+        img = image_to_gray_float(img)
         label = labels[k]
         #img,label = correct_view(img,label)
         label = label_to_float(label,labels_color,labels_incl,border)
@@ -275,7 +275,7 @@ function prepare_validation_data_main(training_data::Training_data,
         return false
     end
     labels_color,labels_incl,border = get_feature_data(features)
-    data_input = map(x->image_to_float(x,gray=true),images)
+    data_input = map(x->image_to_gray_float(x),images)
     data_labels = map(x->label_to_float(x,labels_color,labels_incl,border),labels)
     data = (images,labels,data_input,data_labels)
     put!(results,data)
@@ -292,7 +292,7 @@ prepare_validation_data() = prepare_validation_data_main2(training_data,
     model_data.features,channels.validation_data_progress,
     channels.validation_data_results)
 
-function apply_border_data_main(data_in::BitArray{4},model_data::Model_data)
+function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     inds_border = findall(border)
     if inds_border==nothing
@@ -300,7 +300,7 @@ function apply_border_data_main(data_in::BitArray{4},model_data::Model_data)
     end
     num_border = length(inds_border)
     num_feat = length(model_data.features)
-    data = zeros(typeof(data_in[1]),size(data_in)[1:2]...,num_border)
+    data = BitArray{3}(undef,size(data_in)[1:2]...,num_border)
     for i = 1:num_border
         ind_feat = inds_border[i]
         ind_border = num_feat + ind_feat
@@ -321,7 +321,7 @@ function apply_border_data_main(data_in::BitArray{4},model_data::Model_data)
         segmented = segment_objects(components,objects)
         borders = mapwindow(x->!allequal(x), segmented, (3,3))
         segmented[borders] .= 0
-        data[:,:,ind_feat] = convert(Array{Float32},segmented.>0)
+        data[:,:,ind_feat] = segmented.>0
     end
     return data
 end

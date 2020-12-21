@@ -252,7 +252,7 @@ end
 
 same(el_type::Type,row::Int64,col::Int64,vect::Array) = ones(el_type,row,col).*vect
 same(el_type::Type,row::Int64,col::Int64,vect::CUDA.CuArray) =
-    ones(el_type,row,col).*vect
+    CUDA.ones(el_type,row,col).*vect
 function pad(array::Array,padding::Vector,fun::Union{typeof(zeros),typeof(ones)})
     el_type = eltype(array)
     div_result = padding./2
@@ -267,40 +267,24 @@ function pad(array::Array,padding::Vector,fun::Union{typeof(zeros),typeof(ones)}
             array,fun(el_type,size(array,1),rightpad[2]))
     end
 end
-function pad(array::Union{Array{Float32},Array{Float64}},
+function pad(array::Union{AbstractArray{Float32},AbstractArray{Float64}},
         padding::Vector{Int64},fun::Union{typeof(same),typeof(zeros),typeof(ones)})
     el_type = eltype(array)
     div_result = padding./2
     leftpad = Int64.(floor.(div_result))
     rightpad = Int64.(ceil.(div_result))
     if padding[1]!=0
-        vec1 = collect(array[1,:]')
-        vec2 = collect(array[end,:]')
+        vec1 = array[1,:]'
+        vec2 = array[end,:]'
         array = vcat(fun(el_type,leftpad[1],size(array,2),vec1),
             array,fun(el_type,rightpad[1],size(array,2),vec2))
-    end
-    if padding[2]!=0
+    else
         vec1 = array[:,1]
         vec2 = array[:,end]
         array = hcat(fun(el_type,size(array,1),leftpad[2],vec1),
             array,fun(el_type,size(array,1),rightpad[2],vec2))
     end
-end
-
-function pad(array::Union{CuArray{Float32},CuArray{Float64}},padding::Vector{Int64},
-        fun::Union{typeof(zeros),typeof(ones)})
-    el_type = eltype(array)
-    div_result = padding./2
-    leftpad = Int64.(floor.(div_result))
-    rightpad = Int64.(ceil.(div_result))
-    if padding[1]!=0
-        array = vcat(CUDA.zeros(el_type,leftpad[1],size(array,2)),
-            array,CUDA.zeros(el_type,rightpad[1],size(array,2)))
-    end
-    if padding[2]!=0
-        array = hcat(CUDA.zeros(el_type,size(array,1),leftpad[2]),
-            array,CUDA.zeros(el_type,size(array,1),rightpad[2]))
-    end
+    return array
 end
 
 function conn(num::Int64)

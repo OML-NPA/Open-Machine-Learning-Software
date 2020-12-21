@@ -23,10 +23,9 @@ function training_elapsed_time_main(training_plot_data::Training_plot_data)
 end
 training_elapsed_time() = training_elapsed_time_main(training_plot_data)
 
-function get_train_test(training_data::Training_data,training::Training)
-    data_input = training_data.Training_plot_data.data_input
-    data_labels = convert.(Array{Float32,3},
-        training_data.Training_plot_data.data_labels)
+function get_train_test(training_plot_data::Training_plot_data,training::Training)
+    data_input = training_plot_data.data_input
+    data_labels = convert(Vector{Array{Float32,3}},training_plot_data.data_labels)
     num = length(data_input)
     inds = randperm(num)
     data_input = data_input[inds]
@@ -38,12 +37,12 @@ function get_train_test(training_data::Training_data,training::Training)
     return train_set, test_set
 end
 
-function get_set(training_data::Training_data,training::Training)
-    data_input = training_data.Validation_plot_data.data_input
-    data_labels = convert(Vector{Array{Float32,3}},
-        training_data.Validation_plot_data.data_labels)
-    data_input = map(x->x[:,:,:,:],data_input)
-    data_labels = map(x->x[:,:,:,:],data_labels)
+function get_validation_set(validation_plot_data::Validation_plot_data,training::Training)
+    data_input_raw = validation_plot_data.data_input
+    data_labels_raw = convert(Vector{Array{Float32,3}},
+        validation_plot_data.data_labels)
+    data_input = map(x->x[:,:,:,:],data_input_raw)
+    data_labels = map(x->x[:,:,:,:],data_labels_raw)
     set = (data_input,data_labels)
     return set
 end
@@ -319,6 +318,7 @@ end
 function train_main(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
     training = settings.Training
+    training_plot_data = training_data.Training_plot_data
     model = model_data.model
     loss = model_data.loss
     accuracy = get_accuracy_func(training)
@@ -326,7 +326,7 @@ function train_main(settings::Settings,training_data::Training_data,
     learning_rate = args.learning_rate
     epochs = args.epochs
     # Preparing train and test sets
-    train_set, test_set = get_train_test(training_data,training)
+    train_set, test_set = get_train_test(training_plot_data,training)
     # Load model onto GPU, if enabled
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     if use_GPU
@@ -361,76 +361,97 @@ function train_main2(settings::Settings,training_data::Training_data,
 end
 train() = train_main2(settings,training_data,model_data,channels)
 
+function prepare_data(input_data::Union{Array{Float32,4},CuArray{Float32,4}},ind_max::Int64,
+        max_value::Int64,offset::Int64,ind_split::Int64,j::Int64)
+    start_ind = 1 + (j-1)*ind_split-1
+    end_ind = start_ind + ind_split-1
+    correct_size = end_ind-start_ind+1
+    start_ind = start_ind - offset
+    end_ind = end_ind + offset
+    start_ind = start_ind<1 ? 1 : start_ind
+    end_ind = end_ind>max_value ? max_value : end_ind
+    temp_data = input_data[:,start_ind:end_ind,:,:]
+    max_dim_size = size(temp_data,ind_max)
+    offset_add = Int64(ceil(max_dim_size/16)*16) - max_dim_size
+    temp_data = pad(temp_data,[0,offset_add],same)
+    output_data = (temp_data,correct_size,offset_add)
+    return output_data
+end
+
+function fix_size(temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}},
+        num_parts::Int64,correct_size::Int64,ind_max::Int64,
+        offset_add::Int64,j::Int64)
+    temp_size = size(temp_predicted,ind_max)
+    offset_temp = (temp_size - correct_size) - offset_add
+    if offset_temp>0
+        div_result = offset_add/2
+        offset_add1 = Int64(floor(div_result))
+        offset_add2 = Int64(ceil(div_result))
+        if j==1
+            temp_predicted = temp_predicted[:,
+                (1+offset_add1):(end-offset_temp-offset_add2),:,:]
+        elseif j==num_parts
+            temp_predicted = temp_predicted[:,
+                (1+offset_temp+offset_add1):(end-offset_add2),:,:]
+        else
+            temp = (temp_size - correct_size - offset_add)/2
+            offset_temp = Int64(floor(temp))
+            offset_temp2 = Int64(ceil(temp))
+            temp_predicted = temp_predicted[:,
+                (1+offset_temp+offset_add1):(end-offset_temp2-offset_add2),:,:]
+        end
+    elseif offset_temp<0
+        temp_predicted = pad(temp_predicted,[0,-offset_temp])
+    end
+end
+
 function accum_parts(model::Chain,input_data::Array{Float32,4},
-        num_parts::Int64,offset::Int64,use_GPU::Bool)
+        num_parts::Int64,offset::Int64)
     input_size = size(input_data)
-    max_value = max(input_size...)
-    ind_max::Int64 = findfirst(max_value.==input_size)
+    max_value = maximum(input_size)
+    ind_max = findfirst(max_value.==input_size)
     ind_split = convert(Int64,floor(max_value/num_parts))
     predicted = Vector{Array{Float32,4}}(undef,0)
     for j = 1:num_parts
-        function prepare_data(input_data::Array{Float32,4},
-                max_value::Int64,offset::Int64,ind_split::Int64,j::Int64)
-            start_ind::Int64 = 1 + (j-1)*ind_split-1
-            end_ind::Int64 = start_ind + ind_split-1
-            correct_size = end_ind-start_ind+1
-            start_ind = start_ind - offset
-            end_ind = end_ind + offset
-            start_ind = start_ind<1 ? 1 : start_ind
-            end_ind = end_ind>max_value ? max_value : end_ind
-            temp_data = input_data[:,start_ind:end_ind,:,:]
-            max_dim_size::Int64 = size(temp_data,ind_max)
-            offset_add = Int64(ceil(max_dim_size/16)*16) - max_dim_size
-            temp_data = pad(temp_data,[0,offset_add],same)
-            output_data::Tuple{Array{Float32,4},Int64,Int64} =
-                (temp_data,correct_size,offset_add)
-            return output_data
-        end
-        function fix_size(temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}},
-                num_parts::Int64,correct_size::Int64,ind_max::Int64,
-                offset_add::Int64,j::Int64)
-            temp_size = size(temp_predicted,ind_max)
-            offset_temp = (temp_size - correct_size) - offset_add
-            if offset_temp>0
-                div_result = offset_add/2
-                offset_add1 = Int64(floor(div_result))
-                offset_add2 = Int64(ceil(div_result))
-                if j==1
-                    temp_predicted = temp_predicted[:,
-                        (1+offset_add1):(end-offset_temp-offset_add2),:,:]
-                elseif j==num_parts
-                    temp_predicted = temp_predicted[:,
-                        (1+offset_temp+offset_add1):(end-offset_add2),:,:]
-                else
-                    temp = (temp_size - correct_size - offset_add)/2
-                    offset_temp = Int64(floor(temp))
-                    offset_temp2 = Int64(ceil(temp))
-                    temp_predicted = temp_predicted[:,
-                        (1+offset_temp+offset_add1):(end-offset_temp2-offset_add2),:,:]
-                end
-            elseif offset_temp<0
-                temp_predicted = pad(temp_predicted,[0,-offset_temp])
-            end
-        end
         if j==num_parts
             ind_split = ind_split+rem(max_value,num_parts)
         end
         temp_data,correct_size,offset_add =
-            prepare_data(input_data,max_value,offset,ind_split,j)
-        if use_GPU
-            temp_data = gpu(temp_data)
+            prepare_data(input_data,ind_max,max_value,offset,ind_split,j)
+        temp_predicted = model(temp_data)
+        temp_predicted =
+            fix_size(temp_predicted,num_parts,correct_size,ind_max,offset_add,j)
+        push!(predicted,temp_predicted)
+        GC.gs()
+    end
+    predicted_out::Array{Float32,4} = vcat(predicted...)
+    return predicted_out
+end
+
+function accum_parts(model::Chain,input_data::CuArray{Float32,4},
+        num_parts::Int64,offset::Int64)
+    input_size = size(input_data)
+    max_value = maximum(input_size)
+    ind_max = findfirst(max_value.==input_size)
+    ind_split = convert(Int64,floor(max_value/num_parts))
+    predicted = Vector{CuArray{Float32,4}}(undef,0)
+    for j = 1:num_parts
+        if j==num_parts
+            ind_split = ind_split+rem(max_value,num_parts)
         end
-        temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}} = model(temp_data)
+        temp_data,correct_size,offset_add =
+            prepare_data(input_data,ind_max,max_value,offset,ind_split,j)
+        temp_predicted::CuArray{Float32,4} = model(temp_data)
         temp_predicted =
             fix_size(temp_predicted,num_parts,correct_size,ind_max,offset_add,j)
         push!(predicted,cpu(temp_predicted))
         CUDA.unsafe_free!(temp_predicted)
     end
-    predicted_out::Array{Float32,4} = hcat(predicted...)
+    predicted_out::CuArray{Float32,4} = hcat(predicted...)
     return predicted_out
 end
 
-function output_and_error_images(predicted_array::Vector{BitArray{4}},
+function output_and_error_images(predicted_array::Vector{BitArray{3}},
         actual_array::Array{Array{Float32,4},1},
         model_data::Model_data,channels::Channels)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
@@ -442,11 +463,11 @@ function output_and_error_images(predicted_array::Vector{BitArray{4}},
     num = length(predicted_array)
     num2 = length(labels_color)
     perm_labels_color = Vector{Array{Float32,3}}(undef,num2)
-    for x in labels_color
-        perm_labels_color[i] = permutedims(x[:,:,:]/255,[3,2,1])
+    for i=1:num2
+        perm_labels_color[i] = permutedims(labels_color[i][:,:,:]/255,[3,2,1])
     end
     num_border = sum(border)
-    data_array = Vector{BitArray{4}}(undef,num+num_border)
+    data_array = Vector{BitArray{3}}(undef,num+num_border)
     if num_border>0
         border_array = map(x->apply_border_data_main(x,model_data),predicted_array)
         data_array .= cat.(predicted_array,border_array,dims=3)
@@ -460,7 +481,7 @@ function output_and_error_images(predicted_array::Vector{BitArray{4}},
         set_part = actual_array[i]
         data_array_part = data_array[i]
         function compute(num2::Int64,num_feat::Int64,set_part::Array{Float32,4},
-                data_array_part::BitArray{4})
+                data_array_part::BitArray{3})
             target_temp = Vector{Array{RGB{Float32},2}}(undef,0)
             predicted_color_temp = Vector{Array{RGB{Float32},2}}(undef,0)
             predicted_error_temp = Vector{Array{RGB{Float32},2}}(undef,0)
@@ -532,13 +553,13 @@ end
 function validate_main(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
     training = settings.Training
-    validation_plot = training_data.Validation_plot_data
+    validation_plot_data = training_data.Validation_plot_data
     model = model_data.model
     loss = model_data.loss
     accuracy = get_accuracy_func(training)
     reset_validation_data(validation_plot_data)
     # Preparing set
-    set = get_set(training_data,training)
+    set = get_validation_set(validation_plot_data,training)
     # Load model onto GPU, if enabled
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     if use_GPU
@@ -546,9 +567,9 @@ function validate_main(settings::Settings,training_data::Training_data,
     end
     # Validate
     num = length(set[1])
-    accuracy_array = Vector{Float32}(undef,num)
-    predicted_array = Vector{BitArray{4}}(undef,num)
-    loss_array = Vector{Float32}(undef,num)
+    accuracy_array = Vector{Float32}(undef,0)
+    predicted_array = Vector{BitArray{3}}(undef,0)
+    loss_array = Vector{Float32}(undef,0)
     put!(channels.validation_progress,[2*num])
     num_parts = 10
     offset = 20
@@ -563,14 +584,34 @@ function validate_main(settings::Settings,training_data::Training_data,
         end
         input_data = set[1][i]
         actual = set[2][i]
+        if use_GPU
+            input_data::CuArray{Float32,4} = gpu(input_data)
+            actual::CuArray{Float32,4} = gpu(actual)
+        end
         if num_parts==1
             predicted = model(input_data)
         else
-            predicted = accum_parts(model,input_data,num_parts,offset,use_GPU)
+            predicted = accum_parts(model,input_data,num_parts,offset)
         end
-        accuracy_array[i] = accuracy(predicted,actual)
-        loss_array[i] = loss(predicted,actual)
-        predicted_array[i] = predicted.>0.5
+        size_dim4 = size(predicted,4)
+        accuracy_array_temp = Vector{Float32}(undef,size_dim4)
+        predicted_array_temp = Vector{BitArray{3}}(undef,size_dim4)
+        loss_array_temp = Vector{Float32}(undef,size_dim4)
+        predicted_bool = predicted.>0.5
+        for j = 1:size_dim4
+            predicted_temp = predicted[:,:,:,j:j]
+            actual_temp = actual[:,:,:,j:j]
+            accuracy_array_temp[i] = accuracy(predicted_temp,actual_temp)
+            loss_array_temp[i] = loss(predicted_temp,actual_temp)
+            if has_GPU
+                predicted_array_temp[i] = cpu(predicted_bool[:,:,:,j])
+            else
+                predicted_array_temp[i] = predicted_bool[:,:,:,j]
+            end
+        end
+        push!(accuracy_array,accuracy_array_temp...)
+        push!(loss_array,loss_array_temp...)
+        push!(predicted_array,predicted_array_temp...)
         temp_accuracy = accuracy_array[1:i]
         temp_loss = loss_array[1:i]
         mean_accuracy = mean(temp_accuracy)
@@ -591,7 +632,7 @@ function validate_main(settings::Settings,training_data::Training_data,
     data = (data_predicted,data_error,target,
         accuracy_array,loss_array,std(accuracy_array),std(loss_array))
     put!(channels.validation_results,data)
-    return
+    return nothing
 end
 function validate_main2(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)

@@ -99,7 +99,7 @@ training_plot_data = Training_plot_data()
     data_labels_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
         Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
     data_input::Vector{Array{Float32,2}} = Vector{Array{Float32,2}}(undef,1)
-    data_labels::Vector{BitArray} = Vector{BitArray{3}}(undef,1)
+    data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,1)
     data_predicted::Vector{Vector{Array{RGB{Float32},2}}} =
         Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
     data_error::Vector{Vector{Array{RGB{Float32},2}}} =
@@ -119,7 +119,7 @@ training_data = Training_data()
 
 @with_kw mutable struct Analysis_data
     url_imgs::Vector{String} = Vector{String}(undef,0)
-    data_input::Vector{Array{Float32}} = Vector{Array{Float32}}(undef,1)
+    data_input::Vector{Array{Float32,4}} = Vector{Array{Float32,4}}(undef,1)
 end
 analysis_data = Analysis_data()
 

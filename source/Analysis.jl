@@ -19,23 +19,23 @@ get_urls_analysis() =
     get_urls_analysis_main(analysis,analysis_data)
 
 function prepare_analysis_data_main(analysis_data::Analysis_data,
-        features::Array,progress::RemoteChannel,results::RemoteChannel)
+        features::Vector{Feature},progress::RemoteChannel,results::RemoteChannel)
     put!(progress,2)
     images = load_images(analysis_data)
     put!(progress,1)
     if isempty(features)
         @info "empty features"
-        return false
+        return nothing
     end
     labels_color,labels_incl,border = get_feature_data(features)
-    data_input = map(x->image_to_float(x,gray=true),images)
-    data = data_input
+    #data_input = Vector{Array{Float32,2}}(undef,length(images))
+    data = map(x->image_to_gray_float(x)[:,:,:,:],images)
     put!(results,data)
     put!(progress,1)
     return nothing
 end
 function  prepare_analysis_data_main2(analysis_data::Analysis_data,
-        features::Array,progress::RemoteChannel,results::RemoteChannel)
+        features::Vector{Feature},progress::RemoteChannel,results::RemoteChannel)
     @everywhere analysis_data
     remote_do(prepare_analysis_data_main,workers()[end],analysis_data,
     features,progress,results)
@@ -58,7 +58,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     end
     # Validate
     num = length(set)
-    predicted_array = Vector{BitArray{4}}(undef,num)
+    predicted_array = Vector{BitArray{4}}(undef,0)
     put!(channels.analysis_progress,[2*num])
     num_parts = 6
     offset = 20
@@ -70,7 +70,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
                 break
             end
         end
-        input_data = set[i][:,:,:,:]
+        input_data = set[i]
         if num_parts==1
             predicted = model(input_data)
         else
@@ -97,7 +97,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
                         temp_data = pad(temp_data,[0,offset_add],same)
                         return temp_data,correct_size,offset_add
                     end
-                    function fix_size(temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}},
+                    function fix_size(temp_predicted::Union{Array{Float32,3},CuArray{Float32,3}},
                             correct_size::Int64,ind_max::Int64,offset_add::Int64,j::Int64)
                         temp_size = size(temp_predicted,ind_max)
                         offset_temp = (temp_size - correct_size) - offset_add
@@ -129,7 +129,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
                     if use_GPU
                         temp_data = gpu(temp_data)
                     end
-                    temp_predicted = model(temp_data)
+                    temp_predicted = model(temp_data)[:,:,:]
                     temp_predicted = fix_size(temp_predicted,correct_size,ind_max,offset_add,j)
                     push!(predicted,cpu(temp_predicted))
                     @everywhere GC.safepoint()
@@ -138,13 +138,20 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
             end
             predicted = accum_parts(model,input_data,num_parts,use_GPU)
         end
-        predicted_array[i] = predicted.>0.5
+        predicted_bool = predicted.>0.5
+        size_dim4 = size(predicted_bool,4)
+        if size_dim4!=1
+            predicted_bool_split = Iterators.partition(predicted_bool,)
+            push!(predicted_array,predicted_bool_split...)
+        else
+            push!(predicted_array,predicted_bool)
+        end
         put!(channels.analysis_progress,1)
         @everywhere GC.safepoint()
     end
     _,_,border = get_feature_data(model_data.features)
     if any(border)
-        border_array = map(x->apply_border_data_main(x,model_data),predicted_array)
+        border_array = map(x->apply_border_data_main(x,model_data)[:,:,:,:],predicted_array)
         predicted_array = cat.(predicted_array,border_array,dims=3)
     end
     features = model_data.features
