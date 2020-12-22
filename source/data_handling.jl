@@ -88,7 +88,8 @@ end
 save_settings() = save_settings_main(settings)
 
 function load_settings!(settings)
-    settings = BSON.load("config.bson")[:settings]
+    data = BSON.load("config.bson")
+    copystruct!(settings,data[:settings])
 end
 load_settings() = load_settings!(settings)
 

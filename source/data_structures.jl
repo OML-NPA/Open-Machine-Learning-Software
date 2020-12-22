@@ -164,7 +164,7 @@ processing_training = Processing_training()
     optimiser_params::Vector{Vector{Float64}} = [[],[0.9],[0.9],[0.9],
       [0.9,0.999],[0.9,0.999],[0.9,0.999],[],[0.9],[0.9,0.999],
       [0.9,0.999],[0.9,0.999,0]]
-    optimiser_params_names::Vector{Array{String}} = [[],["ρ"],
+    optimiser_params_names::Vector{Vector{String}} = [[],["ρ"],
       ["ρ"],["ρ"],
       ["β1","β2"],
       ["β1","β2"],
@@ -204,8 +204,8 @@ design = Design()
 @with_kw mutable struct Training
     Options::Options_training = options_training
     Design::Design = design
-    problem_type::Array{Union{String,Int64}} = ["Classification",0]
-    input_type::Array{Union{String,Int64}} = ["Image",0]
+    problem_type::Tuple{String,Int64} = ("Classification",0)
+    input_type::Tuple{String,Int64} = ("Image",0)
     template::String = ""
     images::String = ""
     labels::String = ""
@@ -229,7 +229,7 @@ options_analysis = Options_analysis()
 @with_kw mutable struct Analysis
     Options::Options_analysis = options_analysis
     folder_url::String = ""
-    checked_folders::Array{String} = []
+    checked_folders::Vector{String} = []
 end
 analysis = Analysis()
 
