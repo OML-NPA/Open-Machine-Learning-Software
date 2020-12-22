@@ -160,11 +160,11 @@ processing_training = Processing_training()
 ["ADAM",5] isa Array{<:Union{String,Int64}}
 
 @with_kw mutable struct Hyperparameters_training
-    optimiser::Array{Union{String,Int64}} = ["ADAM",5]
-    optimiser_params::Array{Array{Float64}} = [[],[0.9],[0.9],[0.9],
+    optimiser::Tuple{String,Int64} = ("ADAM",5)
+    optimiser_params::Vector{Vector{Float64}} = [[],[0.9],[0.9],[0.9],
       [0.9,0.999],[0.9,0.999],[0.9,0.999],[],[0.9],[0.9,0.999],
       [0.9,0.999],[0.9,0.999,0]]
-    optimiser_params_names::Array{Array{String}} = [[],["ρ"],
+    optimiser_params_names::Vector{Array{String}} = [[],["ρ"],
       ["ρ"],["ρ"],
       ["β1","β2"],
       ["β1","β2"],
@@ -215,7 +215,6 @@ end
 training = Training()
 
 # Analysis
-
 @with_kw mutable struct Options_analysis
     savepath::String = pwd()
     data_type::Int64 = 0
@@ -223,6 +222,7 @@ training = Training()
     downsize::Int64 = 0
     skip_frames::Int64 = 0
     scaling::Float64 = 1
+    minibatch_size::Int64 = 1
 end
 options_analysis = Options_analysis()
 

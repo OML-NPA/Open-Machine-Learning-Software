@@ -160,7 +160,7 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     data_array = Vector{BitArray{3}}(undef,num+num_border)
     if num_border>0
         border_array = map(x->apply_border_data_main(x,model_data),predicted_array)
-        data_array .= cat.(predicted_array,border_array,dims=3)
+        data_array .= cat3.(predicted_array,border_array)
     else
         data_array .= predicted_array
     end
@@ -204,7 +204,7 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
             function do_predicted_color!(predicted_color_temp::Vector{Array{RGB{Float32},2}},
                     predicted_bool::BitArray{2},color::Array{Float32,3})
                 temp = Float32.(predicted_bool)
-                temp = cat(temp,temp,temp,dims=3)
+                temp = cat3(temp,temp,temp)
                 temp = temp.*color
                 temp = permutedims(temp,[3,1,2])
                 temp2 = convert(Array{Float32,3},temp)
@@ -240,6 +240,26 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     return predicted_color,predicted_error,target_color
 end
 
+function forward(model::Chain,input_data::Array{Float32};
+        num_parts::Int64=1,offset::Int64=0,use_GPU::Bool=true)
+    if use_GPU
+        input_data_gpu = CuArray(input_data)
+        model = move(model,gpu)
+        if num_parts==1
+            predicted = collect(model(input_data_gpu))
+        else
+            predicted = collect(accum_parts(model,input_data_gpu,num_parts,offset))
+        end
+    else
+        if num_parts==1
+            predicted = model(input_data)
+        else
+            predicted = accum_parts(model,input_data,num_parts,offset)
+        end
+    end
+    return predicted::Array{Float32,4}
+end
+
 function validate_main(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
     training = settings.Training
@@ -247,15 +267,10 @@ function validate_main(settings::Settings,training_data::Training_data,
     model = model_data.model
     loss = model_data.loss
     accuracy = get_accuracy_func(training)
+    use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     reset_validation_data(validation_plot_data)
     # Preparing set
     set = get_validation_set(validation_plot_data,training)
-    # Load model onto GPU, if enabled
-    use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
-    if use_GPU
-        model = move(model,gpu)
-    end
-    # Validate
     num = length(set[1])
     accuracy_array = Vector{Float32}(undef,0)
     predicted_array = Vector{BitArray{3}}(undef,0)
@@ -274,15 +289,8 @@ function validate_main(settings::Settings,training_data::Training_data,
         end
         input_data = set[1][i]
         actual = set[2][i]
-        if use_GPU
-            input_data = CuArray(input_data)
-            actual = CuArray(actual)
-        end
-        if num_parts==1
-            predicted = model(input_data)
-        else
-            predicted = accum_parts(model,input_data,num_parts,offset)
-        end
+        predicted = forward(model,input_data,num_parts=num_parts,
+            offset=offset,use_GPU=use_GPU)
         size_dim4 = size(predicted,4)
         accuracy_array_temp = Vector{Float32}(undef,size_dim4)
         predicted_array_temp = Vector{BitArray{3}}(undef,size_dim4)
@@ -293,11 +301,7 @@ function validate_main(settings::Settings,training_data::Training_data,
             actual_temp = actual[:,:,:,j:j]
             accuracy_array_temp[i] = accuracy(predicted_temp,actual_temp)
             loss_array_temp[i] = loss(predicted_temp,actual_temp)
-            if use_GPU
-                predicted_array_temp[i] = cpu(predicted_bool[:,:,:,j])
-            else
-                predicted_array_temp[i] = predicted_bool[:,:,:,j]
-            end
+            predicted_array_temp[i] = predicted_bool[:,:,:,j]
         end
         push!(accuracy_array,accuracy_array_temp...)
         push!(loss_array,loss_array_temp...)

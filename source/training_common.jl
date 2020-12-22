@@ -214,55 +214,6 @@ function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
     return data_out
 end
 
-function prepare_training_data_main(training::Training,training_data::Training_data,
-    model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
-    # Code
-    if isempty(model_data.features)
-        put!(results, "Empty features")
-    end
-    features = model_data.features
-    type = training.type
-    options = training.Options
-    min_fr_pix = options.Processing.min_fr_pix
-    num_angles = options.Processing.num_angles
-    pix_num = model_data.input_size[1:2]
-    labels_color,labels_incl,border = get_feature_data(features)
-    imgs = load_images(training_data)
-    labels = load_labels(training_data)
-    num = length(imgs)
-    data_input = Vector{Vector{Array{Float32,3}}}(undef,num)
-    data_labels = Vector{Vector{BitArray{3}}}(undef,num)
-    put!(progress, num+1)
-    Threads.@threads for k = 1:num
-        if isready(channels.training_data_modifiers)
-            if fetch(channels.training_data_modifiers)[1]=="stop"
-                take!(channels.training_data_modifiers)
-                return nothing
-            end
-        end
-        img = imgs[k]
-        img = image_to_gray_float(img)
-        label = labels[k]
-        #img,label = correct_view(img,label)
-        label = label_to_float(label,labels_color,labels_incl,border)
-        data_input[k],data_labels[k] = augment(k,img,label,num_angles,pix_num,min_fr_pix)
-        put!(progress, 1)
-    end
-    data_out_input::Vector{Array{Float32,3}} = vcat(data_input...)
-    data_out_labels::Vector{BitArray{3}} = vcat(data_labels...)
-    put!(results, (data_out_input,data_out_labels))
-    put!(progress, 1)
-    return
-end
-function prepare_training_data_main2(training::Training,training_data::Training_data,
-    model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
-    @everywhere training,training_data,model_data
-    remote_do(prepare_training_data_main,workers()[end],training,training_data,
-    model_data,progress,results)
-end
-prepare_training_data() = prepare_training_data_main2(training,training_data,
-    model_data,channels.training_data_progress,channels.training_data_results)
-
 function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     inds_border = findall(border)

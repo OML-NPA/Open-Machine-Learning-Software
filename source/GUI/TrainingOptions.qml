@@ -222,9 +222,9 @@ ApplicationWindow {
                                      for (var i=0;i<optimisers.length;i++) {
                                          optimisersModel.append({"name": optimisers[i]})
                                      }
-                                     var name_ind = Julia.get_settings(
-                                         ["Training","Options","Hyperparameters","optimiser"])
-                                     currentIndex = name_ind[1]-1
+                                     var index = Julia.get_settings(
+                                         ["Training","Options","Hyperparameters","optimiser"],2)
+                                     currentIndex = index-1
                                      change_params()
                                 }
                                 function change_params() {

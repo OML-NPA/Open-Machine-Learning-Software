@@ -1,4 +1,53 @@
 
+function prepare_training_data_main(training::Training,training_data::Training_data,
+    model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
+    # Code
+    if isempty(model_data.features)
+        put!(results, "Empty features")
+    end
+    features = model_data.features
+    type = training.type
+    options = training.Options
+    min_fr_pix = options.Processing.min_fr_pix
+    num_angles = options.Processing.num_angles
+    pix_num = model_data.input_size[1:2]
+    labels_color,labels_incl,border = get_feature_data(features)
+    imgs = load_images(training_data)
+    labels = load_labels(training_data)
+    num = length(imgs)
+    data_input = Vector{Vector{Array{Float32,3}}}(undef,num)
+    data_labels = Vector{Vector{BitArray{3}}}(undef,num)
+    put!(progress, num+1)
+    Threads.@threads for k = 1:num
+        if isready(channels.training_data_modifiers)
+            if fetch(channels.training_data_modifiers)[1]=="stop"
+                take!(channels.training_data_modifiers)
+                return nothing
+            end
+        end
+        img = imgs[k]
+        img = image_to_gray_float(img)
+        label = labels[k]
+        #img,label = correct_view(img,label)
+        label = label_to_float(label,labels_color,labels_incl,border)
+        data_input[k],data_labels[k] = augment(k,img,label,num_angles,pix_num,min_fr_pix)
+        put!(progress, 1)
+    end
+    data_out_input::Vector{Array{Float32,3}} = vcat(data_input...)
+    data_out_labels::Vector{BitArray{3}} = vcat(data_labels...)
+    put!(results, (data_out_input,data_out_labels))
+    put!(progress, 1)
+    return
+end
+function prepare_training_data_main2(training::Training,training_data::Training_data,
+    model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
+    @everywhere training,training_data,model_data
+    remote_do(prepare_training_data_main,workers()[end],training,training_data,
+    model_data,progress,results)
+end
+prepare_training_data() = prepare_training_data_main2(training,training_data,
+    model_data,channels.training_data_progress,channels.training_data_results)
+
 function set_training_starting_time_main(training_plot_data::Training_plot_data)
     training_plot_data.starting_time = now()
     return nothing
@@ -122,20 +171,20 @@ end
 function get_optimiser(training::Training)
     optimisers = (Descent,Momentum,Nesterov,RMSProp,ADAM,
         RADAM,AdaMax,ADAGrad,ADADelta,AMSGrad,NADAM,ADAMW)
-    optimiser_ind::Int64 = training.Options.Hyperparameters.optimiser[2]
-    parameters::Vector{Union{Float64,Tuple{Float64,Float64}}} =
+    optimiser_ind = training.Options.Hyperparameters.optimiser[2]
+    parameters_in =
         training.Options.Hyperparameters.optimiser_params[optimiser_ind]
     learning_rate = training.Options.Hyperparameters.learning_rate
-    if length(parameters)==1
-        parameters = [learning_rate,parameters[1]]
-    elseif length(parameters)==2
-        parameters = [learning_rate,(parameters[1],parameters[2])]
-    elseif length(parameters)==3
-        parameters = [learning_rate,(parameters[1],parameters[2]),parameters[3]]
+    if length(parameters_in)==1
+        parameters = [learning_rate,parameters_in[1]]
+    elseif length(parameters_in)==2
+        parameters = [learning_rate,(parameters_in[1],parameters_in[2])]
+    else
+        parameters = [learning_rate,(parameters_in[1],parameters_in[2]),parameters_in[3]]
     end
     optimiser_func = optimisers[optimiser_ind]
     optimiser = optimiser_func(parameters...)
-    return optimiser
+    return optimiser::Function
 end
 
 function train_CPU!(model::Chain,accuracy::Function,loss::Function,
@@ -237,6 +286,7 @@ function train_GPU!(model::Chain,accuracy::Function,loss::Function,
         test_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         opt,channels::Channels)
     # Training loop
+    model = move(model,gpu)
     epochs = args.epochs
     batch_size = args.batch_size
     accuracy_array = Vector{Float32}(undef,0)
@@ -403,15 +453,10 @@ function train_main(settings::Settings,training_data::Training_data,
     args = training.Options.Hyperparameters
     learning_rate = args.learning_rate
     epochs = args.epochs
+    use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
+    reset_training_data(training_plot_data)
     # Preparing train and test sets
     train_set, test_set = get_train_test(training_plot_data,training)
-    # Load model onto GPU, if enabled
-    use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
-    if use_GPU
-        model = move(model,gpu)
-    end
-    reset_training_data(training_plot_data)
-    # Use ADAM optimiser
     opt = get_optimiser(training)
     if isready(channels.training_modifiers)
         stop_cond::String = fetch(channels.training_modifiers)[1]

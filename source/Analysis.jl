@@ -47,160 +47,56 @@ prepare_analysis_data() = prepare_analysis_data_main2(analysis_data,
 function analyse_main(settings::Settings,analysis_data::Analysis_data,
         model_data::Model_data,channels::Channels)
     analysis = settings.Analysis
+    analysis_options = analysis.Options
     model = model_data.model
     loss = model_data.loss
+    features = model_data.features
+    use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
+    _,_,border = get_feature_data(features)
+    num_feat = length(border)
+    num_border = sum(border)
+    apply_border = num_border>0
+    scaling = analysis_options.scaling
+    minibatch_size = analysis_options.minibatch_size
     # Preparing set
     set = analysis_data.data_input
-    # Load model onto GPU, if enabled
-    use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
-    if use_GPU
-        model = move(model,gpu)
-    end
-    # Validate
     num = length(set)
     predicted_array = Vector{BitArray{4}}(undef,0)
     put!(channels.analysis_progress,[2*num])
     num_parts = 6
     offset = 20
+    file_names = get_file_names(analysis_data.url_imgs)
     @everywhere GC.gc()
     for i = 1:num
         if isready(channels.analysis_modifiers)
-            if fetch(channels.analysis_modifiers)[1]=="stop"
+            stop_cond::String = fetch(channels.training_modifiers)[1]
+            if stop_cond=="stop"
                 take!(channels.analysis_modifiers)
                 break
             end
         end
         input_data = set[i]
-        if num_parts==1
-            predicted = model(input_data)
-        else
-            function accum_parts(model::Chain,input_data::Array{Float32,4},
-                    num_parts::Int64,use_GPU::Bool)
-                input_size = size(input_data)
-                max_value = max(input_size...)
-                ind_max = findfirst(max_value.==input_size)
-                ind_split = Int64(floor(max_value/num_parts))
-                predicted = Vector{Array{Float32}}(undef,0)
-                for j = 1:num_parts
-                    function prepare_data(input_data::Array{Float32,4},
-                            ind_split::Int64,j::Int64)
-                        start_ind = 1 + (j-1)*ind_split-1
-                        end_ind = start_ind + ind_split-1
-                        correct_size = end_ind-start_ind+1
-                        start_ind = start_ind - offset
-                        end_ind = end_ind + offset
-                        start_ind = start_ind<1 ? 1 : start_ind
-                        end_ind = end_ind>max_value ? max_value : end_ind
-                        temp_data = input_data[:,start_ind:end_ind,:,:]
-                        max_dim_size = size(temp_data,ind_max)
-                        offset_add = Int64(ceil(max_dim_size/16)*16) - max_dim_size
-                        temp_data = pad(temp_data,[0,offset_add],same)
-                        return temp_data,correct_size,offset_add
-                    end
-                    function fix_size(temp_predicted::Union{Array{Float32,3},CuArray{Float32,3}},
-                            correct_size::Int64,ind_max::Int64,offset_add::Int64,j::Int64)
-                        temp_size = size(temp_predicted,ind_max)
-                        offset_temp = (temp_size - correct_size) - offset_add
-                        if offset_temp>0
-                            div_result = offset_add/2
-                            offset_add1 = Int64(floor(div_result))
-                            offset_add2 = Int64(ceil(div_result))
-                            if j==1
-                                temp_predicted = temp_predicted[:,
-                                    (1+offset_add1):(end-offset_temp-offset_add2),:,:]
-                            elseif j==num_parts
-                                temp_predicted = temp_predicted[:,
-                                    (1+offset_temp+offset_add1):(end-offset_add2),:,:]
-                            else
-                                temp = (temp_size - correct_size - offset_add)/2
-                                offset_temp = Int64(floor(temp))
-                                offset_temp2 = Int64(ceil(temp))
-                                temp_predicted = temp_predicted[:,
-                                    (1+offset_temp+offset_add1):(end-offset_temp2-offset_add2),:,:]
-                            end
-                        elseif offset_temp<0
-                            temp_predicted = pad(temp_predicted,[0,-offset_temp])
-                        end
-                    end
-                    if j==num_parts
-                        ind_split = ind_split+rem(max_value,num_parts)
-                    end
-                    temp_data,correct_size,offset_add = prepare_data(input_data,ind_split,j)
-                    if use_GPU
-                        temp_data = CuArray(temp_data)
-                    end
-                    temp_predicted = model(temp_data)[:,:,:]
-                    temp_predicted = fix_size(temp_predicted,correct_size,ind_max,offset_add,j)
-                    push!(predicted,cpu(temp_predicted))
-                    @everywhere GC.safepoint()
-                end
-                return hcat(predicted...)
-            end
-            predicted = accum_parts(model,input_data,num_parts,use_GPU)
-        end
+        predicted = forward(model,input_data,num_parts=num_parts,
+            offset=offset,use_GPU=use_GPU)
         predicted_bool = predicted.>0.5
         size_dim4 = size(predicted_bool,4)
-        if size_dim4!=1
-            predicted_bool_split = Iterators.partition(predicted_bool,)
-            push!(predicted_array,predicted_bool_split...)
-        else
-            push!(predicted_array,predicted_bool)
+        masks = Vector{BitArray{3}}(undef,size_dim4)
+        for j in 1:size_dim4
+            temp_mask = predicted_bool[:,:,:,j]
+            if apply_border
+                border_mask = apply_border_data_main(temp_mask,model_data)
+                temp_mask::BitArray{3} = cat3(temp_mask,border_mask)
+            end
+            masks[j] = temp_mask
+        end
+        for k = 1:length(masks)
+            mask = masks[k]
+            mask_to_img(mask,labels_color,labels_incl,border)
+            mask_to_data(mask,features,num,num_feat,num_border,output_options,scaling)
         end
         put!(channels.analysis_progress,1)
         @everywhere GC.safepoint()
     end
-    _,_,border = get_feature_data(model_data.features)
-    if any(border)
-        border_array = map(x->apply_border_data_main(x,model_data)[:,:,:,:],predicted_array)
-        predicted_array = cat.(predicted_array,border_array,dims=3)
-    end
-    features = model_data.features
-    num_feat = length(border)
-    num_border = sum(border)
-    scaling = settings.Analysis.Options.scaling
-    mask_imgs = Vector{Vector{Array{RGBA{Float32},2}}}(undef,num)
-    area_histograms = Array{Histogram}(undef,num,num_feat)
-    volume_histograms = Array{Histogram}(undef,num,num_feat)
-    obj_areas = Array{Vector{Float64}}(undef,num,num_feat)
-    obj_volumes = Array{Vector{Float64}}(undef,num,num_feat)
-    for i = 1:num
-        masks = predicted_array[i]
-        mask_imgs[i] = masks_to_imgs(masks,features)
-        for j = 1:num_feat
-            output_options = features[j].Output
-            area_dist_cond = output_options.Area.area_distribution
-            area_obj_cond = output_options.Area.individual_obj_area
-            volume_dist_cond = output_options.Area.area_distribution
-            volume_obj_cond = output_options.Area.individual_obj_area
-            ind = j
-            if border[j]==true
-                ind = j + num_border + num_feat
-            end
-            mask_current = masks[:,:,ind]
-            components = label_components(mask_current,conn(4))
-            if area_dist_cond || area_obj_cond
-                area_options = output_options.Area
-                area_values = objects_area(components,scaling)
-                if area_dist_cond
-                    area_histograms[i,j] = make_histogram(area_values,area_options)
-                end
-                if area_obj_cond
-                    obj_areas[i,j] = area_values
-                end
-            end
-            if volume_dist_cond || volume_obj_cond
-                volume_options = output_options.Volume
-                volume_values = objects_volume(components,mask_current,scaling)
-                if volume_dist_cond
-                    volume_histograms[i,j] = make_histogram(volume_values,volume_options)
-                end
-                if volume_obj_cond
-                    obj_volumes[i,j] = volume_values
-                end
-            end
-        end
-    end
-    file_names = get_file_names(analysis_data.url_imgs)
     return nothing
 end
 
@@ -238,9 +134,11 @@ function make_histogram(values::Vector{<:Real}, options::Union{Output_area,Outpu
     else
         h = normalize(h, mode=:none)
     end
+    return nothing
 end
 
-function masks_to_imgs(data::BitArray{4},features::Vector{Feature})
+function mask_to_img(data::BitArray{4},labels_color::Vector{Vector{Float64}},
+        labels_incl::Vector{Vector{Int64}},border::Vector{Bool})
     labels_color,labels_incl,border = get_feature_data(features)
     num_feat = length(border)
     num_border = sum(border)
@@ -278,15 +176,57 @@ function masks_to_imgs(data::BitArray{4},features::Vector{Feature})
         color = perm_labels_color[j]
         predicted_bool = data[:,:,j].>0.5
         temp = convert(Array{Float32,2},predicted_bool)
-        temp2 = cat(temp,temp,temp,dims=3)
+        temp2 = cat3(temp,temp,temp)
         temp2 = temp.*color
-        temp2 = cat(temp2,temp,dims=3)
+        temp2 = cat3(temp2,temp)
         temp2 = permutedims(temp2,[3,1,2])
         temp3 = colorview(RGBA,temp2)
         temp3 = collect(temp3)
         push!(predicted_color,temp3)
     end
     return predicted_color
+end
+
+function mask_to_data(mask::Array{Float32},features::Vector{Feature},num::Int64,num_feat::Int64,
+        num_border::Int64,output_options::Output_options,scaling::Float64)
+    area_histograms = Array{Histogram}(undef,num,num_feat)
+    volume_histograms = Array{Histogram}(undef,num,num_feat)
+    obj_areas = Array{Vector{Float64}}(undef,num,num_feat)
+    obj_volumes = Array{Vector{Float64}}(undef,num,num_feat)
+    for j = 1:num_feat
+        output_options = features[j].Output
+        area_dist_cond = output_options.Area.area_distribution
+        area_obj_cond = output_options.Area.individual_obj_area
+        volume_dist_cond = output_options.Area.area_distribution
+        volume_obj_cond = output_options.Area.individual_obj_area
+        ind = j
+        if border[j]==true
+            ind = j + num_border + num_feat
+        end
+        mask_current = mask[:,:,ind]
+        components = label_components(mask_current,conn(4))
+        if area_dist_cond || area_obj_cond
+            area_options = output_options.Area
+            area_values = objects_area(components,scaling)
+            if area_dist_cond
+                area_histograms[i,j] = make_histogram(area_values,area_options)
+            end
+            if area_obj_cond
+                obj_areas[i,j] = area_values
+            end
+        end
+        if volume_dist_cond || volume_obj_cond
+            volume_options = output_options.Volume
+            volume_values = objects_volume(components,mask_current,scaling)
+            if volume_dist_cond
+                volume_histograms[i,j] = make_histogram(volume_values,volume_options)
+            end
+            if volume_obj_cond
+                obj_volumes[i,j] = volume_values
+            end
+        end
+    end
+    return nothing
 end
 
 function objects_area(components::Array{Int64,2},scaling::Float64)
@@ -344,6 +284,7 @@ function export_output(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
     if any(inds_bool)
         inds = findall(inds_bool)
     end
+    return nothing
 end
 
 function export_images(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
@@ -354,4 +295,5 @@ function export_images(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
 
         end
     end
+    return nothing
 end
