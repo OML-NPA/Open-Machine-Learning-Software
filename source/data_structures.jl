@@ -182,7 +182,7 @@ hyperparameters_training = Hyperparameters_training()
 @with_kw mutable struct General_training
     weight_accuracy::Bool = true
     test_data_fraction::Float64 = 0
-    testing_frequency::Int64 = 5
+    testing_frequency::Float64 = 5
 end
 general_training = General_training()
 

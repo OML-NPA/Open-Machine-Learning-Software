@@ -3,9 +3,12 @@
 struct Parallel
     layers::Tuple
 end
-function Parallel(x::Union{CuArray{Float32},Array{Float32}},
-        layers::Tuple)
-    result = map(fun -> fun(x), layers)
+function Parallel(x::Array{Float32,4},layers::Tuple)
+    result::Tuple{Array{Float32,4},Array{Float32,4}} = map(fun -> fun(x), layers)
+    return result
+end
+function Parallel(x::CuArray{Float32,4},layers::Tuple)
+    result::Tuple{CuArray{Float32,4},CuArray{Float32,4}} = map(fun -> fun(x), layers)
     return result
 end
 (m::Parallel)(x) = Parallel(x, m.layers)
@@ -20,9 +23,28 @@ struct Decatenation
     outputs::Int64
     dims::Int64
 end
-function Decatenation_func(x::Union{CuArray{Float32},Array{Float32}},
+function Decatenation_func(x::Array{Float32},
         outputs::Int64, dims::Int64)
-    x_out = Array{Union{CuArray{Float32},Array{Float32}}}(undef, outputs)
+    x_out = Array{Array{Float32,4}}(undef, outputs)
+    step_var = Int64(size(x, dims) / outputs)
+    if dims == 1
+        for i = 1:outputs
+            x_out[i] = x[(1+(i-1)*step_var):(i)*step, :, :,:]
+        end
+    elseif dims == 2
+        for i = 1:outputs
+            x_out[i] = x[:, (1+(i-1)*step_var):(i)*step, :,:]
+        end
+    elseif dims == 3
+        for i = 1:outputs
+            x_out[i] = x[:, :, (1+(i-1)*step_var):(i)*step_var,:]
+        end
+    end
+    return x_out
+end
+function Decatenation_func(x::CuArray{Float32,4},
+        outputs::Int64, dims::Int64)
+    x_out = Array{CuArray{Float32,4}}(undef, outputs)
     step_var = Int64(size(x, dims) / outputs)
     if dims == 1
         for i = 1:outputs
@@ -49,7 +71,7 @@ struct Upscaling
     new_size::Tuple{Int64,Int64,Int64}
     dims::Union{Int64,Tuple{Int64,Int64},Tuple{Int64,Int64,Int64}}
 end
-function Upscaling_func(x::Union{CuArray{Float32},Array{Float32}}, multiplier::Float64,
+function Upscaling_func(x::Union{CuArray{Float32,4},Array{Float32,4}}, multiplier::Float64,
         new_size::Tuple{Int64,Int64,Int64},
         dims::Union{Int64,Tuple{Int64,Int64},Tuple{Int64,Int64,Int64}})
     multiplier = Int64(multiplier)
@@ -66,7 +88,7 @@ function Upscaling_func(x::Union{CuArray{Float32},Array{Float32}}, multiplier::F
     end
     return upscale(x,ratio)
 end
-function upscale(x::Array{Float32},ratio::Tuple{Int64,Int64,Int64,Int64})
+function upscale(x::Array{Float32,4},ratio::Tuple{Int64,Int64,Int64,Int64})
     s = size(x)
     h,w,c,n = s
     y = fill(1.0f0, (ratio[1], 1, ratio[2], 1, ratio[3], 1))
@@ -74,7 +96,7 @@ function upscale(x::Array{Float32},ratio::Tuple{Int64,Int64,Int64,Int64})
     new_x = reshape(z, s .* ratio)
     return new_x
 end
-function upscale(x::CuArray{Float32},ratio::Tuple{Int64,Int64,Int64,Int64})
+function upscale(x::CuArray{Float32,4},ratio::Tuple{Int64,Int64,Int64,Int64})
     s = size(x)
     h,w,c,n = s
     y = gpu(fill(1.0f0, (ratio[1], 1, ratio[2], 1, ratio[3], 1)))

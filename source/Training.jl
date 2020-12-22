@@ -138,10 +138,11 @@ function get_optimiser(training::Training)
     return optimiser
 end
 
-function train!(model::Chain,args::Hyperparameters_training,testing_frequency::Int64,
-    loss::Function,channels::Channels,
-    train_set::Tuple{Vector{<:Array{Float32}},Vector{<:Array{Float32}}},
-    test_set::Tuple{Vector{<:Array{Float32}},Vector{<:Array{Float32}}},opt,use_GPU::Bool)
+function train_CPU!(model::Chain,accuracy::Function,loss::Function,
+        args::Hyperparameters_training,testing_frequency::Float64,
+        train_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
+        test_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
+        opt,channels::Channels)
     # Training loop
     epochs = args.epochs
     batch_size = args.batch_size
@@ -195,17 +196,106 @@ function train!(model::Chain,args::Hyperparameters_training,testing_frequency::I
             end
             train_minibatch = train_batches[i]
             # Training part
-            local temp_loss,predicted
-            if use_GPU
-                train_minibatch = CuArray.(train_minibatch)
-            end
+            local temp_loss = 0.0f0
+            local predicted = Array{Float32,4}(undef,0,0,0,0)
             input = train_minibatch[1]
             actual = train_minibatch[2]
             ps = Flux.Params(params(model))
             gs = gradient(ps) do
               predicted = model(input)
               temp_loss = loss(predicted,actual)
-              return temp_loss
+            end
+            Flux.Optimise.update!(opt,ps,gs)
+            accuracy_val::Float32 = accuracy(predicted,actual)
+            loss_val::Float32 = temp_loss
+            data_temp = [accuracy_val,loss_val]
+            put!(channels.training_progress,["Training",data_temp...])
+            push!(accuracy_array,data_temp[1])
+            push!(loss_array,data_temp[2])
+            # Testing part
+            if run_test
+              if ceil(i/testing_frequency)>last_test || iteration==max_iterations
+                  data_test = test(model,loss,channels,test_batches,length(test_batches),use_GPU)
+                  last_test += 1
+                  put!(channels.training_progress,["Testing",data_test...,iteration])
+                  push!(test_accuracy,data_test[1])
+                  push!(test_loss,data_test[2])
+                  push!(test_iteration,iteration)
+              end
+            end
+            @everywhere GC.safepoint()
+        end
+        @everywhere GC.gc()
+    end
+    data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
+    return data
+end
+
+function train_GPU!(model::Chain,accuracy::Function,loss::Function,
+        args::Hyperparameters_training,testing_frequency::Float64,
+        train_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
+        test_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
+        opt,channels::Channels)
+    # Training loop
+    epochs = args.epochs
+    batch_size = args.batch_size
+    accuracy_array = Vector{Float32}(undef,0)
+    loss_array = Vector{Float32}(undef,0)
+    test_accuracy = Vector{Float32}(undef,0)
+    test_loss = Vector{Float32}(undef,0)
+    test_iteration = Vector{Int64}(undef,0)
+    max_iterations = 0
+    iteration = 0
+    epoch_idx = 0
+    while epoch_idx<epochs
+        epoch_idx += 1
+        # Make minibatches
+        num_test = length(test_set[1])
+        run_test = num_test!=0
+        train_batches = make_minibatch(train_set,batch_size)
+        if run_test
+            test_batches = make_minibatch(test_set,batch_size)
+        else
+            test_batches = Vector{Tuple{Array{Float32,4},Array{Float32,4}}}(undef,0)
+        end
+        num = length(train_batches)
+        if epoch_idx==1
+            testing_frequency = num/testing_frequency
+            max_iterations = epochs*num
+            put!(channels.training_progress,[epochs,num,max_iterations])
+        end
+        last_test = 0
+        # Run iteration
+        for i=1:num
+            iteration+=1
+            if isready(channels.training_modifiers)
+                modifs = fix_QML_types(take!(channels.training_modifiers))
+                while isready(channels.training_modifiers)
+                    modifs = fix_QML_types(take!(channels.training_modifiers))
+                end
+                modif1::String = modifs[1]
+                if modif1=="stop"
+                    data = (accuracy_array,loss_array,
+                        test_accuracy,test_loss,test_iteration)
+                    return data
+                elseif modif1=="learning rate"
+                    opt.eta = convert(Float64,modifs[2])
+                elseif modif1=="epochs"
+                    epochs::Int64 = convert(Int64,modifs[2])
+                elseif modif1=="testing frequency"
+                    testing_frequency::Float64 = floor(num/modif2)
+                end
+            end
+            train_minibatch = CuArray.(train_batches[i])
+            # Training part
+            local temp_loss = 0.0f0
+            local predicted = CuArray(Array{Float32,4}(undef,0,0,0,0))
+            input_data = train_minibatch[1]
+            actual = train_minibatch[2]
+            ps = Flux.Params(params(model))
+            gs = gradient(ps) do
+              predicted = model(input_data)
+              temp_loss = loss(predicted,actual)
             end
             Flux.Optimise.update!(opt,ps,gs)
             accuracy_val::Float32 = accuracy(predicted,actual)
@@ -234,15 +324,27 @@ function train!(model::Chain,args::Hyperparameters_training,testing_frequency::I
     return data
 end
 
-function test(model::Chain,loss::Function,channels::Channels,test_batches::Array,
-    num_test::Int64,use_GPU::Bool)
+function test_CPU(model::Chain,loss::Function,channels::Channels,
+    test_batches::Array{Tuple{Array{Float32,4},Array{Float32,4}},1},num_test::Int64)
     test_accuracy = Vector{Float32}(undef,num_test)
     test_loss = Vector{Float32}(undef,num_test)
     for j=1:num_test
         test_minibatch = test_batches[j]
-        if use_GPU
-            test_minibatch = CuArray.(test_minibatch)
-        end
+        predicted = model(test_minibatch[1])
+        actual = test_minibatch[2]
+        test_accuracy[j] = accuracy(predicted,actual)
+        test_loss[j] = loss(predicted,actual)
+    end
+    data = [mean(test_accuracy),mean(test_loss)]
+    return data
+end
+
+function test_GPU(model::Chain,loss::Function,channels::Channels,
+        test_batches::Array{Tuple{Array{Float32,4},Array{Float32,4}},1},num_test::Int64)
+    test_accuracy = Vector{Float32}(undef,num_test)
+    test_loss = Vector{Float32}(undef,num_test)
+    for j=1:num_test
+        test_minibatch = CuArray.(test_batches[j])
         predicted = model(test_minibatch[1])
         actual = test_minibatch[2]
         test_accuracy[j] = cpu(accuracy(predicted,actual))
@@ -320,8 +422,11 @@ function train_main(settings::Settings,training_data::Training_data,
     end
     testing_frequency = training.Options.General.testing_frequency
     if use_GPU
-        data = train!(model,args,testing_frequency,loss,channels,
-            train_set,test_set,opt,use_GPU)
+        data = train_GPU!(model,accuracy,loss,args,testing_frequency,
+            train_set,test_set,opt,channels)
+    else
+        data = train_CPU!(model,accuracy,loss,args,testing_frequency,
+            train_set,test_set,opt,channels)
     end
     if use_GPU
         model = move(model,cpu)

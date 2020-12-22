@@ -39,8 +39,8 @@ function get_validation_set(validation_plot_data::Validation_plot_data,training:
 end
 
 function reset_validation_data(validation_plot_data::Validation_plot_data)
-    validation_plot_data.accuracy = []
-    validation_plot_data.loss = []
+    validation_plot_data.accuracy = Vector{Float32}(undef,0)
+    validation_plot_data.loss = Vector{Float32}(undef,0)
     validation_plot_data.loss_std = NaN
     validation_plot_data.accuracy_std = NaN
     validation_plot_data.data_error =
@@ -51,7 +51,6 @@ function reset_validation_data(validation_plot_data::Validation_plot_data)
         Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
     return nothing
 end
-
 
 function prepare_data(input_data::Union{Array{Float32,4},CuArray{Float32,4}},ind_max::Int64,
         max_value::Int64,offset::Int64,ind_split::Int64,j::Int64)
