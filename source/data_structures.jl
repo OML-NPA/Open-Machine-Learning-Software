@@ -75,11 +75,11 @@ model_data = Model_data()
 @with_kw mutable struct Training_plot_data
     data_input::Vector{Array{Float32,3}} = Vector{Array{Float32,3}}(undef,0)
     data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,0)
-    loss::Array{Float32} = []
-    accuracy::Array{Float32} = []
-    test_accuracy::Array{Float32} = []
-    test_loss::Array{Float32} = []
-    test_iteration::Array{Float32} = []
+    loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    test_accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    test_loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    test_iteration::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
     iteration::Int64 = 0
     epoch::Int64 = 0
     iterations_per_epoch::Int64 = 0
