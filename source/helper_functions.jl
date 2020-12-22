@@ -346,3 +346,7 @@ function segment_objects(components::Array{Int64,2},objects::BitArray{2})
     end
     return new_components
 end
+
+cat3(A::AbstractArray) = cat(A; dims=Val(3))
+cat3(A::AbstractArray, B::AbstractArray) = cat(A, B; dims=Val(3))
+cat3(A::AbstractArray...) = cat(A...; dims=Val(3))
