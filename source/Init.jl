@@ -21,7 +21,7 @@ end
 CUDA.allowscalar(false)
 gc() = @everywhere GC.gc()
 
-if !isfile("config.json")
+if !isfile("config.bson")
     save_settings()
 else
     load_settings()

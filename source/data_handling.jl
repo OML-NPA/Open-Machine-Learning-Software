@@ -83,20 +83,12 @@ end
 set_settings(fields,value,args...) = set_settings_main(settings,fields,value,args...)
 
 function save_settings_main(settings::Settings)
-    open("config.json","w") do f
-      JSON.print(f,settings)
-    end
+    BSON.@save("config.bson",settings)
 end
 save_settings() = save_settings_main(settings)
 
 function load_settings!(settings)
-    local dict
-    if isfile("config.json")
-      open("config.json", "r") do f
-        dict = JSON.parse(f)
-      end
-    end
-    dict_to_struct!(settings,dict)
+    settings = BSON.load("config.bson")[:settings]
 end
 load_settings() = load_settings!(settings)
 
