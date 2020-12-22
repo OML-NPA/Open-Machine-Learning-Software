@@ -90,10 +90,10 @@ end
 training_plot_data = Training_plot_data()
 
 @with_kw mutable struct Validation_plot_data
-    loss::Array{AbstractFloat} = []
-    accuracy::Array{AbstractFloat} = []
-    loss_std::AbstractFloat = 0
-    accuracy_std::AbstractFloat = 0
+    loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    loss_std::Union{Float32,Float64} = 0.0f0
+    accuracy_std::Union{Float32,Float64} = 0.0f0
     data_input_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
         Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
     data_labels_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
@@ -160,11 +160,11 @@ processing_training = Processing_training()
 ["ADAM",5] isa Array{<:Union{String,Int64}}
 
 @with_kw mutable struct Hyperparameters_training
-    optimiser::Array = ["ADAM",5]
-    optimiser_params::Array = [[],[0.9],[0.9],[0.9],
+    optimiser::Array{Union{String,Int64}} = ["ADAM",5]
+    optimiser_params::Array{Array{Float64}} = [[],[0.9],[0.9],[0.9],
       [0.9,0.999],[0.9,0.999],[0.9,0.999],[],[0.9],[0.9,0.999],
       [0.9,0.999],[0.9,0.999,0]]
-    optimiser_params_names::Array = [[],["ρ"],
+    optimiser_params_names::Array{Array{String}} = [[],["ρ"],
       ["ρ"],["ρ"],
       ["β1","β2"],
       ["β1","β2"],
@@ -173,8 +173,8 @@ processing_training = Processing_training()
       ["β1","β2"],
       ["β1","β2","Weight decay"]]
     learning_rate::Float64 = 1e-3
-    epochs::Int = 1
-    batch_size::Int = 10
+    epochs::Int64 = 1
+    batch_size::Int64 = 10
     savepath::String = "./"
 end
 hyperparameters_training = Hyperparameters_training()

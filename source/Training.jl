@@ -1,439 +1,339 @@
 
-function get_urls_training_main(training::Training,training_data::Training_data)
-    url_imgs = training_data.url_imgs
-    url_labels = training_data.url_labels
-    empty!(url_imgs)
-    empty!(url_labels)
-    dir_imgs = training.images
-    dir_labels = training.labels
-    if isempty(dir_imgs) || isempty(dir_labels)
-        @info "empty urls"
-    end
-    type::String = settings.Training.type
-    dirs_imgs = getdirs(dir_imgs)
-    dirs_labels = getdirs(dir_labels)
-    dirs = intersect(dirs_imgs,dirs_labels)
-    if length(dirs)==0
-        dirs = [""]
-    end
-    for k = 1:length(dirs)
-        if type=="segmentation"
-            files_imgs = getfiles(string(dir_imgs,"/",dirs[k]))
-            files_labels = getfiles(string(dir_labels,"/",dirs[k]))
-            filenames_imgs = remove_ext(files_imgs)
-            filenames_labels = remove_ext(files_labels)
-            inds1, inds2 = intersect_inds(filenames_labels, filenames_imgs)
-            files_imgs = files_imgs[inds1]
-            files_labels = files_labels[inds2]
-            for l = 1:length(files_imgs)
-                push!(url_imgs,string(dir_imgs,"/",files_imgs[l]))
-                push!(url_labels,string(dir_labels,"/",files_labels[l]))
-            end
-        else
-            files_imgs = getfiles(string(dir_imgs,"/",dirs[k]))
-            filenames_imgs = remove_ext(files_imgs)
-            for l = 1:length(files_imgs)
-                push!(url_imgs,string(dir_imgs,"/",files_imgs[l]))
-            end
-        end
-    end
+function set_training_starting_time_main(training_plot_data::Training_plot_data)
+    training_plot_data.starting_time = now()
     return nothing
 end
-get_urls_training() =
-    get_urls_training_main(training,training_data)
+set_training_starting_time() =
+    set_training_starting_time_main(training_plot_data)
 
-function get_image(url_img::String)
-    img::Array{RGB{N0f8},2} = load(url_img)
-    return img
-end
-
-function get_label(url_label::String)
-    label::Array{RGB{N0f8},2} = load(url_label)
-    return label
-end
-
-function load_images(source::Union{Training_data,Analysis_data})
-    url_imgs = source.url_imgs
-    num = length(url_imgs)
-    imgs = Vector{Array{RGB{N0f8},2}}(undef,num)
-    for i = 1:num
-        imgs[i] = get_image(url_imgs[i])
+function training_elapsed_time_main(training_plot_data::Training_plot_data)
+    dif = (now() - training_plot_data.starting_time).value
+    hours = string(Int64(round(dif/3600000)))
+    minutes = floor(dif/60000)
+    minutes = string(Int64(minutes - floor(minutes/60)*60))
+    if length(minutes)<2
+        minutes = string("0",minutes)
     end
-    return imgs
+    seconds = round(dif/1000)
+    seconds = string(Int64(seconds - floor(seconds/60)*60))
+    if length(seconds)<2
+        seconds = string("0",seconds)
+    end
+    return string(hours,":",minutes,":",seconds)
+end
+training_elapsed_time() = training_elapsed_time_main(training_plot_data)
+
+function get_train_test(training_plot_data::Training_plot_data,training::Training)
+    data_input = training_plot_data.data_input
+    data_labels = convert(Vector{Array{Float32,3}},training_plot_data.data_labels)
+    num = length(data_input)
+    inds = randperm(num)
+    data_input = data_input[inds]
+    data_labels = data_labels[inds]
+    test_fraction = training.Options.General.test_data_fraction
+    ind = Int64(round((1-test_fraction)*num))
+    train_set = (data_input[1:ind],data_labels[1:ind])
+    test_set = (data_input[ind+1:end],data_labels[ind+1:end])
+    return train_set, test_set
 end
 
-function load_labels(training_data::Training_data)
-    url_labels = training_data.url_labels
-    num = length(url_labels)
-    labels = Vector{Array{RGB{N0f8},2}}(undef,num)
-    for i = 1:num
-        labels[i] = get_label(url_labels[i])
+function make_minibatch(set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
+        batch_size::Int64)
+    finish = Int64(floor(length(set[1])/batch_size)*batch_size)-batch_size
+    range_array = Vector(1:batch_size:finish)
+    inds = shuffle!(range_array)
+    set_size = size(set[1][1])
+    dim = length(set_size)+1
+    data_input = set[1]
+    data_labels = set[2]
+    set_minibatch = Vector{Tuple{Array{Float32,4},
+        Array{Float32,4}}}(undef,length(inds))
+    Threads.@threads for i=1:length(inds)
+        ind = inds[i]
+        current_input = data_input[ind+1:(ind+10)]
+        current_labels = data_labels[ind+1:(ind+10)]
+        minibatch = (cat(current_input...,dims=dim),
+              cat(current_labels...,dims=dim))
+        set_minibatch[i] = minibatch
     end
-    return labels
+    return set_minibatch
 end
 
-function image_to_gray_float(image::Array{RGB{Normed{UInt8,8}},2})
-    return collect(channelview(float.(Gray.(image))))
+function accuracy_regular(predicted::Union{Array,CuArray},actual::Union{Array,CuArray})
+    dif = predicted - actual
+    acc = 1-mean(mean.(map(x->abs.(x),dif)))
+    return acc
 end
 
-function image_to_rgb_float(image::Array{RGB{Normed{UInt8,8}},2})
-    return collect(channelview(float.(image)))
-end
-
-function label_to_float(labelimg::Array{RGB{Normed{UInt8,8}},2},
-        labels_color::Vector{Vector{Float64}},labels_incl::Vector{Vector{Int64}},
-        border::Vector{Bool})
-    colors = map(x->RGB((n0f8.(./(x,255)))...),labels_color)
-    num = length(colors)
-    num_borders = sum(border)
-    inds_borders = findall(border)
-    label = fill!(BitArray{3}(undef, size(labelimg)...,
-        num + num_borders),0)
-    for i=1:num
-        label[:,:,i] = .==(labelimg,colors[i])
-    end
-    for i=1:num
-        for j=1:length(labels_incl[i])
-            label[:,:,i] = .|(label[:,:,i],
-                label[:,:,labels_incl[i][j]])
-        end
-    end
-    for j=1:length(inds_borders)
-        dil = dilate(perim(label[:,:,inds_borders[j]]),5)
-        label[:,:,length(colors)+j] = dil
-    end
-    return label
-end
-
-function get_feature_data(features::Vector{Feature})
-    num = length(features)
-    labels_color = Vector{Vector{Float64}}(undef,num)
-    labels_incl = Vector{Vector{Int64}}(undef,num)
-    border = Vector{Bool}(undef,num)
-    feature_names = Vector{String}(undef,num)
-    feature_parents = Vector{String}(undef,num)
-    for i = 1:num
-        feature_names[i] = features[i].name
-        feature_parents[i] = features[i].parent
-    end
-    for i = 1:num
-        feature = features[i]
-        labels_color[i] = feature.color
-        border[i] = feature.border
-        inds = findall(feature_names[i].==feature_parents)
-        labels_incl[i] = inds
-    end
-    return labels_color,labels_incl,border
-end
-
-# Functions
-function correct_view(img::Array{Float32,2},label::Array{RGB{Normed{UInt8,8}},2})
-    field = dilate(imfilter(img.<0.3, Kernel.gaussian(4)).>0.5,20)
-    areaopen!(field,30000)
-    field = .!(field)
-    field_area = sum(field)
-    field_perim = sum(perim(field))/1.25
-    circularity = (4*pi*field_area)/(field_perim^2)
-    if circularity>0.9
-        row_bool = any(field,1)
-        col_bool = any(field,2)
-        col1 = findfirst(col_bool)[1]
-        col2 = findlast(col_bool)[1]
-        row1 = findfirst(row_bool)[1]
-        row2 = findlast(row_bool)[1]
-        img = img[row1:row2,col1:col2]
-        label = label[row1:row2,col1:col2]
-    end
-    img = rescale(img,(0,1))
-    return img,label
-end
-
-function rotate_img(img::Union{Array{Float32,2},BitArray},angle::Float64)
-    if angle!=0
-        img2 = copy(img)
-        for i = 1:size(img,3)
-            temp = imrotate(img[:,:,i],angle,
-                axes(img[:,:,i]))
-            replace_nan!(temp)
-            if img2 isa BitArray
-                img[:,:,i] = temp.>0
-            end
-        end
-        return(img2)
+function accuracy_weighted(predicted::Union{Array{Float32,4},CuArray{Float32,4}},
+        actual::Union{Array{Float32,4},CuArray{Float32,4}})
+    num_feat = size(actual,3)
+    num_batch = size(actual,4)
+    actual_bool = actual.>0
+    predicted_bool = predicted.>0.5
+    comp_bool = predicted_bool .& actual_bool
+    dif_bool = xor.(predicted_bool,actual_bool)
+    comp_background_bool = (!).(dif_bool .| actual_bool)
+    dif_background_bool = dif_bool-actual_bool
+    array_size = size(actual)[1:2]
+    numel = prod(array_size)
+    pix_sum = sum(actual_bool,dims=(1,2,4))[:]
+    feature_counts = Vector{Int64}(undef,num_feat)
+    if pix_sum isa CuArray
+        feature_counts .= cpu(pix_sum)
     else
-        return(img)
+        feature_counts .= pix_sum
+    end
+    fr = feature_counts./numel./num_batch
+    w = 1 ./fr
+    w2 = 1 ./(1 .- fr)
+    w_sum = w + w2
+    w = w./w_sum
+    w2 = w2./w_sum
+    w_adj = w./feature_counts
+    w2_adj = w2./(numel*num_batch .- feature_counts)
+    features_correct = Vector{Float32}(undef,num_feat)
+    background_correct = Vector{Float32}(undef,num_feat)
+    for i = 1:num_feat
+        sum_comp = sum(comp_bool[:,:,i,:])
+        sum_dif = sum(dif_bool[:,:,i,:])
+        sum_comb = sum_comp*sum_comp/(sum_comp+sum_dif)
+        features_correct[i] = w_adj[i]*sum_comb
+        sum_comp = sum(comp_background_bool[:,:,i,:])
+        sum_dif = sum(dif_background_bool[:,:,i,:])
+        sum_comb = sum_comp*sum_comp/(sum_comp+sum_dif)
+        background_correct[i] = w2_adj[i]*sum_comb
+    end
+    acc = mean(features_correct+background_correct)
+    if acc>1.0
+        acc = 1.0f0
+    end
+    return acc
+end
+
+function get_accuracy_func(training::Training)
+    if training.Options.General.weight_accuracy
+        return accuracy_weighted
+    else
+        return accuracy_regular
     end
 end
 
-function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
-    num_angles::Int64,pix_num::Tuple{Int64,Int64},min_fr_pix::Float64)
+function get_optimiser(training::Training)
+    optimisers = (Descent,Momentum,Nesterov,RMSProp,ADAM,
+        RADAM,AdaMax,ADAGrad,ADADelta,AMSGrad,NADAM,ADAMW)
+    optimiser_ind::Int64 = training.Options.Hyperparameters.optimiser[2]
+    parameters::Vector{Union{Float64,Tuple{Float64,Float64}}} =
+        training.Options.Hyperparameters.optimiser_params[optimiser_ind]
+    learning_rate = training.Options.Hyperparameters.learning_rate
+    if length(parameters)==1
+        parameters = [learning_rate,parameters[1]]
+    elseif length(parameters)==2
+        parameters = [learning_rate,(parameters[1],parameters[2])]
+    elseif length(parameters)==3
+        parameters = [learning_rate,(parameters[1],parameters[2]),parameters[3]]
+    end
+    optimiser_func = optimisers[optimiser_ind]
+    optimiser = optimiser_func(parameters...)
+    return optimiser
+end
 
-    lim = prod(pix_num)*min_fr_pix
-    angles = range(0,stop=2*pi,length=num_angles+1)
-    angles = angles[1:end-1]
-    num = length(angles)
-    imgs_out = Vector{Vector{Array{Float32,3}}}(undef,num)
-    labels_out = Vector{Vector{BitArray{3}}}(undef,num)
-    for g = 1:num
-        img2 = rotate_img(img,angles[g])
-        label2 = rotate_img(label,angles[g])
-        num1 = Int64(floor(size(label2,1)/(pix_num[1]*0.9)))
-        num2 = Int64(floor(size(label2,2)/(pix_num[2]*0.9)))
-        step1 = Int64(floor(size(label2,1)/num1))
-        step2 = Int64(floor(size(label2,2)/num2))
-        num_batch = 2*(num1-1)*(num2-1)
-        img_temp = Vector{Array{Float32}}(undef,0)
-        label_temp = Vector{BitArray{3}}(undef,0)
-        for h = 1:2
-            if h==1
-                img3 = img2
-                label3 = label2
-            elseif h==2
-                img3 = reverse(img2, dims = 2)
-                label3 = reverse(label2, dims = 2)
-            end
-            for i = 1:num1-1
-                for j = 1:num2-1
-                    ymin = (i-1)*step1+1;
-                    xmin = (j-1)*step2+1;
-                    I1 = label3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                    if sum(I1)<lim
-                        continue
-                    end
-                    I2 = img3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                    push!(label_temp,I1)
-                    push!(img_temp,I2)
+function train!(model::Chain,args::Hyperparameters_training,testing_frequency::Int64,
+    loss::Function,channels::Channels,
+    train_set::Tuple{Vector{<:Array{Float32}},Vector{<:Array{Float32}}},
+    test_set::Tuple{Vector{<:Array{Float32}},Vector{<:Array{Float32}}},opt,use_GPU::Bool)
+    # Training loop
+    epochs = args.epochs
+    batch_size = args.batch_size
+    accuracy_array = Vector{Float32}(undef,0)
+    loss_array = Vector{Float32}(undef,0)
+    test_accuracy = Vector{Float32}(undef,0)
+    test_loss = Vector{Float32}(undef,0)
+    test_iteration = Vector{Int64}(undef,0)
+    max_iterations = 0
+    iteration = 0
+    epoch_idx = 0
+    while epoch_idx<epochs
+        epoch_idx += 1
+        # Make minibatches
+        num_test = length(test_set[1])
+        run_test = num_test!=0
+        train_batches = make_minibatch(train_set,batch_size)
+        if run_test
+            test_batches = make_minibatch(test_set,batch_size)
+        else
+            test_batches = Vector{Tuple{Array{Float32,4},Array{Float32,4}}}(undef,0)
+        end
+        num = length(train_batches)
+        if epoch_idx==1
+            testing_frequency = num/testing_frequency
+            max_iterations = epochs*num
+            put!(channels.training_progress,[epochs,num,max_iterations])
+        end
+        last_test = 0
+        # Run iteration
+        for i=1:num
+            iteration+=1
+            if isready(channels.training_modifiers)
+                modifs::Union{Vector{String},Vector{String,Float64},
+                    Vector{String,Int64}} = fix_QML_types(take!(channels.training_modifiers))
+                while isready(channels.training_modifiers)
+                    modifs = fix_QML_types(take!(channels.training_modifiers))
+                end
+                modif1::String = modifs[1]
+                if modif1=="stop"
+                    data = (accuracy_array,loss_array,
+                        test_accuracy,test_loss,test_iteration)
+                    return data
+                elseif modif1=="learning rate"
+                    opt.eta = convert(Float64,modifs[2])
+                elseif modif1=="epochs"
+                    epochs::Int64 = convert(Int64,modifs[2])
+                elseif modif1=="testing frequency"
+                    testing_frequency::Int64 = convert(Int64,floor(num/modif2))
                 end
             end
-        end
-        imgs_out[g] = img_temp
-        labels_out[g] = label_temp
-    end
-    data_out::Tuple{Vector{Array{Float32,3}},Vector{BitArray{3}}} =
-        (vcat(imgs_out...),vcat(labels_out...))
-    return data_out
-end
-
-function prepare_training_data_main(training::Training,training_data::Training_data,
-    model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
-    # Code
-    if isempty(model_data.features)
-        put!(results, "Empty features")
-    end
-    features = model_data.features
-    type = training.type
-    options = training.Options
-    min_fr_pix = options.Processing.min_fr_pix
-    num_angles = options.Processing.num_angles
-    pix_num = model_data.input_size[1:2]
-    labels_color,labels_incl,border = get_feature_data(features)
-    imgs = load_images(training_data)
-    labels = load_labels(training_data)
-    num = length(imgs)
-    data_input = Vector{Vector{Array{Float32,3}}}(undef,num)
-    data_labels = Vector{Vector{BitArray{3}}}(undef,num)
-    put!(progress, num+1)
-    Threads.@threads for k = 1:num
-        if isready(channels.training_data_modifiers)
-            if fetch(channels.training_data_modifiers)[1]=="stop"
-                take!(channels.training_data_modifiers)
-                return nothing
+            train_minibatch = train_batches[i]
+            # Training part
+            local temp_loss,predicted
+            if use_GPU
+                train_minibatch = CuArray.(train_minibatch)
             end
+            input = train_minibatch[1]
+            actual = train_minibatch[2]
+            ps = Flux.Params(params(model))
+            gs = gradient(ps) do
+              predicted = model(input)
+              temp_loss = loss(predicted,actual)
+              return temp_loss
+            end
+            Flux.Optimise.update!(opt,ps,gs)
+            accuracy_val::Float32 = accuracy(predicted,actual)
+            loss_val::Float32 = temp_loss
+            data_temp = [accuracy_val,loss_val]
+            CUDA.unsafe_free!(predicted)
+            put!(channels.training_progress,["Training",data_temp...])
+            push!(accuracy_array,data_temp[1])
+            push!(loss_array,data_temp[2])
+            # Testing part
+            if run_test
+              if ceil(i/testing_frequency)>last_test || iteration==max_iterations
+                  data_test = test(model,loss,channels,test_batches,length(test_batches),use_GPU)
+                  last_test += 1
+                  put!(channels.training_progress,["Testing",data_test...,iteration])
+                  push!(test_accuracy,data_test[1])
+                  push!(test_loss,data_test[2])
+                  push!(test_iteration,iteration)
+              end
+            end
+            @everywhere GC.safepoint()
         end
-        img = imgs[k]
-        img = image_to_gray_float(img)
-        label = labels[k]
-        #img,label = correct_view(img,label)
-        label = label_to_float(label,labels_color,labels_incl,border)
-        data_input[k],data_labels[k] = augment(k,img,label,num_angles,pix_num,min_fr_pix)
-        put!(progress, 1)
+        @everywhere GC.gc()
     end
-    data_out_input::Vector{Array{Float32,3}} = vcat(data_input...)
-    data_out_labels::Vector{BitArray{3}} = vcat(data_labels...)
-    put!(results, (data_out_input,data_out_labels))
-    put!(progress, 1)
-    return
-end
-function prepare_training_data_main2(training::Training,training_data::Training_data,
-    model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
-    @everywhere training,training_data,model_data
-    remote_do(prepare_training_data_main,workers()[end],training,training_data,
-    model_data,progress,results)
-end
-prepare_training_data() = prepare_training_data_main2(training,training_data,
-    model_data,channels.training_data_progress,channels.training_data_results)
-
-function prepare_validation_data_main(training_data::Training_data,
-        features::Array,progress::RemoteChannel,results::RemoteChannel)
-    put!(progress,3)
-    images = load_images(training_data)
-    put!(progress,1)
-    labels = load_labels(training_data)
-    put!(progress,1)
-    if isempty(features)
-        @info "empty features"
-        return false
-    end
-    labels_color,labels_incl,border = get_feature_data(features)
-    data_input = map(x->image_to_gray_float(x),images)
-    data_labels = map(x->label_to_float(x,labels_color,labels_incl,border),labels)
-    data = (images,labels,data_input,data_labels)
-    put!(results,data)
-    put!(progress,1)
-    return nothing
-end
-function  prepare_validation_data_main2(training_data::Training_data,
-        features::Array,progress::RemoteChannel,results::RemoteChannel)
-    @everywhere training_data
-    remote_do(prepare_validation_data_main,workers()[end],training_data,
-    features,progress,results)
-end
-prepare_validation_data() = prepare_validation_data_main2(training_data,
-    model_data.features,channels.validation_data_progress,
-    channels.validation_data_results)
-
-function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
-    labels_color,labels_incl,border = get_feature_data(model_data.features)
-    inds_border = findall(border)
-    if inds_border==nothing
-        return data_in
-    end
-    num_border = length(inds_border)
-    num_feat = length(model_data.features)
-    data = BitArray{3}(undef,size(data_in)[1:2]...,num_border)
-    for i = 1:num_border
-        ind_feat = inds_border[i]
-        ind_border = num_feat + ind_feat
-        data_feat_bool = data_in[:,:,ind_feat]
-        data_feat = convert(Array{Float32},data_feat_bool)
-        data_border = data_in[:,:,ind_border]
-        border_bool = data_border
-        skel = thinning(border_bool)
-        components = label_components((!).(border_bool),conn(4))
-        centroids = component_centroids(components)
-        intensities = component_intensity(components,data_feat)
-        bad_components = findall(intensities.<0.7)
-        for i = 1:length(bad_components)
-            components[components.==bad_components[i]] .= 0
-        end
-        objects = data_feat.!=0
-        objects[skel] .= false
-        segmented = segment_objects(components,objects)
-        borders = mapwindow(x->!allequal(x), segmented, (3,3))
-        segmented[borders] .= 0
-        data[:,:,ind_feat] = segmented.>0
-    end
+    data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
     return data
 end
-apply_border_data(data_in) = apply_border_data_main(data_in,model_data)
 
-function get_labels_colors_main(training_data::Training_data,channels::Channels)
-    url_labels = training_data.url_labels
-    num = length(url_labels)
-    put!(channels.training_labels_colors,num)
-    colors_array = Vector{Vector{Vector{Float32}}}(undef,num)
-    labelimgs = Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,0)
-    for i=1:num
-        push!(labelimgs,RGB.(load(url_labels[i])))
+function test(model::Chain,loss::Function,channels::Channels,test_batches::Array,
+    num_test::Int64,use_GPU::Bool)
+    test_accuracy = Vector{Float32}(undef,num_test)
+    test_loss = Vector{Float32}(undef,num_test)
+    for j=1:num_test
+        test_minibatch = test_batches[j]
+        if use_GPU
+            test_minibatch = CuArray.(test_minibatch)
+        end
+        predicted = model(test_minibatch[1])
+        actual = test_minibatch[2]
+        test_accuracy[j] = cpu(accuracy(predicted,actual))
+        test_loss[j] = cpu(loss(predicted,actual))
     end
-    Threads.@threads for i=1:num
-            labelimg = labelimgs[i]
-            unique_colors = unique(labelimg)
-            ind = findfirst(unique_colors.==RGB.(0,0,0))
-            deleteat!(unique_colors,ind)
-            colors = channelview(float.(unique_colors))*255
-            colors_array[i] = arsplit(colors,2)
-            put!(channels.training_labels_colors,1)
-    end
-    colors_out::Vector{Vector{Float32}} = vcat(colors_array...)
-    unique_colors = unique(colors_out)
-    put!(channels.training_labels_colors,unique_colors)
-    return
+    data = [mean(test_accuracy),mean(test_loss)]
+    return data
 end
-function get_labels_colors_main2(training_data::Training_data,channels::Channels)
-    @everywhere training_data
-    remote_do(get_labels_colors_main,workers()[end],training_data,channels)
-end
-get_labels_colors() = get_labels_colors_main2(training_data,channels)
 
-model_count() = length(model_data.layers)
-model_properties(index) = [keys(model_data.layers[index])...]
-function model_get_property_main(model_data::Model_data,index,property_name)
-    layer = model_data.layers[index]
-    property = layer[property_name]
-    if  isa(property,Tuple)
-        property = join(property,',')
-    end
-    return property
+function reset_training_data(training_plot_data::Training_plot_data)
+    training_plot_data.accuracy = []
+    training_plot_data.loss = []
+    training_plot_data.test_accuracy = []
+    training_plot_data.test_loss = []
+    training_plot_data.iteration = 0
+    training_plot_data.epoch = 0
+    training_plot_data.iterations_per_epoch = 0
+    training_plot_data.starting_time = now()
+    return nothing
 end
-model_get_property(index,property_name) =
-    model_get_property_main(model_data,index,property_name)
 
-function reset_layers_main(model_data::Model_data)
-    empty!(model_data.layers)
-end
-reset_layers() = reset_layers_main(model_data::Model_data)
-
-function update_layers_main(model_data::Model_data,keys,values,ext...)
-    layers = model_data.layers
-    keys = fix_QML_types(keys)
-    values = fix_QML_types(values)
-    ext = fix_QML_types(ext)
-    dict = Dict{String,Any}()
-    sizehint!(dict, length(keys))
-    for i = 1:length(keys)
-        var = values[i]
-        if var isa String
-            var_num = tryparse(Float64, var)
-            if var_num == nothing
-              if occursin(",", var) && !occursin("[", var)
-                 dict[keys[i]] = str2tuple(Int64,var)
-              else
-                 dict[keys[i]] = var
-              end
+function move(model,target::Union{typeof(cpu),typeof(gpu)})
+    model_moved = []
+    if model isa Chain
+        for i = 1:length(model)
+            if model[i] isa Parallel
+                layers = model[i].layers
+                new_layers = Array{Any}(undef,length(layers))
+                for i = 1:length(layers)
+                    new_layers[i] = move(layers[i],target)
+                end
+                new_layers = (new_layers...,)
+                push!(model_moved,target(Parallel(new_layers)))
             else
-              dict[keys[i]] = var_num
+                push!(model_moved,target(model[i]))
             end
-        else
-            dict[keys[i]] = var
+        end
+    else
+        push!(model_moved,target(model))
+    end
+    if length(model_moved)==1
+        model_moved = model_moved[1]
+    else
+        model_moved = target(Chain(model_moved...))
+    end
+    return model_moved
+end
+
+function train_main(settings::Settings,training_data::Training_data,
+        model_data::Model_data,channels::Channels)
+    training = settings.Training
+    training_plot_data = training_data.Training_plot_data
+    model = model_data.model
+    loss = model_data.loss
+    accuracy = get_accuracy_func(training)
+    args = training.Options.Hyperparameters
+    learning_rate = args.learning_rate
+    epochs = args.epochs
+    # Preparing train and test sets
+    train_set, test_set = get_train_test(training_plot_data,training)
+    # Load model onto GPU, if enabled
+    use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
+    if use_GPU
+        model = move(model,gpu)
+    end
+    reset_training_data(training_plot_data)
+    # Use ADAM optimiser
+    opt = get_optimiser(training)
+    if isready(channels.training_modifiers)
+        stop_cond::String = fetch(channels.training_modifiers)[1]
+        if stop_cond=="stop"
+            take!(channels.training_modifiers)
+            return nothing
         end
     end
-    if length(ext)!=0
-        for i = 1:2:length(ext)
-            dict[ext[i]] = ext[i+1]
-        end
+    testing_frequency = training.Options.General.testing_frequency
+    if use_GPU
+        data = train!(model,args,testing_frequency,loss,channels,
+            train_set,test_set,opt,use_GPU)
     end
-    dict = fixtypes(dict)
-    push!(layers, copy(dict))
+    if use_GPU
+        model = move(model,cpu)
+    end
+    model_data.model = model
+    save_model_main(model_data,string("models/",training.name,".model"))
+    put!(channels.training_data_results,(model,data...))
+    return nothing
 end
-update_layers(keys,values,ext...) = update_layers_main(model_data::Model_data,
-    keys,values,ext...)
-
-function reset_features_main(model_data)
-    empty!(model_data.features)
+function train_main2(settings::Settings,training_data::Training_data,
+        model_data::Model_data,channels::Channels)
+    @everywhere settings,training_data,model_data
+    remote_do(train_main,workers()[end],settings,training_data,model_data,channels)
 end
-reset_features() = reset_features_main(model_data::Model_data)
-
-function append_features_main(model_data::Model_data,name,colorR,colorG,colorB,border,parent)
-    push!(model_data.features,Feature(String(name),
-        Int64.([colorR,colorG,colorB]),Bool(border),String(parent)))
-end
-append_features(name,colorR,colorG,colorB,border,parent) =
-    append_features_main(model_data,name,colorR,colorG,colorB,border,parent)
-
-function update_features_main(model_data,index,name,colorR,colorG,colorB,border,parent)
-    model_data.features[index] = Feature(String(name),Int64.([colorR,colorG,colorB]),
-        Bool(border),String(parent))
-end
-update_features(index,name,colorR,colorG,colorB,border,parent) =
-    update_features_main(model_data,index,name,colorR,colorG,colorB,border,parent)
-
-function num_features_main(model_data::Model_data)
-    return length(model_data.features)
-end
-num_features() = num_features_main(model_data::Model_data)
-
-function get_feature_main(model_data::Model_data,index,fieldname)
-    return getfield(model_data.features[index], Symbol(String(fieldname)))
-end
-get_feature_field(index,fieldname) = get_feature_main(model_data,index,fieldname)
+train() = train_main2(settings,training_data,model_data,channels)
