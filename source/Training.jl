@@ -93,18 +93,17 @@ function make_minibatch(set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32
     finish = Int64(val*batch_size)
     range_array = Vector(1:batch_size:finish)
     inds = shuffle!(range_array)
-    set_size = size(set[1][1])
-    dim = length(set_size)+1
     data_input = set[1]
     data_labels = set[2]
     set_minibatch = Vector{Tuple{Array{Float32,4},
         Array{Float32,4}}}(undef,length(inds))
     Threads.@threads for i=1:length(inds)
         ind = inds[i]
-        current_input = data_input[ind+1:(ind+10)]
-        current_labels = data_labels[ind+1:(ind+10)]
-        minibatch = (cat(current_input...,dims=dim),
-              cat(current_labels...,dims=dim))
+        ind1 = ind+1
+        ind2 = ind+batch_size
+        current_input = data_input[ind1:ind2]
+        current_labels = data_labels[ind1:ind2]
+        minibatch = (cat4(current_input...),cat4(current_labels...))
         set_minibatch[i] = minibatch
     end
     return set_minibatch

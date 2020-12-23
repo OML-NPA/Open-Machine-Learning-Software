@@ -340,3 +340,7 @@ end
 cat3(A::AbstractArray) = cat(A; dims=Val(3))
 cat3(A::AbstractArray, B::AbstractArray) = cat(A, B; dims=Val(3))
 cat3(A::AbstractArray...) = cat(A...; dims=Val(3))
+
+cat4(A::AbstractArray) = cat(A; dims=Val(4))
+cat4(A::AbstractArray, B::AbstractArray) = cat(A, B; dims=Val(4))
+cat4(A::AbstractArray...) = cat(A...; dims=Val(4))
