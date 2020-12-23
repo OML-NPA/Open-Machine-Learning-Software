@@ -1,8 +1,20 @@
 
-using QML, JSON, BSON, Printf, Parameters, Dates, FileIO, CxxWrap, StatsBase,
-    Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP,
-    Flux, Flux.Losses, Random, CUDAapi, Statistics, Plots, LinearAlgebra,
-    ImageSegmentation, Combinatorics, Distances, ImageMorphology.FeatureTransform,
-    CSV, DataFrames, StaticArrays
-import Base.string, Base.any, Base.copy!, ImageSegmentation.label_components
+using
+# Interfacing
+QML, CxxWrap, CUDAapi,
+# Data structuring
+Parameters, DataFrames, StaticArrays, Dates
+# Data import/export
+FileIO, JSON, BSON,
+# Image manipulation
+Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP,
+ImageMorphology.FeatureTransform, ImageSegmentation,
+# Machine learning
+Flux, Flux.Losses,
+# Math functions
+Random, StatsBase, Statistics, LinearAlgebra, Combinatorics, Distances,
+# Other
+Plots
+
+import Base.any
 import CUDA, CUDA.CuArray, Flux.outdims
