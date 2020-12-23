@@ -15,19 +15,16 @@ function dict_to_struct!(obj,dict::Dict;skip=[])
     end
 end
 
-function copy_struct!(struct1,struct2,skip_fields::Vector{Symbol})
+function copystruct!(struct1,struct2)
   ks = fieldnames(typeof(struct1))
   for i = 1:length(ks)
-    if ks[i] in skip_fields
-        resetproperty!(struct1,ks[i])
-        continue
-    end
     value = getproperty(struct2,ks[i])
-    if isstructtype(typeof(settings))
-        copy_struct!(getproperty(struct1,ks[i]),
-            getproperty(struct2,ks[i]),skip_fields)
-    else
+    if value isa AbstractArray || value isa Tuple ||
+            value isa Number || value isa AbstractString
         setproperty!(struct1,ks[i],value)
+    else
+        copystruct!(getproperty(struct1,ks[i]),
+            getproperty(struct2,ks[i]))
     end
   end
 end
@@ -71,13 +68,6 @@ function str2tuple(type::Type,str::String)
         ar = parse.(type, split(str, ","))
     end
     return (ar...,)
-end
-
-function copystruct!(struct1,struct2)
-    fields = fieldnames(typeof(struct1))
-    for i = 1:length(fields)
-        setfield!(struct1,fields[i],getfield(struct2,fields[i]))
-    end
 end
 
 function areaopen!(im::BitArray{2},area::Int64)
