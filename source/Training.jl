@@ -88,7 +88,9 @@ end
 
 function make_minibatch(set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         batch_size::Int64)
-    finish = Int64(floor(length(set[1])/batch_size)*batch_size)-batch_size
+    num = length(set[1]) - batch_size
+    val = minimum(floor(num/batch_size))
+    finish = Int64(val*batch_size)
     range_array = Vector(1:batch_size:finish)
     inds = shuffle!(range_array)
     set_size = size(set[1][1])
