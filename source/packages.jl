@@ -3,7 +3,7 @@ using
 # Interfacing
 QML, CxxWrap, CUDAapi,
 # Data structuring
-Parameters, DataFrames, StaticArrays, Dates
+Parameters, DataFrames, StaticArrays, Dates,
 # Data import/export
 FileIO, JSON, BSON,
 # Image manipulation
