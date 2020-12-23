@@ -212,7 +212,7 @@ ApplicationWindow {
                                 onActivated: {
                                     Julia.set_settings(
                                         ["Training","Options","Hyperparameters","optimiser"],
-                                        [currentText,currentIndex+1])
+                                        [currentText,currentIndex+1],"make_tuple")
                                     change_params()
                                 }
                                 Component.onCompleted: {

@@ -197,12 +197,11 @@ Component {
                             }
                             onActivated: {
                                 Julia.set_settings(["Training","problem_type"],
-                                    [currentText,currentIndex])
+                                    [currentText,currentIndex],"make_tuple")
                                 changeLabels()
                             }
                             Component.onCompleted: {
-                                var val = Julia.get_settings(["Training","problem_type"])
-                                currentIndex = val[1]
+                                currentIndex = Julia.get_settings(["Training","problem_type"],2)
                                 changeLabels()
                             }
                         }
@@ -235,12 +234,11 @@ Component {
                             }
                             onActivated: {
                                 Julia.set_settings(["Training","input_type"],
-                                    [currentText,currentIndex])
+                                    [currentText,currentIndex],"make_tuple")
                                 changeLabels()
                             }
                             Component.onCompleted: {
-                                var val = Julia.get_settings(["Training","input_type"])
-                                currentIndex = val[1]
+                                currentIndex = Julia.get_settings(["Training","input_type"],2)
                                 changeLabels()
                             }
                         }

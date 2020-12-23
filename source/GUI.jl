@@ -48,6 +48,7 @@ end
     set_training_starting_time,
     training_elapsed_time,
     # Other
+    make_tuple,
     isfile,
     isdir,
     num_cores,
@@ -56,7 +57,6 @@ end
     yield,
     info,
     time,
-    arrange,
     gc
 )
 load("GUI//Main.qml",

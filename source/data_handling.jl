@@ -60,6 +60,7 @@ get_settings(fields,inds...) = get_settings_main(settings,fields,inds...)
 function set_settings_main(settings::Settings,fields::QML.QListAllocated,args...)
     data = settings
     fields = String.(QML.value.(fields))
+    args = fix_QML_types(args)
     for i = 1:length(fields)-1
         field = Symbol(fields[i])
         data = getproperty(data,field)
@@ -69,18 +70,40 @@ function set_settings_main(settings::Settings,fields::QML.QListAllocated,args...
         values[i] = fix_QML_types(args[i])
     end
     if length(args)==1
-        value = fix_QML_types(args[1])
+        value = args[1]
     elseif length(args)==2
         value = getproperty(data,Symbol(fields[end]))
-        value[args[1]] = args[2]
+        if args[end]=="make_tuple"
+            fun = args[2]
+            value = make_tuple(args[1])
+        else
+            value[args[1]] = args[2]
+        end
     elseif length(args)==3
         value = getproperty(data,Symbol(fields[end]))
-        value[args[1]][args[2]] = args[3]
+        if args[end]=="make_tuple"
+            fun = args[3]
+            value[args[1]] = make_tuple(args[2])
+        else
+            value[args[1]][args[2]] = args[3]
+        end
+    elseif length(args)==4
+        value = getproperty(data,Symbol(fields[end]))
+        if args[end]=="make_tuple"
+            fun = args[4]
+            value[args[1]][args[2]] = make_tuple(args[3])
+        else
+            value[args[1]][args[2]][args[3]] = args[4]
+        end
     end
     setproperty!(data, Symbol(fields[end]), value)
     return
 end
 set_settings(fields,value,args...) = set_settings_main(settings,fields,value,args...)
+
+function make_tuple(array::AbstractArray)
+    return (array...,)
+end
 
 function save_settings_main(settings::Settings)
     BSON.@save("config.bson",settings)
