@@ -176,7 +176,6 @@ ApplicationWindow {
                                             id: modelData
                                             ListElement { text: "CSV" }
                                             ListElement { text: "XLSX" }
-                                            ListElement { text: "XLS" }
                                             ListElement { text: "TXT" }
                                             ListElement { text: "JSON" }
                                             ListElement { text: "BSON" }
