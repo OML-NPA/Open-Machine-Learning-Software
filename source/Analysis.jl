@@ -71,6 +71,11 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     num_parts = 6
     offset = 20
     @everywhere GC.gc()
+    area_histograms = Array{Union{Histogram,Nothing},2}(undef,num,num_feat)
+    volume_histograms = Array{Union{Histogram,Nothing},2}(undef,num,num_feat)
+    obj_areas = Array{Union{Vector{Float64},Nothing}}(undef,num,num_feat)
+    obj_volumes = Array{Union{Vector{Float64},Nothing}}(undef,num,num_feat)
+    cnt = 1
     for i = 1:num
         if isready(channels.analysis_modifiers)
             stop_cond::String = fetch(channels.training_modifiers)[1]
@@ -98,13 +103,23 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
             filename = filenames[j]
             mask = masks[j]
             mask_to_img(mask,labels_color,border,savepath,filename,img_ext,img_sym_ext)
-            mask_to_data(mask,features,num,num_feat,num_border,output_options,scaling)
+            mask_to_data(area_histograms,volume_histograms,obj_areas,obj_volumes,cnt,j,
+                    mask,features,num,num_feat,num_border,output_options,scaling)
+            cnt = cnt + 1
         end
         put!(channels.analysis_progress,1)
         @everywhere GC.safepoint()
     end
+
     return nothing
 end
+function analyse_main2(settings::Settings,training_data::Training_data,
+        model_data::Model_data,channels::Channels)
+    @everywhere settings,training_data,model_data
+    remote_do(validate_main,workers()[end],settings,training_data,model_data,channels)
+end
+analyse() = remote_do(analyse_main,workers()[end],settings,training_data,
+model_data,channels)
 
 function get_filenames(data::Vector{String})
     data = split.(data,"/")
@@ -137,36 +152,6 @@ function batch_filenames(filenames::Vector{String},batch_size::Int64)
         filename_batches[i] = filenames[ind1:ind2]
     end
     return filename_batches
-end
-
-
-function analyse_main2(settings::Settings,training_data::Training_data,
-        model_data::Model_data,channels::Channels)
-    @everywhere settings,training_data,model_data
-    remote_do(validate_main,workers()[end],settings,training_data,model_data,channels)
-end
-analyse() = remote_do(analyse_main,workers()[end],settings,training_data,
-model_data,channels)
-
-function make_histogram(values::Vector{<:Real}, options::Union{Output_area,Output_volume})
-    if options.binning==0
-        h = fit(Histogram, values)
-    elseif options.binning==1
-        h = fit(Histogram, values, nbins=options.value)
-    else
-        num = round(maximum(values)/options.value)
-        h = fit(Histogram, values, nbins=num)
-    end
-    if options.normalisation==0
-        h = normalize(h, mode=:pdf)
-    elseif area_options.normalisation==1
-        h = normalize(h, mode=:density)
-    elseif area_options.normalisation==2
-        h = normalize(h, mode=:probability)
-    else
-        h = normalize(h, mode=:none)
-    end
-    return nothing
 end
 
 function get_save_image_info(mask::BitArray{3},features::Vector{Feature},border::Vector{Bool})
@@ -258,12 +243,12 @@ function get_image_ext(ind)
     return ext[ind+1],ext_symbol[ind+1]
 end
 
-function mask_to_data(mask::Array{Float32},features::Vector{Feature},num::Int64,num_feat::Int64,
+function mask_to_data(area_histograms::Array{Union{Histogram,Nothing},2},
+        volume_histograms::Array{Union{Histogram,Nothing},2},
+        obj_areas::Array{Union{Vector{Float64},Nothing}},
+        obj_volumes::Array{Union{Vector{Float64},Nothing}},i::Int64,j::Int64,
+        mask::BitArray{3},features::Vector{Feature},num::Int64,num_feat::Int64,
         num_border::Int64,output_options::Output_options,scaling::Float64)
-    area_histograms = Array{Histogram}(undef,num,num_feat)
-    volume_histograms = Array{Histogram}(undef,num,num_feat)
-    obj_areas = Array{Vector{Float64}}(undef,num,num_feat)
-    obj_volumes = Array{Vector{Float64}}(undef,num,num_feat)
     for j = 1:num_feat
         output_options = features[j].Output
         area_dist_cond = output_options.Area.area_distribution
@@ -298,6 +283,27 @@ function mask_to_data(mask::Array{Float32},features::Vector{Feature},num::Int64,
         end
     end
     return nothing
+end
+
+function make_histogram(values::Vector{<:Real}, options::Union{Output_area,Output_volume})
+    if options.binning==0
+        h = fit(Histogram, values)
+    elseif options.binning==1
+        h = fit(Histogram, values, nbins=options.value)
+    else
+        num = round(maximum(values)/options.value)
+        h = fit(Histogram, values, nbins=num)
+    end
+    if options.normalisation==0
+        h = normalize(h, mode=:pdf)
+    elseif area_options.normalisation==1
+        h = normalize(h, mode=:density)
+    elseif area_options.normalisation==2
+        h = normalize(h, mode=:probability)
+    else
+        h = normalize(h, mode=:none)
+    end
+    return h
 end
 
 function objects_area(components::Array{Int64,2},scaling::Float64)
