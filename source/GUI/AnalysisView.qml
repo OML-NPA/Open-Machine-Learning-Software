@@ -283,6 +283,7 @@ Component {
         }
 
         function import_model_analysis(url) {
+            Julia.set_settings(["Analysis","model_url"],url)
             Julia.load_model(url)
             analysisfeatureModel.clear()
             load_model_features(analysisfeatureModel)
