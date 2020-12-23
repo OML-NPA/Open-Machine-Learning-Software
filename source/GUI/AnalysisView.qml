@@ -42,9 +42,7 @@ Component {
             folder: Qt.resolvedUrl(".")
             onAccepted: {
                 var url = stripURL(file)
-                Julia.load_model(url)
-                analysisfeatureModel.clear()
-                load_model_features(analysisfeatureModel)
+                import_model_analysis(url)
             }
         }
 
@@ -80,6 +78,12 @@ Component {
                         Layout.preferredHeight: buttonHeight
                         Layout.leftMargin: 0.5*margin
                         backgroundRadius: 0
+                        Component.onCompleted: {
+                            var url = Julia.get_settings(["Analysis","model_url"])
+                            if (Julia.isfile(url)) {
+                                import_model_analysis(url)
+                            }
+                        }
                         onClicked: {
                             modelFileDialog.open()
                             /*if (selectneuralnetworkLoader.sourceComponent === null) {
@@ -203,7 +207,12 @@ Component {
                                     boundsBehavior: Flickable.StopAtBounds
                                     model: ListModel {id: analysisfeatureModel}
                                     Component.onCompleted: {
-                                        load_model_features(analysisfeatureModel)
+                                        var url = Julia.get_settings(["Analysis","model_url"])
+                                        if (url!=="") {
+                                            load_model_features(analysisfeatureModel)
+                                            var url_split = url.split('/')
+                                            nnselectLabel.text = url_split[url_split.length-1]
+                                        }
                                     }
                                     delegate: TreeButton {
                                         id: analysisfeatureButton
@@ -271,6 +280,14 @@ Component {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
             }
+        }
+
+        function import_model_analysis(url) {
+            Julia.load_model(url)
+            analysisfeatureModel.clear()
+            load_model_features(analysisfeatureModel)
+            url = url.split('/')
+            nnselectLabel.text = url[url.length-1]
         }
 
         function updateFolder(path) {

@@ -229,6 +229,7 @@ options_analysis = Options_analysis()
 @with_kw mutable struct Analysis
     Options::Options_analysis = options_analysis
     folder_url::String = ""
+    model_url::String = ""
     checked_folders::Vector{String} = []
 end
 analysis = Analysis()
