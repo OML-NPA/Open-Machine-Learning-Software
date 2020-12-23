@@ -193,7 +193,6 @@ ApplicationWindow {
                                             id: modelImages
                                             ListElement { text: "PNG" }
                                             ListElement { text: "TIFF" }
-                                            ListElement { text: "JSON" }
                                             ListElement { text: "BSON" }
                                         }
                                         Component.onCompleted: {

@@ -5,7 +5,7 @@ QML, CxxWrap, CUDAapi,
 # Data structuring
 Parameters, DataFrames, StaticArrays, Dates,
 # Data import/export
-FileIO, JSON, BSON,
+FileIO, ImageIO, JSON, BSON,
 # Image manipulation
 Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP,
 ImageMorphology.FeatureTransform, ImageSegmentation,

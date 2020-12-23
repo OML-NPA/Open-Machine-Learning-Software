@@ -216,7 +216,7 @@ training = Training()
 
 # Analysis
 @with_kw mutable struct Options_analysis
-    savepath::String = pwd()
+    savepath::String = replace(pwd(), "\\"=>"/")
     data_type::Int64 = 0
     image_type::Int64 = 0
     downsize::Int64 = 0
