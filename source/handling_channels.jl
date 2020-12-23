@@ -1,5 +1,5 @@
 
-function get_progress_main(channels,field)
+function get_progress_main(channels::Channels,field)
     field = fix_QML_types(field)
     if field=="Training data preparation"
         channel_temp = channels.training_data_progress
@@ -18,7 +18,7 @@ function get_progress_main(channels,field)
 end
 get_progress(field) = get_progress_main(channels,field)
 
-function check_progress_main(channels,field)
+function check_progress_main(channels::Channels,field)
     field = fix_QML_types(field)
     if field=="Training data preparation"
         channel_temp = channels.training_data_progress
@@ -37,7 +37,8 @@ function check_progress_main(channels,field)
 end
 check_progress(field) = check_progress_main(channels,field)
 
-function get_results_main(channels,master_data,model_data,field)
+function get_results_main(channels::Channels,master_data::Master_data,
+        model_data::Model_data,field)
     field = fix_QML_types(field)
     if field=="Training data preparation"
         if isready(channels.training_data_results)
