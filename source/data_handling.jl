@@ -226,7 +226,12 @@ save_model(url) = save_model_main(model_data,url)
 function load_model_main(model_data,url)
   data = BSON.load(String(url))
   if haskey(data,:model_data)
-      copystruct!(model_data,data[:model_data])
+      imported_model_data = data[:model_data]
+      ks = fieldnames(Model_data)
+      for i = 1:length(ks)
+        value = getproperty(imported_model_data,ks[i])
+        setproperty!(model_data,ks[i],value)
+      end
       return true
   else
       return false
