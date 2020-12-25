@@ -46,6 +46,7 @@ prepare_analysis_data() = prepare_analysis_data_main2(analysis_data,
 
 function analyse_main(settings::Settings,analysis_data::Analysis_data,
         model_data::Model_data,channels::Channels)
+    # Initialize constants
     analysis = settings.Analysis
     options_analysis = analysis.Options
     model = model_data.model
@@ -58,25 +59,37 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     apply_border = num_border>0
     scaling = options_analysis.scaling
     batch_size = options_analysis.minibatch_size
+    # Get path and names
     filenames_vector = get_filenames(analysis_data.url_imgs)
     filenames_batched = batch_filenames(filenames_vector,batch_size)
     savepath = options_analysis.savepath
+    # Get file extensions
     img_ext,img_sym_ext = get_image_ext(options_analysis.image_type)
-    data_ext,data_sym_ext = get_image_ext(options_analysis.data_type)
-    # Preparing set
+    data_ext,data_sym_ext = get_data_ext(options_analysis.data_type)
+    # Initialize accumulators
+    log_area_dist = map(x->x.Output.Area.area_distribution,features)
+    log_area_obj = map(x->x.Output.Area.individual_obj_area,features)
+    log_volume_dist = map(x->x.Output.Volume.volume_distribution,features)
+    log_volume_obj = map(x->x.Output.Volume.individual_obj_volume,features)
+    num_dist_area = sum(log_area_dist)
+    num_dist_volume = sum(log_volume_dist)
+    num_obj_area = sum(log_area_obj)
+    num_obj_volume = sum(log_volume_obj)
+    histograms_area = Vector{Vector{Histogram}}(undef,num)
+    histograms_volume = Vector{Vector{Histogram}}(undef,num)
+    objs_area = Vector{Vector{Vector{Float64}}}(undef,num)
+    objs_volume = Vector{Vector{Vector{Float64}}}(undef,num)
+    # Prepare set
     set = analysis_data.data_input
-    num = length(set)
-    predicted_array = Vector{BitArray{4}}(undef,0)
-    put!(channels.analysis_progress,[2*num])
+    # Run analysis
+    cnt = 1
     num_parts = 6
     offset = 20
+    num = length(set)
+    put!(channels.analysis_progress,[2*num])
     @everywhere GC.gc()
-    area_histograms = Array{Union{Histogram,Nothing},2}(undef,num,num_feat)
-    volume_histograms = Array{Union{Histogram,Nothing},2}(undef,num,num_feat)
-    obj_areas = Array{Union{Vector{Float64},Nothing}}(undef,num,num_feat)
-    obj_volumes = Array{Union{Vector{Float64},Nothing}}(undef,num,num_feat)
-    cnt = 1
     for i = 1:num
+        # Stop if asked
         if isready(channels.analysis_modifiers)
             stop_cond::String = fetch(channels.training_modifiers)[1]
             if stop_cond=="stop"
@@ -84,13 +97,14 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
                 break
             end
         end
+        # Get neural network output
         input_data = set[i]
         predicted = forward(model,input_data,num_parts=num_parts,
             offset=offset,use_GPU=use_GPU)
         predicted_bool = predicted.>0.5
         size_dim4 = size(predicted_bool,4)
+        # Flatten and use border info if present
         masks = Vector{BitArray{3}}(undef,size_dim4)
-        filenames = filenames_batched[i]
         for j = 1:size_dim4
             temp_mask = predicted_bool[:,:,:,j]
             if apply_border
@@ -99,18 +113,24 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
             end
             masks[j] = temp_mask
         end
+        # Make and export images
+        filenames = filenames_batched[i]
         for j = 1:length(masks)
             filename = filenames[j]
             mask = masks[j]
             mask_to_img(mask,labels_color,border,savepath,filename,img_ext,img_sym_ext)
-            mask_to_data(area_histograms,volume_histograms,obj_areas,obj_volumes,cnt,j,
+            mask_to_data(histograms_area,histograms_volume,objs_area,objs_volume,cnt,j,
                     mask,features,num,num_feat,num_border,output_options,scaling)
             cnt = cnt + 1
         end
         put!(channels.analysis_progress,1)
         @everywhere GC.safepoint()
     end
-
+    # Export data
+    export_histograms(histograms_area,histograms_volume,num,num_dist_area,
+        num_dist_volume,savepath,filenames_vector,data_ext,data_sym_ext)
+    export_objs(objs_area,objs_volume,num,num_dist_area,
+        num_dist_volume,savepath,filenames_vector,data_ext,data_sym_ext)
     return nothing
 end
 function analyse_main2(settings::Settings,training_data::Training_data,
@@ -120,6 +140,119 @@ function analyse_main2(settings::Settings,training_data::Training_data,
 end
 analyse() = remote_do(analyse_main,workers()[end],settings,training_data,
 model_data,channels)
+
+function export_histograms(histograms_area::Vector{Vector{Histogram}},
+        histograms_volume::Vector{Vector{Histogram}},num::Int64,
+        num_dist_area::Int64,num_dist_volume::Int64,savepath::String,
+        filenames_vector::Vector{String},data_ext::String,data_sym_ext::Symbol)
+    num_cols_dist = num_dist_area + num_dist_volume
+    if num_cols_dist==0
+        return nothing
+    end
+    for i = 1:num
+        num_cols_dist = num_dist_area + num_dist_volume
+        num_rows_area = maximum(map(x->length(x.weights),histograms_area[i]))
+        num_rows_volume = maximum(map(x->length(x.weights),histograms_volume[i]))
+        num_rows = num_rows_area+num_rows_volume
+        histogram_area = histograms_area[i]
+        histogram_volume = histograms_volume[i]
+        rows = Vector{Union{Float64,Missing}}(undef,num_rows)
+        fill!(rows,missing)
+        df_dists = DataFrame(repeat(rows,1,2*num_cols_dist), :auto)
+        histograms_to_dataframe(df_dists,histogram_area,num_dist_area,0)
+        offset = 2*num_dist_area
+        histograms_to_dataframe(df_dists,histogram_volume,num_dist_volume,offset)
+        names = map(x->x.name,features)
+        names_area = get_dataframe_names(names,"area",log_area_dist,:dists)
+        names_volume = get_dataframe_names(names,"volume",log_volume_dist,:dists)
+        names_all = vcat(names_area,names_volume)
+        rename!(df_dists, Symbol.(names_all))
+        fname = filenames_vector[i]
+        path = string(savepath,"/",fname,"/")
+        if num_cols_dist>0
+            name = string("Distributions ",fname,data_ext)
+            save(path,name,df_dists,data_sym_ext)
+        end
+    end
+    return nothing
+end
+
+function export_objs(objs_area::Vector{Vector{Vector{Float64}}},
+        objs_volume::Vector{Vector{Vector{Float64}}},num::Int64,
+        num_obj_area::Int64,num_obj_volume::Int64,savepath::String,
+        filenames_vector::Vector{String},data_ext::String,data_sym_ext::Symbol)
+    num_cols_obj = num_obj_area + num_obj_volume
+    if num_cols_obj==0
+        return nothing
+    end
+    for i = 1:num
+        num_rows_area = maximum(map(x->length(x),objs_area[i]))
+        num_rows_volume = maximum(map(x->length(x),objs_volume[i]))
+        num_rows = num_rows_area+num_rows_volume
+        obj_area = objs_area[i]
+        obj_volume = objs_volume[i]
+        rows = Vector{Union{Float64,Missing}}(undef,num_rows)
+        fill!(rows,missing)
+        df_objs = DataFrame(repeat(rows,1,num_cols_obj), :auto)
+        objs_to_dataframe(df_objs,obj_area,num_obj_area,0)
+        offset = num_obj_area
+        objs_to_dataframe(df_objs,obj_volume,num_obj_volume,offset)
+        names = map(x->x.name,features)
+        names_area = get_dataframe_names(names,"area",log_area_obj,:objs)
+        names_volume = get_dataframe_names(names,"volume",log_volume_obj,:objs)
+        names_all = vcat(names_area,names_volume)
+        rename!(df_objs, Symbol.(names_all))
+        fname = filenames_vector[i]
+        path = string(savepath,"/",fname,"/")
+        if num_cols_obj>0
+            name = string("Objects ",fname,data_ext)
+            save(path,name,df_objs,data_sym_ext)
+        end
+    end
+    return nothing
+end
+
+function get_dataframe_names(names::Vector{String},type::String,
+        Bools::Vector{Bool},datatype::Symbol)
+    names_x = String[]
+    inds = findall(Bools)
+    if datatype==:dists
+        for i in inds
+            name_current = names[i]
+            name_edges = string(name_current,"_",type,"_edges")
+            name_weights = string(name_current,"_",type,"_weights")
+            push!(names_x,name_edges,name_weights)
+        end
+    elseif datatype==:objs
+        for i in inds
+            name_current = names[i]
+            name = string(name_current,"_",type)
+            push!(names_x,name)
+        end
+    end
+    return names_x
+end
+
+function histograms_to_dataframe(df::DataFrame,histograms::Vector{Histogram},
+        num::Int64,offset::Int64)
+    for j = 1:2:num
+        weights = histograms[j].weights
+        numel = length(weights)
+        edges = collect(histograms[j].edges[1])
+        edges = map(ind->mean([edges[ind],edges[ind+1]]),1:numel)
+        df[1:numel,j+offset] .= edges
+        df[1:numel,j+offset+1] .= weights
+    end
+end
+
+function objs_to_dataframe(df::DataFrame,objs::Vector{Vector{Float64}},
+        num::Int64,offset::Int64)
+    for j = 1:num
+        objs_current = objs[j]
+        numel = length(objs_current)
+        df[1:numel,j+offset] .= objs_current
+    end
+end
 
 function get_filenames(data::Vector{String})
     data = split.(data,"/")
@@ -154,10 +287,10 @@ function batch_filenames(filenames::Vector{String},batch_size::Int64)
     return filename_batches
 end
 
-function get_save_image_info(mask::BitArray{3},features::Vector{Feature},border::Vector{Bool})
+function get_save_image_info(num_dims::Int64,features::Vector{Feature},border::Vector{Bool})
     num_feat = length(border)
     num_border = sum(border)
-    num_dims = size(mask)[3]
+
     logical_inds = BitArray{1}(undef,num_dims)
     img_names = Vector{String}(undef,0)
     for a = 1:num_feat
@@ -171,12 +304,12 @@ function get_save_image_info(mask::BitArray{3},features::Vector{Feature},border:
             if features[a].Output.Mask.mask
                 ind = a + num_feat
                 logical_inds[ind] = true
-                push!(img_names,string(feature_name,"(border)"))
+                push!(img_names,string(feature_name," (border)"))
             end
             if features[a].Output.Mask.mask
                 ind = num_feat + num_border + a
                 logical_inds[ind] = true
-                push!(img_names,string(feature_name,"(applied border)"))
+                push!(img_names,string(feature_name," (applied border)"))
             end
         end
     end
@@ -186,7 +319,8 @@ end
 
 function mask_to_img(mask::BitArray{3},labels_color::Vector{Vector{Float64}},
         border::Vector{Bool},savepath::String,filename::String,ext::String,sym_ext::Symbol)
-    inds,img_names = get_save_image_info(mask,features,border)
+    num_dims = size(mask)[3]
+    inds,img_names = get_save_image_info(num_dims,features,border)
     if isempty(inds)
         return nothing
     end
@@ -220,35 +354,44 @@ function save(path::String,name::String,data,ext::Symbol)
         mkdir(path)
     end
     url = string(path,name)
+    if isfile(url)
+        rm(url)
+    end
     if ext==:json
         open(url,"w") do f
             JSON.print(f,data)
         end
     elseif ext==:bson
         BSON.@save(url,data)
+    elseif ext==:xlsx
+        XLSX.writetable(url, collect(DataFrames.eachcol(data)), DataFrames.names(data))
     else
         FileIO.save(url,data)
     end
 end
 
-function get_file_ext(ind)
-    ext = [".csv",".xlsx",".xls",".json",".txt",".bson"]
-    ext_symbol = [:csv,:xlsx,:xls,:json,:txt,:bson]
-    return ext[ind+1],ext_symbol[ind+1]
-end
-
 function get_image_ext(ind)
-    ext = [".png",".tiff",".json",".bson"]
-    ext_symbol = [:png,:tiff,:json,:bson]
+    ext = [".png",".tiff",".bson"]
+    ext_symbol = [:png,:tiff,:bson]
     return ext[ind+1],ext_symbol[ind+1]
 end
 
-function mask_to_data(area_histograms::Array{Union{Histogram,Nothing},2},
-        volume_histograms::Array{Union{Histogram,Nothing},2},
-        obj_areas::Array{Union{Vector{Float64},Nothing}},
-        obj_volumes::Array{Union{Vector{Float64},Nothing}},i::Int64,j::Int64,
+function get_data_ext(ind)
+    ext = [".csv",".xlsx",".json",".bson"]
+    ext_symbol = [:csv,:xlsx,:json,:bson]
+    return ext[ind+1],ext_symbol[ind+1]
+end
+
+function mask_to_data(histograms_area::Vector{Vector{Histogram}},
+        histograms_volume::Vector{Vector{Histogram}},
+        objs_area::Vector{Vector{Vector{Float64}}},
+        objs_volume::Array{Vector{Vector{Float64}}},i::Int64,j::Int64,
         mask::BitArray{3},features::Vector{Feature},num::Int64,num_feat::Int64,
         num_border::Int64,output_options::Output_options,scaling::Float64)
+    temp_histograms_area = Histogram[]
+    temp_histograms_volume = Histogram[]
+    temp_objs_area = Vector{Float64}[]
+    temp_objs_volume = Vector{Float64}[]
     for j = 1:num_feat
         output_options = features[j].Output
         area_dist_cond = output_options.Area.area_distribution
@@ -265,23 +408,27 @@ function mask_to_data(area_histograms::Array{Union{Histogram,Nothing},2},
             area_options = output_options.Area
             area_values = objects_area(components,scaling)
             if area_dist_cond
-                area_histograms[i,j] = make_histogram(area_values,area_options)
+                push!(temp_histograms_area,make_histogram(area_values,area_options))
             end
             if area_obj_cond
-                obj_areas[i,j] = area_values
+                push!(temp_objs_area,area_values)
             end
         end
         if volume_dist_cond || volume_obj_cond
             volume_options = output_options.Volume
             volume_values = objects_volume(components,mask_current,scaling)
             if volume_dist_cond
-                volume_histograms[i,j] = make_histogram(volume_values,volume_options)
+                push!(temp_histograms_volume,make_histogram(volume_values,volume_options))
             end
             if volume_obj_cond
-                obj_volumes[i,j] = volume_values
+                push!(temp_objs_volume,volume_values)
             end
         end
     end
+    histograms_area[i] = temp_histograms_area
+    histograms_volume[i] = temp_histograms_volume
+    objs_area[i] = temp_objs_area
+    objs_volume[i] = temp_objs_volume
     return nothing
 end
 
@@ -350,14 +497,14 @@ function objects_volume(components::Array{Int64},objects_mask::BitArray{2},scali
 end
 
 function export_output(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
-        area_histograms::Array{Histogram},volume_histograms::Array{Histogram},
-        obj_areas::Array{Vector{Float64},2},obj_volumes::Array{Vector{Float64},2},
+        histograms_area::Array{Histogram},histograms_volume::Array{Histogram},
+        objs_area::Array{Vector{Float64},2},objs_volume::Array{Vector{Float64},2},
         filenames::Vector{String},options::Options_analysis)
     inds_bool = map(x->isassigned(mask_imgs, x),1:length(mask_imgs))
     if any(inds_bool)
         inds = findall(inds_bool)
     end
-    inds_bool = map(x->isassigned(area_histograms, x),1:length(area_histograms))
+    inds_bool = map(x->isassigned(histograms_area, x),1:length(histograms_area))
     if any(inds_bool)
         inds = findall(inds_bool)
     end
