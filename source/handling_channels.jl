@@ -5,10 +5,14 @@ function get_progress_main(channels::Channels,field)
         channel_temp = channels.training_data_progress
     elseif field=="Validation data preparation"
         channel_temp = channels.validation_data_progress
+    elseif field=="Analysis data preparation"
+        channel_temp = channels.analysis_data_progress
     elseif field=="Training"
         channel_temp = channels.training_progress
     elseif field=="Validation"
         channel_temp = channels.validation_progress
+    elseif field=="Analysis"
+        channel_temp = channels.analysis_progress
     end
     if isready(channel_temp)
         return take!(channel_temp)
@@ -120,6 +124,8 @@ function empty_progress_channel_main(channels::Channels,field)
         channel_temp = channels.training_data_progress
     elseif field=="Validation data preparation"
         channel_temp = channels.validation_data_progress
+    elseif field=="Analysis data preparation"
+        channel_temp = channels.analysis_data_progress
     elseif field=="Training data preparation modifiers"
         channel_temp = channels.training_data_modifiers
     elseif field=="Validation data preparation modifiers"
@@ -128,10 +134,14 @@ function empty_progress_channel_main(channels::Channels,field)
         channel_temp = channels.training_progress
     elseif field=="Validation"
         channel_temp = channels.validation_progress
+    elseif field=="Analysis"
+        channel_temp = channels.analysis_progress
     elseif field=="Training modifiers"
         channel_temp = channels.training_modifiers
     elseif field=="Validation modifiers"
         channel_temp = channels.validation_modifiers
+    elseif field=="Analysis modifiers"
+        channel_temp = channels.analysis_modifiers
     elseif field=="Labels colors"
         channel_temp = channels.training_labels_colors
     end
@@ -151,6 +161,8 @@ function empty_results_channel_main(channels::Channels,field)
         channel_temp = channels.training_data_results
     elseif field=="Validation data preparation"
         channel_temp = channels.validation_data_results
+    elseif field=="Analysis data preparation"
+        channel_temp = channels.analysis_data_results
     elseif field=="Training"
         channel_temp = channels.training_results
     elseif field=="Validation"

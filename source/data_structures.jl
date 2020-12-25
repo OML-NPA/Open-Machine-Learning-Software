@@ -17,9 +17,10 @@
     analysis_data_results::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     analysis_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     analysis_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
-    analysis_results::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
 end
 channels = Channels()
+
+#---
 
 @with_kw mutable struct Output_mask
     mask::Bool = false
@@ -72,6 +73,7 @@ end
 model_data = Model_data()
 
 #---
+
 @with_kw mutable struct Training_plot_data
     data_input::Vector{Array{Float32,3}} = Vector{Array{Float32,3}}(undef,0)
     data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,0)

@@ -29,6 +29,7 @@ end
     get_labels_colors,
     prepare_training_data,
     prepare_validation_data,
+    prepare_analysis_data,
     # Data handling
     reset,
     get_data,
@@ -42,9 +43,10 @@ end
     empty_results_channel,
     empty_progress_channel,
     put_channel,
-    # Training
+    # Actions
     train,
     validate,
+    analyse,
     set_training_starting_time,
     training_elapsed_time,
     # Other

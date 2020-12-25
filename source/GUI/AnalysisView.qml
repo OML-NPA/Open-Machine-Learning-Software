@@ -268,17 +268,141 @@ Component {
                 onClicked: {
                     if (analysisoptionsLoader.sourceComponent === null) {
                        analysisoptionsLoader.source = "AnalysisOptions.qml"
-
                     }
                 }
             }
             Button {
+                id: analysisButton
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 Layout.row: 2
                 Layout.column: 1
-                text: "Start analysis"
+                text: "Analyse"
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
+                onClicked: {
+                    if (analysisButton.text==="Analyse") {
+                        analysisButton.text = "Stop data preparation"
+                        Julia.get_urls_analysis()
+                        var num_urls = Julia.get_data(["Analysis_data","url_imgs"]).length
+                        if (num_urls===0) {
+                            return
+                        }
+                        Julia.empty_progress_channel("Analysis data preparation")
+                        Julia.empty_results_channel("Analysis data preparation")
+                        Julia.empty_progress_channel("Analysis")
+                        Julia.empty_progress_channel("Analysis modifiers")
+                        analysisTimer.running = true
+                        analysisprogressLabel.visible = true
+                        Julia.gc()
+                        Julia.prepare_analysis_data()
+                    }
+                    else {
+                        analysisButton.text = "Analyse"
+                        analysisTimer.running = false
+                        analysisTimer.value = 0
+                        analysisTimer.max_value = 0
+                        analysisTimer.done = false
+                        analysisProgressbar.value = 0
+                        analysisprogressLabel.visible = false
+                        Julia.put_channel("Analysis data preparation",["stop"])
+                        Julia.put_channel("Analysis",["stop"])
+                    }
+                }
+                Timer {
+                    id: analysisTimer
+                    interval: 1000; running: false; repeat: true
+                    property double value: 0
+                    property double max_value: 0
+                    property bool done: false
+                    onTriggered: {
+                        analysisTimerFunction(analysisButton,analysisTimer,
+                            "Analyse","Stop analysis")
+                    }
+                }
+            }
+            ColumnLayout {
+                id: progressbarLayout
+                spacing: 0.1*margin
+                Layout.alignment: Qt.AlignHCenter
+                ProgressBar {
+                    id: analysisProgressbar
+                    Layout.alignment: Qt.AlignHCenter
+                    width: buttonWidth
+                }
+                Label {
+                    id: analysisprogressLabel
+                    Layout.alignment: Qt.AlignHCenter
+                    visible: false
+                    text: "0%"
+                }
+            }
+        }
+
+        function analysisTimerFunction(button,timer,start,stop) {
+            if (timer.done) {
+                if (timer.max_value!==0) {
+                    var value = Julia.get_progress("Analysis")
+                    if (timer.value===timer.max_value) {
+                        timer.running = false
+                        timer.done = false
+                        timer.value = 0
+                        timer.max_value = 0
+                        button.text = start
+                    }
+                    else {
+                        if (value!==false) {
+                            timer.value += value
+                            var progressvalue = timer.value/timer.max_value
+                            analysisProgressbar.value = progressvalue
+                            analysisprogressLabel.text = Math.round(100*progressvalue)+"%"
+                        }
+                    }
+                }
+                else {
+                    value = Julia.get_progress("Analysis")
+                    if (value===false) { return }
+                    timer.max_value = value
+                }
+            }
+            else {
+                if (timer.max_value!==0) {
+                    value = Julia.get_progress("Analysis data preparation")
+                    if (timer.value===timer.max_value) {
+                        timer.done = true
+                        Julia.get_results("Analysis data preparation")
+                        Julia.analyse()
+                        timer.value = 0
+                        timer.max_value = 0
+                        button.text = stop
+                        progressvalue = 0
+                        analysisProgressbar.value = progressvalue
+                        analysisprogressLabel.text = Math.round(100*progressvalue)+"%"
+                    }
+                    else {
+                        if (value!==false) {
+                            timer.value += value
+                            progressvalue = timer.value/timer.max_value
+                            analysisProgressbar.value = progressvalue
+                            analysisprogressLabel.text = Math.round(100*progressvalue)+"%"
+                        }
+                    }
+                }
+                else {
+                    value = Julia.get_progress("Analysis data preparation")
+                    if (value===false) { return }
+                    if (value!==0) {
+                        timer.max_value = value
+                    }
+                    else {
+                        timer.running = false
+                        timer.value = 0
+                        timer.max_value = 0
+                        timer.done = false
+                        button.text = start
+                        analysisprogressLabel.visible = false
+                        analysisprogressLabel.text = "0%"
+                    }
+                }
             }
         }
 
