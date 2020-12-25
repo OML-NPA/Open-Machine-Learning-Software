@@ -143,7 +143,6 @@ Component {
                 }
             }
         }
-
         Column {
             id: mainColumn
             spacing: 0.7*margin
@@ -554,6 +553,9 @@ Component {
                             else {
                                 starttrainingButton.text = "Train"
                                 trainingTimer.running = false
+                                trainingTimer.value = 0
+                                trainingTimer.max_value = 0
+                                trainingTimer.done = false
                                 progressbar.value = 0
                                 Julia.put_channel("Training data preparation",["stop"])
                                 Julia.put_channel("Training",["stop"])
@@ -609,7 +611,6 @@ Component {
                         Timer {
                             id: validationTimer
                             interval: 1000; running: false; repeat: true
-                            property double step: 0
                             property double value: 0
                             property double max_value: 0
                             property bool done: false
@@ -633,7 +634,6 @@ Component {
         }
         function dataProcessingTimerFunction(button,timer,start,stop,
             action,action_done,load_window) {
-            var temp = Julia.check_progress(action)
             if (timer.max_value!==0 && !timer.done) {
                 var value = Julia.get_progress(action)
                 if (timer.value===timer.max_value) {
@@ -655,7 +655,6 @@ Component {
             }
             if (timer.done && Julia.check_progress(action_done)!==false) {
                 timer.running = false
-                timer.step = 0
                 timer.value = 0
                 timer.max_value = 0
                 timer.done = false
@@ -670,6 +669,9 @@ Component {
                 }
                 else {
                     timer.running = false
+                    timer.value = 0
+                    timer.max_value = 0
+                    timer.done = false
                     button.text = start
                 }
             }
