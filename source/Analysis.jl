@@ -44,6 +44,39 @@ prepare_analysis_data() = prepare_analysis_data_main2(analysis_data,
     model_data.features,channels.analysis_data_progress,
     channels.analysis_data_results)
 
+function get_filenames(data::Vector{String})
+    data = split.(data,"/")
+    data = map(x->x[end],data)
+    data = split.(data,".")
+    data = map(x->string(x[1:end-1]...),data)
+    return data
+end
+
+function batch_filenames(filenames::Vector{String},batch_size::Int64)
+    len = length(filenames)
+    num = len - batch_size
+    val = max(0.0,floor(num/batch_size))
+    finish = Int64(val*batch_size)
+    inds = Vector(0:batch_size:finish)
+    if isempty(inds)
+        inds = [0]
+    end
+    num = length(inds)
+    filename_batches = Vector{Vector{String}}(undef,num)
+    for i = 1:num
+        ind = inds[i]
+        if i==num
+            ind1 = ind+1
+            ind2 = len
+        else
+            ind1 = ind+1
+            ind2 = ind+batch_size
+        end
+        filename_batches[i] = filenames[ind1:ind2]
+    end
+    return filename_batches
+end
+
 function analyse_main(settings::Settings,analysis_data::Analysis_data,
         model_data::Model_data,channels::Channels)
     # Initialize constants
@@ -85,7 +118,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
 
     # Run analysis
     cnt = 1
-    num_parts = 6
+    num_parts = 10
     offset = 20
     put!(channels.analysis_progress,2*num+1)
     @everywhere GC.gc()
@@ -145,6 +178,72 @@ function analyse_main2(settings::Settings,training_data::Training_data,
 end
 analyse() = analyse_main2(settings,training_data,
 model_data,channels)
+
+#---Histogram and objects related functions
+function objects_count(components::Array{Int64,2})
+    return maximum(components)
+end
+
+function objects_area(components::Array{Int64,2},scaling::Float64)
+    area = component_lengths(components)[2:end]
+    area = convert(Vector{Float64},area).*scaling
+    return area
+end
+
+function objects_volume(components::Array{Int64},objects_mask::BitArray{2},scaling::Float64)
+    volume_model = func2D_to_3D(objects_mask)
+    num = maximum(components)
+    volumes = Vector{Float64}(undef,num)
+    scaling = scaling^3
+    for i = 1:num
+        logical_inds = components.==i
+        pixels = volume_model[logical_inds]
+        volumes[i] = 2*sum(pixels)/scaling
+    end
+    return volumes
+end
+
+function get_dataframe_names(names::Vector{String},type::String,
+        Bools::Vector{Bool},datatype::Symbol)
+    names_x = String[]
+    inds = findall(Bools)
+    if datatype==:dists
+        for i in inds
+            name_current = names[i]
+            name_edges = string(name_current,"_",type,"_edges")
+            name_weights = string(name_current,"_",type,"_weights")
+            push!(names_x,name_edges,name_weights)
+        end
+    elseif datatype==:objs
+        for i in inds
+            name_current = names[i]
+            name = string(name_current,"_",type)
+            push!(names_x,name)
+        end
+    end
+    return names_x
+end
+
+function histograms_to_dataframe(df::DataFrame,histograms::Vector{Histogram},
+        num::Int64,offset::Int64)
+    for j = 1:2:num
+        weights = histograms[j].weights
+        numel = length(weights)
+        edges = collect(histograms[j].edges[1])
+        edges = map(ind->mean([edges[ind],edges[ind+1]]),1:numel)
+        df[1:numel,j+offset] .= edges
+        df[1:numel,j+offset+1] .= weights
+    end
+end
+
+function objs_to_dataframe(df::DataFrame,objs::Vector{Vector{Float64}},
+        num::Int64,offset::Int64)
+    for j = 1:num
+        objs_current = objs[j]
+        numel = length(objs_current)
+        df[1:numel,j+offset] .= objs_current
+    end
+end
 
 function export_histograms(histograms_area::Vector{Vector{Histogram}},
         histograms_volume::Vector{Vector{Histogram}},features::Vector{Feature},num::Int64,
@@ -219,177 +318,6 @@ function export_objs(objs_area::Vector{Vector{Vector{Float64}}},
     return nothing
 end
 
-function get_dataframe_names(names::Vector{String},type::String,
-        Bools::Vector{Bool},datatype::Symbol)
-    names_x = String[]
-    inds = findall(Bools)
-    if datatype==:dists
-        for i in inds
-            name_current = names[i]
-            name_edges = string(name_current,"_",type,"_edges")
-            name_weights = string(name_current,"_",type,"_weights")
-            push!(names_x,name_edges,name_weights)
-        end
-    elseif datatype==:objs
-        for i in inds
-            name_current = names[i]
-            name = string(name_current,"_",type)
-            push!(names_x,name)
-        end
-    end
-    return names_x
-end
-
-function histograms_to_dataframe(df::DataFrame,histograms::Vector{Histogram},
-        num::Int64,offset::Int64)
-    for j = 1:2:num
-        weights = histograms[j].weights
-        numel = length(weights)
-        edges = collect(histograms[j].edges[1])
-        edges = map(ind->mean([edges[ind],edges[ind+1]]),1:numel)
-        df[1:numel,j+offset] .= edges
-        df[1:numel,j+offset+1] .= weights
-    end
-end
-
-function objs_to_dataframe(df::DataFrame,objs::Vector{Vector{Float64}},
-        num::Int64,offset::Int64)
-    for j = 1:num
-        objs_current = objs[j]
-        numel = length(objs_current)
-        df[1:numel,j+offset] .= objs_current
-    end
-end
-
-function get_filenames(data::Vector{String})
-    data = split.(data,"/")
-    data = map(x->x[end],data)
-    data = split.(data,".")
-    data = map(x->string(x[1:end-1]...),data)
-    return data
-end
-
-function batch_filenames(filenames::Vector{String},batch_size::Int64)
-    len = length(filenames)
-    num = len - batch_size
-    val = max(0.0,floor(num/batch_size))
-    finish = Int64(val*batch_size)
-    inds = Vector(0:batch_size:finish)
-    if isempty(inds)
-        inds = [0]
-    end
-    num = length(inds)
-    filename_batches = Vector{Vector{String}}(undef,num)
-    for i = 1:num
-        ind = inds[i]
-        if i==num
-            ind1 = ind+1
-            ind2 = len
-        else
-            ind1 = ind+1
-            ind2 = ind+batch_size
-        end
-        filename_batches[i] = filenames[ind1:ind2]
-    end
-    return filename_batches
-end
-
-function get_save_image_info(num_dims::Int64,features::Vector{Feature},border::Vector{Bool})
-    num_feat = length(border)
-    num_border = sum(border)
-
-    logical_inds = BitArray{1}(undef,num_dims)
-    img_names = Vector{String}(undef,0)
-    for a = 1:num_feat
-        feature = features[a]
-        feature_name = feature.name
-        if feature.Output.Mask.mask
-            logical_inds[a] = true
-            push!(img_names,feature_name)
-        end
-        if feature.border
-            if features[a].Output.Mask.mask
-                ind = a + num_feat
-                logical_inds[ind] = true
-                push!(img_names,string(feature_name," (border)"))
-            end
-            if features[a].Output.Mask.mask
-                ind = num_feat + num_border + a
-                logical_inds[ind] = true
-                push!(img_names,string(feature_name," (applied border)"))
-            end
-        end
-    end
-    inds = findall(logical_inds)
-    return inds,img_names
-end
-
-function mask_to_img(mask::BitArray{3},features::Vector{Feature},
-        labels_color::Vector{Vector{Float64}},border::Vector{Bool},
-        savepath::String,filename::String,ext::String,sym_ext::Symbol)
-    num_dims = size(mask)[3]
-    inds,img_names = get_save_image_info(num_dims,features,border)
-    if isempty(inds)
-        return nothing
-    end
-    border_colors = labels_color[findall(border)]
-    labels_color = vcat(labels_color,border_colors,border_colors)
-    perm_labels_color64 = map(x -> permutedims(x[:,:,:]/255,[3,2,1]),labels_color)
-
-    num2 = length(labels_color)
-    perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color64)
-    predicted_color = Vector{Array{RGBA{Float32},2}}(undef,0)
-    for j = 1:length(inds)
-        ind = inds[j]
-        mask_current = mask[:,:,ind]
-        color = perm_labels_color[ind]
-        mask_float = convert(Array{Float32,2},mask_current)
-        mask_dim3 = cat3(mask_float,mask_float,mask_float)
-        mask_dim3 = mask_dim3.*color
-        mask_dim3 = cat3(mask_dim3,mask_float)
-        mask_dim3 = permutedims(mask_dim3,[3,1,2])
-        mask_RGB = colorview(RGBA,mask_dim3)
-        img_name = img_names[j]
-        path = string(savepath,"/",filename,"/")
-        name = string(img_name," ",filename,ext)
-        save(path,name,mask_RGB,sym_ext)
-    end
-    return nothing
-end
-
-function save(path::String,name::String,data,ext::Symbol)
-    if !isdir(path)
-        mkdir(path)
-    end
-    url = string(path,name)
-    if isfile(url)
-        rm(url)
-    end
-    if ext==:json
-        open(url,"w") do f
-            JSON.print(f,data)
-        end
-    elseif ext==:bson
-        BSON.@save(url,data)
-    elseif ext==:xlsx
-        XLSX.writetable(url, collect(DataFrames.eachcol(data)), DataFrames.names(data))
-    else
-        FileIO.save(url,data)
-    end
-end
-
-function get_image_ext(ind)
-    ext = [".png",".tiff",".bson"]
-    ext_symbol = [:png,:tiff,:bson]
-    return ext[ind+1],ext_symbol[ind+1]
-end
-
-function get_data_ext(ind)
-    ext = [".csv",".xlsx",".json",".bson"]
-    ext_symbol = [:csv,:xlsx,:json,:bson]
-    return ext[ind+1],ext_symbol[ind+1]
-end
-
 function mask_to_data(histograms_area::Vector{Vector{Histogram}},
         histograms_volume::Vector{Vector{Histogram}},
         objs_area::Vector{Vector{Vector{Float64}}},
@@ -461,14 +389,67 @@ function make_histogram(values::Vector{<:Real}, options::Union{Output_area,Outpu
     return h
 end
 
-function objects_area(components::Array{Int64,2},scaling::Float64)
-    area = component_lengths(components)[2:end]
-    area = convert(Vector{Float64},area).*scaling
-    return area
+#---Image related functions
+function get_save_image_info(num_dims::Int64,features::Vector{Feature},border::Vector{Bool})
+    num_feat = length(border)
+    num_border = sum(border)
+
+    logical_inds = BitArray{1}(undef,num_dims)
+    img_names = Vector{String}(undef,num_feat+num_border*2)
+    for a = 1:num_feat
+        feature = features[a]
+        feature_name = feature.name
+        if feature.Output.Mask.mask
+            logical_inds[a] = true
+            img_names[a] = feature_name
+        end
+        if feature.border
+            if features[a].Output.Mask.mask
+                ind = a + num_feat
+                logical_inds[ind] = true
+                img_names[ind] = string(feature_name," (border)")
+            end
+            if features[a].Output.Mask.mask
+                ind = num_feat + num_border + a
+                logical_inds[ind] = true
+                img_names[ind] = string(feature_name," (applied border)")
+            end
+        end
+    end
+    inds = findall(logical_inds)
+    return inds,img_names
 end
 
-function objects_count(components::Array{Int64,2})
-    return maximum(components)
+function mask_to_img(mask::BitArray{3},features::Vector{Feature},
+        labels_color::Vector{Vector{Float64}},border::Vector{Bool},
+        savepath::String,filename::String,ext::String,sym_ext::Symbol)
+    num_dims = size(mask)[3]
+    inds,img_names = get_save_image_info(num_dims,features,border)
+    if isempty(inds)
+        return nothing
+    end
+    border_colors = labels_color[findall(border)]
+    labels_color = vcat(labels_color,border_colors,border_colors)
+    perm_labels_color64 = map(x -> permutedims(x[:,:,:]/255,[3,2,1]),labels_color)
+    num2 = length(labels_color)
+    perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color64)
+    predicted_color = Vector{Array{RGBA{Float32},2}}(undef,0)
+    for j = 1:length(inds)
+        ind = inds[j]
+        mask_current = mask[:,:,ind]
+        color = perm_labels_color[ind]
+        mask_float = convert(Array{Float32,2},mask_current)
+        mask_dim3 = cat3(mask_float,mask_float,mask_float)
+        mask_dim3 = mask_dim3.*color
+        mask_dim3 = cat3(mask_dim3,mask_float)
+        mask_dim3 = permutedims(mask_dim3,[3,1,2])
+        mask_RGB = colorview(RGBA,mask_dim3)
+        img_name = img_names[j]
+        path = string(savepath,"/",filename,"/")
+        name = string(img_name," ",filename,ext)
+        save(path,name,mask_RGB,sym_ext)
+    end
+    return nothing
 end
 
 function func2D_to_3D(objects_mask::BitArray{2})
@@ -491,19 +472,6 @@ function func2D_to_3D(objects_mask::BitArray{2})
     return mask_out
 end
 
-function objects_volume(components::Array{Int64},objects_mask::BitArray{2},scaling::Float64)
-    volume_model = func2D_to_3D(objects_mask)
-    num = maximum(components)
-    volumes = Vector{Float64}(undef,num)
-    scaling = scaling^3
-    for i = 1:num
-        logical_inds = components.==i
-        pixels = volume_model[logical_inds]
-        volumes[i] = 2*sum(pixels)/scaling
-    end
-    return volumes
-end
-
 function export_output(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
         histograms_area::Array{Histogram},histograms_volume::Array{Histogram},
         objs_area::Array{Vector{Float64},2},objs_volume::Array{Vector{Float64},2},
@@ -517,4 +485,38 @@ function export_output(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
         inds = findall(inds_bool)
     end
     return nothing
+end
+
+#---Saving
+function get_data_ext(ind)
+    ext = [".csv",".xlsx",".json",".bson"]
+    ext_symbol = [:csv,:xlsx,:json,:bson]
+    return ext[ind+1],ext_symbol[ind+1]
+end
+
+function get_image_ext(ind)
+    ext = [".png",".tiff",".bson"]
+    ext_symbol = [:png,:tiff,:bson]
+    return ext[ind+1],ext_symbol[ind+1]
+end
+
+function save(path::String,name::String,data,ext::Symbol)
+    if !isdir(path)
+        mkdir(path)
+    end
+    url = string(path,name)
+    if isfile(url)
+        rm(url)
+    end
+    if ext==:json
+        open(url,"w") do f
+            JSON.print(f,data)
+        end
+    elseif ext==:bson
+        BSON.@save(url,data)
+    elseif ext==:xlsx
+        XLSX.writetable(url, collect(DataFrames.eachcol(data)), DataFrames.names(data))
+    else
+        FileIO.save(url,data)
+    end
 end
