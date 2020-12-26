@@ -1,4 +1,5 @@
 
+#---Struct related functions
 function dict_to_struct!(obj,dict::Dict;skip=[])
     ks = [keys(dict)...]
     for i = 1:length(ks)
@@ -29,47 +30,7 @@ function copystruct!(struct1,struct2)
   end
 end
 
-function fixtypes(dict::Dict)
-    for key in [
-        "filters",
-        "dilationfactor",
-        "stride",
-        "inputs",
-        "outputs",
-        "dimension"]
-        if haskey(dict, key)
-            dict[key] = Int64(dict[key])
-        end
-    end
-    if haskey(dict, "size")
-        if length(dict["size"])==2
-            dict["size"] = (dict["size"]...,1)
-        end
-    end
-    for key in ["filtersize", "poolsize"]
-        if haskey(dict, key)
-            if length(dict[key])==1 && !(dict[key] isa Array)
-                dict[key] = Int64(dict[key])
-                dict[key] = (dict[key], dict[key])
-            else
-                dict[key] = (dict[key]...,)
-            end
-        end
-    end
-    return dict
-end
-
-function str2tuple(type::Type,str::String)
-    if occursin("[",str)
-        str2 = split(str,"")
-        str2 = join(str2[2:end-1])
-        ar = parse.(Int64, split(str2, ","))
-    else
-        ar = parse.(type, split(str, ","))
-    end
-    return (ar...,)
-end
-
+#---Image processing related functions
 function areaopen!(im::BitArray{2},area::Int64)
     im_segm = label_components(im)
     num = maximum(im_segm)
@@ -131,22 +92,6 @@ function dilate(array::BitArray{2},num::Int64)
     return(array2)
 end
 
-function arsplit(ar,dim::Int64)
-    type = typeof(ar[1])
-    dim2 = dim==1 ? 2 : 1
-    ar_out = []
-    if dim==1
-        for i=1:size(ar,dim)
-            push!(ar_out,ar[i,:])
-        end
-    else
-        for i=1:size(ar,dim)
-            push!(ar_out,ar[:,i])
-        end
-    end
-    return ar_out
-end
-
 function perim(array::BitArray{2})
     array2 = copy(array)
     array2[1:end,1] .= 0
@@ -157,24 +102,6 @@ function perim(array::BitArray{2})
     return xor.(array2,er)
 end
 
-function any(array::BitArray,dim::Int64)
-    vec = BitArray(undef, size(array,dim), 1)
-    if dim==1
-        for i=1:length(vec)
-            vec[i] = any(array[i,:])
-        end
-    elseif dim==2
-        for i=1:length(vec)
-            vec[i] = any(array[:,i])
-        end
-    elseif dim==3
-        for i=1:length(vec)
-            vec[i] = any(array[:,:,i])
-        end
-    end
-    return vec
-end
-
 function rescale(array,r::Tuple)
     r = convert(Float32,r)
     min_val = minimum(array)
@@ -182,64 +109,45 @@ function rescale(array,r::Tuple)
     array = array.*((r[2]-r[1])/(max_val-min_val)).-min_val.+r[1]
 end
 
-anynan(x) = any(isnan.(x))
+function segment_objects(components::Array{Int64,2},objects::BitArray{2})
+    img_size = size(components)[1:2]
+    initial_indices = findall(components.!=0)
+    operations = [(0,1),(1,0),(0,-1),(-1,0),(1,-1),(-1,1),(-1,-1),(1,1)]
+    new_components = copy(components)
+    indices_out = initial_indices
 
-function replace_nan!(x)
-    type = typeof(x[1])
-    for i = eachindex(x)
-        if isnan(x[i])
-            x[i] = zero(type)
+    while length(indices_out)!=0
+        indices_in = indices_out
+        indices_accum = Vector{Vector{CartesianIndex{2}}}(undef,0)
+        for i = 1:4
+            target = repeat([operations[i]],length(indices_in))
+            new_indices = broadcast((x,y) -> x .+ y,
+                Tuple.(indices_in),target)
+            objects_values = objects[indices_in]
+            target = repeat([(0,0)],length(new_indices))
+            nonzero_bool = broadcast((x,y) -> all(x .> y),
+                new_indices,target)
+            target = repeat([img_size],length(new_indices))
+            correct_size_bool = broadcast((x,y) -> all(x.<img_size),
+                new_indices,target)
+            remove_incorrect = nonzero_bool .&
+                correct_size_bool .& objects_values
+            new_indices = new_indices[remove_incorrect]
+            values = new_components[CartesianIndex.(new_indices)]
+            new_indices_0_bool = values.==0
+            new_indices_0 = map(x-> CartesianIndex(x),
+                new_indices[new_indices_0_bool])
+            indices_prev = indices_in[remove_incorrect][new_indices_0_bool]
+            prev_values = new_components[CartesianIndex.(indices_prev)]
+            new_components[new_indices_0] .= prev_values
+            push!(indices_accum,new_indices_0)
         end
+        indices_out = reduce(vcat,indices_accum)
     end
+    return new_components
 end
 
-function getdirs(dir)
-    return filter(x -> isdir(joinpath(dir, x)),readdir(dir))
-end
-
-function getfiles(dir)
-    return filter(x -> !isdir(joinpath(dir, x)),
-        readdir(dir))
-end
-
-function remove_ext(files)
-    filenames = copy(files)
-    for i=1:length(files)
-        chars = collect(files[i])
-        ind = findfirst(chars.=='.')
-        filenames[i] = String(chars[1:ind-1])
-    end
-    return filenames
-end
-
-function intersect_inds(ar1,ar2)
-    inds1 = Array{Int64,1}(undef, 0)
-    inds2 = Array{Int64,1}(undef, 0)
-    for i=1:length(ar1)
-        inds_log = ar2.==ar1[i]
-        if any(inds_log)
-            push!(inds1,i)
-            push!(inds2,findfirst(inds_log))
-        end
-    end
-    return (inds1, inds2)
-end
-
-function num_cores()
-    return Threads.nthreads()
-end
-
-function source_dir()
-    return replace(pwd(), "\\" => "/")
-end
-
-function time()
-      date = string(now())
-      date = date[1:19]
-      date = replace(date,"T"=>" ")
-      return date
-end
-
+#---Padding
 same(el_type::Type,row::Int64,col::Int64,vect::Array) = ones(el_type,row,col).*vect
 same(el_type::Type,row::Int64,col::Int64,vect::CUDA.CuArray) =
     CUDA.ones(el_type,row,col).*vect
@@ -287,7 +195,132 @@ function conn(num::Int64)
                   true true true
                   true true true]
     end
+    return kernel
+end
 
+
+#---Other boolean things
+function allequal(itr::Union{Array,Tuple})
+    return length(itr)==0 || all( ==(itr[1]), itr)
+end
+
+function allcmp(inds)
+    for i = 1:length(inds)
+        if inds[1][1] != inds[i][1]
+            return false
+        end
+    end
+    return true
+end
+
+function any(array::BitArray,dim::Int64)
+    vec = BitArray(undef, size(array,dim), 1)
+    if dim==1
+        for i=1:length(vec)
+            vec[i] = any(array[i,:])
+        end
+    elseif dim==2
+        for i=1:length(vec)
+            vec[i] = any(array[:,i])
+        end
+    elseif dim==3
+        for i=1:length(vec)
+            vec[i] = any(array[:,:,i])
+        end
+    end
+    return vec
+end
+
+anynan(x) = any(isnan.(x))
+
+#---Other
+function arsplit(ar::AbstractArray,dim::Int64)
+    type = typeof(ar[1])
+    dim2 = dim==1 ? 2 : 1
+    ar_out = Vector{Vector{typeof(ar[1])}}(undef,size(ar,dim))
+    if dim==1
+        for i=1:size(ar,dim)
+            push!(ar_out,ar[i,:])
+        end
+    else
+        for i=1:size(ar,dim)
+            push!(ar_out,ar[:,i])
+        end
+    end
+    return ar_out
+end
+
+# Text of form "[n,n,...,n]", where n is a number to a tuple (n,n...,n)
+function str2tuple(type::Type,str::String)
+    if occursin("[",str)
+        str2 = split(str,"")
+        str2 = join(str2[2:end-1])
+        ar = parse.(Int64, split(str2, ","))
+    else
+        ar = parse.(type, split(str, ","))
+    end
+    return (ar...,)
+end
+
+# Tuple from array
+function make_tuple(array::AbstractArray)
+    return (array...,)
+end
+
+function replace_nan!(x)
+    type = typeof(x[1])
+    for i = eachindex(x)
+        if isnan(x[i])
+            x[i] = zero(type)
+        end
+    end
+end
+
+function getdirs(dir)
+    return filter(x -> isdir(joinpath(dir, x)),readdir(dir))
+end
+
+function getfiles(dir)
+    return filter(x -> !isdir(joinpath(dir, x)),
+        readdir(dir))
+end
+
+function remove_ext(files::Vector{String})
+    filenames = copy(files)
+    for i=1:length(files)
+        chars = collect(files[i])
+        ind = findfirst(chars.=='.')
+        filenames[i] = String(chars[1:ind-1])
+    end
+    return filenames
+end
+
+function intersect_inds(ar1,ar2)
+    inds1 = Array{Int64,1}(undef, 0)
+    inds2 = Array{Int64,1}(undef, 0)
+    for i=1:length(ar1)
+        inds_log = ar2.==ar1[i]
+        if any(inds_log)
+            push!(inds1,i)
+            push!(inds2,findfirst(inds_log))
+        end
+    end
+    return (inds1, inds2)
+end
+
+function num_cores()
+    return Threads.nthreads()
+end
+
+function source_dir()
+    return replace(pwd(), "\\" => "/")
+end
+
+function time()
+      date = string(now())
+      date = date[1:19]
+      date = replace(date,"T"=>" ")
+      return date
 end
 
 function get_random_color(seed)
@@ -295,46 +328,9 @@ function get_random_color(seed)
     rand(RGB{N0f8})
 end
 
-function allequal(itr::Union{Array,Tuple})
-    return length(itr)==0 || all( ==(itr[1]), itr)
-end
-
-function segment_objects(components::Array{Int64,2},objects::BitArray{2})
-    img_size = size(components)[1:2]
-    initial_indices = findall(components.!=0)
-    operations = [(0,1),(1,0),(0,-1),(-1,0),(1,-1),(-1,1),(-1,-1),(1,1)]
-    new_components = copy(components)
-    indices_out = initial_indices
-
-    while length(indices_out)!=0
-        indices_in = indices_out
-        indices_accum = Vector{Vector{CartesianIndex{2}}}(undef,0)
-        for i = 1:4
-            target = repeat([operations[i]],length(indices_in))
-            new_indices = broadcast((x,y) -> x .+ y,
-                Tuple.(indices_in),target)
-            objects_values = objects[indices_in]
-            target = repeat([(0,0)],length(new_indices))
-            nonzero_bool = broadcast((x,y) -> all(x .> y),
-                new_indices,target)
-            target = repeat([img_size],length(new_indices))
-            correct_size_bool = broadcast((x,y) -> all(x.<img_size),
-                new_indices,target)
-            remove_incorrect = nonzero_bool .&
-                correct_size_bool .& objects_values
-            new_indices = new_indices[remove_incorrect]
-            values = new_components[CartesianIndex.(new_indices)]
-            new_indices_0_bool = values.==0
-            new_indices_0 = map(x-> CartesianIndex(x),
-                new_indices[new_indices_0_bool])
-            indices_prev = indices_in[remove_incorrect][new_indices_0_bool]
-            prev_values = new_components[CartesianIndex.(indices_prev)]
-            new_components[new_indices_0] .= prev_values
-            push!(indices_accum,new_indices_0)
-        end
-        indices_out::Array{CartesianIndex{2},1} = vcat(indices_accum...)
-    end
-    return new_components
+# Allows to use @info from GUI
+function info(fields)
+    @info get_data(fields)
 end
 
 cat3(A::AbstractArray) = cat(A; dims=Val(3))
@@ -344,3 +340,5 @@ cat3(A::AbstractArray...) = cat(A...; dims=Val(3))
 cat4(A::AbstractArray) = cat(A; dims=Val(4))
 cat4(A::AbstractArray, B::AbstractArray) = cat(A, B; dims=Val(4))
 cat4(A::AbstractArray...) = cat(A...; dims=Val(4))
+
+gc() = GC.gc()

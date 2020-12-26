@@ -31,6 +31,8 @@ end
     prepare_validation_data,
     prepare_analysis_data,
     # Data handling
+    isfile,
+    isdir,
     reset,
     get_data,
     get_settings,
@@ -43,16 +45,15 @@ end
     empty_results_channel,
     empty_progress_channel,
     put_channel,
-    # Actions
+    # Main actions
     train,
     validate,
     analyse,
+    # Training related
     set_training_starting_time,
     training_elapsed_time,
     # Other
     make_tuple,
-    isfile,
-    isdir,
     num_cores,
     has_cuda,
     source_dir,

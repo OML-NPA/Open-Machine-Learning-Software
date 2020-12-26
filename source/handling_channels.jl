@@ -1,6 +1,27 @@
 
+# Return values from progress channels without taking the values
+function check_progress_main(channels::Channels,field)
+    field::String = fix_QML_types(field)
+    if field=="Training data preparation"
+        channel_temp = channels.training_data_progress
+    elseif field=="Validation data preparation"
+        channel_temp = channels.validation_data_progress
+    elseif field=="Training"
+        channel_temp = channels.training_progress
+    elseif field=="Validation"
+        channel_temp = channels.validation_progress
+    end
+    if isready(channel_temp)
+        return fetch(channel_temp)
+    else
+        return false
+    end
+end
+check_progress(field) = check_progress_main(channels,field)
+
+# Return values from progress channels by taking the values
 function get_progress_main(channels::Channels,field)
-    field = fix_QML_types(field)
+    field::String = fix_QML_types(field)
     if field=="Training data preparation"
         channel_temp = channels.training_data_progress
     elseif field=="Validation data preparation"
@@ -22,28 +43,10 @@ function get_progress_main(channels::Channels,field)
 end
 get_progress(field) = get_progress_main(channels,field)
 
-function check_progress_main(channels::Channels,field)
-    field = fix_QML_types(field)
-    if field=="Training data preparation"
-        channel_temp = channels.training_data_progress
-    elseif field=="Validation data preparation"
-        channel_temp = channels.validation_data_progress
-    elseif field=="Training"
-        channel_temp = channels.training_progress
-    elseif field=="Validation"
-        channel_temp = channels.validation_progress
-    end
-    if isready(channel_temp)
-        return fetch(channel_temp)
-    else
-        return false
-    end
-end
-check_progress(field) = check_progress_main(channels,field)
-
+# Return values from results channels by taking the values
 function get_results_main(channels::Channels,master_data::Master_data,
         model_data::Model_data,field)
-    field = fix_QML_types(field)
+    field::String = fix_QML_types(field)
     if field=="Training data preparation"
         if isready(channels.training_data_results)
             data = take!(channels.training_data_results)
@@ -118,8 +121,10 @@ function get_results_main(channels::Channels,master_data::Master_data,
 end
 get_results(field) = get_results_main(channels,master_data,model_data,field)
 
+#---
+# Empties progress channels
 function empty_progress_channel_main(channels::Channels,field)
-    field = fix_QML_types(field)
+    field::String = fix_QML_types(field)
     if field=="Training data preparation"
         channel_temp = channels.training_data_progress
     elseif field=="Validation data preparation"
@@ -155,8 +160,9 @@ function empty_progress_channel_main(channels::Channels,field)
 end
 empty_progress_channel(field) = empty_progress_channel_main(channels,field)
 
+# Empties results channels
 function empty_results_channel_main(channels::Channels,field)
-    field = fix_QML_types(field)
+    field::String = fix_QML_types(field)
     if field=="Training data preparation"
         channel_temp = channels.training_data_results
     elseif field=="Validation data preparation"
@@ -178,8 +184,10 @@ function empty_results_channel_main(channels::Channels,field)
 end
 empty_results_channel(field) = empty_results_channel_main(channels,field)
 
+#---
+# Puts data into modifiers channels
 function put_channel_main(channels::Channels,field,value)
-    field = fix_QML_types(field)
+    field::String = fix_QML_types(field)
     value = fix_QML_types(value)
     if field=="Training data preparation"
         put!(channels.training_data_modifiers,value)

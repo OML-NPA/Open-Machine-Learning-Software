@@ -11,7 +11,7 @@ function prepare_validation_data_main(training_data::Training_data,
     end
     labels_color,labels_incl,border = get_feature_data(features)
     data_input = map(x->image_to_gray_float(x),images)
-    data_labels = map(x->label_to_float(x,labels_color,labels_incl,border),labels)
+    data_labels = map(x->label_to_bool(x,labels_color,labels_incl,border),labels)
     data = (images,labels,data_input,data_labels)
     put!(results,data)
     put!(progress,1)
@@ -114,7 +114,7 @@ function accum_parts(model::Chain,input_data::Array{Float32,4},
             fix_size(temp_predicted,num_parts,correct_size,ind_max,offset_add,j)
         push!(predicted,temp_predicted)
     end
-    predicted_out::Array{Float32,4} = vcat(predicted...)
+    predicted_out = reduce(vcat,predicted)
     return predicted_out
 end
 

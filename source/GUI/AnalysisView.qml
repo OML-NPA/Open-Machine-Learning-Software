@@ -280,6 +280,8 @@ Component {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
+                    analysisProgressbar.value = 0
+                    analysisprogressLabel.text = "0%"
                     if (analysisButton.text==="Analyse") {
                         analysisButton.text = "Stop data preparation"
                         Julia.get_urls_analysis()

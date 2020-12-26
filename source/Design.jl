@@ -1,5 +1,5 @@
 
-# Layers
+#---Layers
 struct Parallel
     layers::Tuple
 end
@@ -116,7 +116,7 @@ struct Identity
 end
 (m::Identity)(x) = x
 
-# Model constructor
+#---Layer constructors
 function getlinear(type::String, d, in_size::Tuple{Int64,Int64,Int64})
     if type == "Convolution"
         layer = Conv(
@@ -250,108 +250,7 @@ function getlayer(layer, in_size)
     return (layer_f, out)
 end
 
-function get_loss(name::String)
-    if name == "MAE"
-        return Losses.mae
-    elseif name == "MSE"
-        return Losses.mse
-    elseif name == "MSLE"
-        return Losses.msle
-    elseif name == "Huber"
-        return Losses.huber_loss
-    elseif name == "Crossentropy"
-        return Losses.crossentropy
-    elseif name == "Logit crossentropy"
-        return Losses.logitcrossentropy
-    elseif name == "Binary crossentropy"
-        return Losses.binarycrossentropy
-    elseif name == "Logit binary crossentropy"
-        return Losses.logitbinarycrossentropy
-    elseif name == "Kullback-Leiber divergence"
-        return Losses.kldivergence
-    elseif name == "Poisson"
-        return Losses.poisson_loss
-    elseif name == "Hinge"
-        return Losses.hinge_loss
-    elseif name == "Squared hinge"
-        return squared_hinge_loss
-    elseif name == "Dice coefficient"
-        return Losses.dice_coeff_loss
-    elseif name == "Tversky"
-        return Losses.tversky_loss
-    end
-end
-
-function getbranch(layer_params,in_size)
-    num = layer_params isa Dict ? 1 : length(layer_params)
-    if num==1
-        layer, in_size = getlayer(layer_params, in_size)
-    else
-        par_layers = []
-        par_size = []
-        for i = 1:num
-            if in_size isa Array
-                temp_size = in_size[i]
-            else
-                temp_size = in_size
-            end
-            if isempty(layer_params[i])
-                temp_layers = [Identity()]
-            else
-                temp_layers = []
-                for j = 1:length(layer_params[i])
-                    layer,temp_size = getbranch(layer_params[i][j],temp_size)
-                    push!(temp_layers,layer)
-                end
-            end
-            if length(temp_layers)>1
-                push!(par_layers,Chain(temp_layers...))
-            else
-                push!(par_layers,temp_layers[1])
-            end
-            push!(par_size,temp_size)
-        end
-        layer = Parallel((par_layers...,))
-        if allcmp(par_size)
-            in_size = par_size
-        else
-            return @info "incorrect size"
-        end
-    end
-    return layer,in_size
-end
-
-function make_model_main(model_data::Model_data)
-    layers_arranged,inds = get_topology()
-    if layers_arranged isa String
-        return @info "not supported"
-    end
-    in_size = (layers_arranged[1]["size"]...,)
-    model_data.input_size = in_size
-    popfirst!(layers_arranged)
-    loss_name = layers_arranged[end]["loss"][1]
-    model_data.loss = get_loss(loss_name)
-    pop!(layers_arranged)
-    model_layers = []
-    for i = 1:length(layers_arranged)
-        layer_params = layers_arranged[i]
-        layer,in_size = getbranch(layer_params,in_size)
-        push!(model_layers,layer)
-    end
-    model_data.model = Chain(model_layers...)
-    return nothing
-end
-make_model() = make_model_main(model_data)
-
-function allcmp(inds)
-    for i = 1:length(inds)
-        if inds[1][1] != inds[i][1]
-            return false
-        end
-    end
-    return true
-end
-
+#---Topology constructors
 function topology_linear(layers_arranged::Vector,inds_arranged::Vector,
         layers::Vector{Dict{String,Any}},connections::Vector{Array{Vector{Int64}}},
         types::Vector{String},ind)
@@ -381,7 +280,7 @@ function topology_split(layers_arranged::Vector,inds_arranged::Vector,
             inds_temp = [0]
         end
         if (type=="Catenation" || type=="Addition") && inds_temp[1]==nothing
-            #par_inds[i] = []
+            # Happens if one of input nodes is empty
         else
             par_layers_arranged[i] = layers_temp
             par_inds[i] = inds_temp
@@ -478,6 +377,69 @@ function get_topology_main(model_data::Model_data)
 end
 get_topology() = get_topology_main(model_data)
 
+#---Model constructors
+function getbranch(layer_params,in_size)
+    num = layer_params isa Dict ? 1 : length(layer_params)
+    if num==1
+        layer, in_size = getlayer(layer_params, in_size)
+    else
+        par_layers = []
+        par_size = []
+        for i = 1:num
+            if in_size isa Array
+                temp_size = in_size[i]
+            else
+                temp_size = in_size
+            end
+            if isempty(layer_params[i])
+                temp_layers = [Identity()]
+            else
+                temp_layers = []
+                for j = 1:length(layer_params[i])
+                    layer,temp_size = getbranch(layer_params[i][j],temp_size)
+                    push!(temp_layers,layer)
+                end
+            end
+            if length(temp_layers)>1
+                push!(par_layers,Chain(temp_layers...))
+            else
+                push!(par_layers,temp_layers[1])
+            end
+            push!(par_size,temp_size)
+        end
+        layer = Parallel((par_layers...,))
+        if allcmp(par_size)
+            in_size = par_size
+        else
+            return @info "incorrect size"
+        end
+    end
+    return layer,in_size
+end
+
+function make_model_main(model_data::Model_data)
+    layers_arranged,inds = get_topology()
+    if layers_arranged isa String
+        return @info "not supported"
+    end
+    in_size = (layers_arranged[1]["size"]...,)
+    model_data.input_size = in_size
+    popfirst!(layers_arranged)
+    loss_name = layers_arranged[end]["loss"][1]
+    model_data.loss = get_loss(loss_name)
+    pop!(layers_arranged)
+    model_layers = []
+    for i = 1:length(layers_arranged)
+        layer_params = layers_arranged[i]
+        layer,in_size = getbranch(layer_params,in_size)
+        push!(model_layers,layer)
+    end
+    model_data.model = Chain(model_layers...)
+    return nothing
+end
+make_model() = make_model_main(model_data)
+
+#---Model visual representation constructors
 function arrange_layer(coordinates::Array,coordinate::Array{Float64},
     parameters::Design)
     coordinate[2] = coordinate[2] + parameters.min_dist_y + parameters.height
@@ -553,3 +515,36 @@ function arrange_main(design::Design)
     return [coordinates_flattened,inds_flattened.-1]
 end
 arrange() = arrange_main(design)
+
+#---Losses
+function get_loss(name::String)
+    if name == "MAE"
+        return Losses.mae
+    elseif name == "MSE"
+        return Losses.mse
+    elseif name == "MSLE"
+        return Losses.msle
+    elseif name == "Huber"
+        return Losses.huber_loss
+    elseif name == "Crossentropy"
+        return Losses.crossentropy
+    elseif name == "Logit crossentropy"
+        return Losses.logitcrossentropy
+    elseif name == "Binary crossentropy"
+        return Losses.binarycrossentropy
+    elseif name == "Logit binary crossentropy"
+        return Losses.logitbinarycrossentropy
+    elseif name == "Kullback-Leiber divergence"
+        return Losses.kldivergence
+    elseif name == "Poisson"
+        return Losses.poisson_loss
+    elseif name == "Hinge"
+        return Losses.hinge_loss
+    elseif name == "Squared hinge"
+        return squared_hinge_loss
+    elseif name == "Dice coefficient"
+        return Losses.dice_coeff_loss
+    elseif name == "Tversky"
+        return Losses.tversky_loss
+    end
+end

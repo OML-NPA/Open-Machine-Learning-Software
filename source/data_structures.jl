@@ -1,4 +1,5 @@
 
+#---Channels
 @with_kw struct Channels
     training_data_progress::RemoteChannel = RemoteChannel(()->Channel{Float32}(Inf))
     training_data_results::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
@@ -20,8 +21,7 @@
 end
 channels = Channels()
 
-#---
-
+#---Model data
 @with_kw mutable struct Output_mask
     mask::Bool = false
     mask_border::Bool = false
@@ -72,8 +72,7 @@ feature = Feature()
 end
 model_data = Model_data()
 
-#---
-
+#---Master data
 @with_kw mutable struct Training_plot_data
     data_input::Vector{Array{Float32,3}} = Vector{Array{Float32,3}}(undef,0)
     data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,0)
@@ -132,7 +131,7 @@ analysis_data = Analysis_data()
 end
 master_data = Master_data()
 
-#---
+#---Settings
 # Main
 @with_kw mutable struct Main_s
     a::Int = 0

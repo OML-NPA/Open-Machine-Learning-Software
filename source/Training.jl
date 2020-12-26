@@ -1,43 +1,89 @@
 
+# Set training starting time
+function set_training_starting_time_main(training_plot_data::Training_plot_data)
+    training_plot_data.starting_time = now()
+    return nothing
+end
+set_training_starting_time() =
+    set_training_starting_time_main(training_plot_data)
+
+# Calculates the time elapsed from the begining of training
+function training_elapsed_time_main(training_plot_data::Training_plot_data)
+    dif = (now() - training_plot_data.starting_time).value
+    hours = string(Int64(round(dif/3600000)))
+    minutes_num = floor(dif/60000)
+    minutes = string(Int64(minutes_num - floor(minutes_num/60)*60))
+    if length(minutes)<2
+        minutes = string("0",minutes)
+    end
+    seconds_num = round(dif/1000)
+    seconds = string(Int64(seconds_num - floor(seconds_num/60)*60))
+    if length(seconds)<2
+        seconds = string("0",seconds)
+    end
+    return string(hours,":",minutes,":",seconds)
+end
+training_elapsed_time() = training_elapsed_time_main(training_plot_data)
+
+#---
+# Prepare data for training
 function prepare_training_data_main(training::Training,training_data::Training_data,
     model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
-    # Code
+    # Return of features are empty
     if isempty(model_data.features)
         put!(results, "Empty features")
     end
+    # Initialize
     features = model_data.features
     type = training.type
     options = training.Options
     min_fr_pix = options.Processing.min_fr_pix
     num_angles = options.Processing.num_angles
+    # Get output image size for dimensions 1 and 2
     pix_num = model_data.input_size[1:2]
+    # Get feature data
     labels_color,labels_incl,border = get_feature_data(features)
+    # Load images and labels
     imgs = load_images(training_data)
     labels = load_labels(training_data)
+    # Get number of images
     num = length(imgs)
+    # Initialize accumulators
     data_input = Vector{Vector{Array{Float32,3}}}(undef,num)
     data_labels = Vector{Vector{BitArray{3}}}(undef,num)
+    # Return progress target value
     put!(progress, num+1)
+    # Make imput images
     Threads.@threads for k = 1:num
+        # Abort if requested
         if isready(channels.training_data_modifiers)
             if fetch(channels.training_data_modifiers)[1]=="stop"
                 take!(channels.training_data_modifiers)
                 return nothing
             end
         end
+        # Get current image and label
         img = imgs[k]
-        img = image_to_gray_float(img)
         label = labels[k]
-        #img,label = correct_view(img,label)
-        label = label_to_float(label,labels_color,labels_incl,border)
+        # Convert to grayscale
+        img = image_to_gray_float(img)
+        # Crope to remove black background
+        # img,label = correct_view(img,label)
+        # Convert BitArray labels to Array{Float32}
+        label = label_to_bool(label,labels_color,labels_incl,border)
+        # Augment images
         data_input[k],data_labels[k] = augment(k,img,label,num_angles,pix_num,min_fr_pix)
+        # Return progress
         put!(progress, 1)
     end
-    data_out_input::Vector{Array{Float32,3}} = vcat(data_input...)
-    data_out_labels::Vector{BitArray{3}} = vcat(data_labels...)
+    # Flatten input images and labels array
+    data_out_input = reduce(vcat,data_input)
+    data_out_labels = reduce(vcat,data_labels)
+    # Return results
     put!(results, (data_out_input,data_out_labels))
+    # Return progress
     put!(progress, 1)
-    return
+    return nothing
 end
 function prepare_training_data_main2(training::Training,training_data::Training_data,
     model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
@@ -48,92 +94,145 @@ end
 prepare_training_data() = prepare_training_data_main2(training,training_data,
     model_data,channels.training_data_progress,channels.training_data_results)
 
-function set_training_starting_time_main(training_plot_data::Training_plot_data)
-    training_plot_data.starting_time = now()
-    return nothing
-end
-set_training_starting_time() =
-    set_training_starting_time_main(training_plot_data)
-
-function training_elapsed_time_main(training_plot_data::Training_plot_data)
-    dif = (now() - training_plot_data.starting_time).value
-    hours = string(Int64(round(dif/3600000)))
-    minutes = floor(dif/60000)
-    minutes = string(Int64(minutes - floor(minutes/60)*60))
-    if length(minutes)<2
-        minutes = string("0",minutes)
-    end
-    seconds = round(dif/1000)
-    seconds = string(Int64(seconds - floor(seconds/60)*60))
-    if length(seconds)<2
-        seconds = string("0",seconds)
-    end
-    return string(hours,":",minutes,":",seconds)
-end
-training_elapsed_time() = training_elapsed_time_main(training_plot_data)
-
+# Creates data sets for training and testing
 function get_train_test(training_plot_data::Training_plot_data,training::Training)
+    # Get inputs and labels
     data_input = training_plot_data.data_input
     data_labels = convert(Vector{Array{Float32,3}},training_plot_data.data_labels)
+    # Get the number of elements
     num = length(data_input)
+    # Get shuffle indices
     inds = randperm(num)
+    # Shuffle using randomized indices
     data_input = data_input[inds]
     data_labels = data_labels[inds]
+    # Get fraction of data used for testing
     test_fraction = training.Options.General.test_data_fraction
+    # Get index after which all data is for testing
     ind = Int64(round((1-test_fraction)*num))
+    # Separate data into training and testing data
     train_set = (data_input[1:ind],data_labels[1:ind])
     test_set = (data_input[ind+1:end],data_labels[ind+1:end])
     return train_set, test_set
 end
 
+# Creates a minibatch
 function make_minibatch(set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         batch_size::Int64)
+    # Calculate final index
     num = length(set[1]) - batch_size
     val = max(0.0,floor(num/batch_size))
     finish = Int64(val*batch_size)
+    # Get a vector of initial-1 indices
     range_array = Vector(0:batch_size:finish)
+    # Shuffle indices
     inds = shuffle!(range_array)
+    # Separate set into inputs and labels
     data_input = set[1]
     data_labels = set[2]
+    # Initialize accumulator for minibatches
     set_minibatch = Vector{Tuple{Array{Float32,4},
         Array{Float32,4}}}(undef,length(inds))
-    Threads.@threads for i=1:length(inds)
+    for i=1:length(inds)
         ind = inds[i]
+        # First and last minibatch indices
         ind1 = ind+1
         ind2 = ind+batch_size
+        # Get inputs and labels
         current_input = data_input[ind1:ind2]
         current_labels = data_labels[ind1:ind2]
-        minibatch = (cat4(current_input...),cat4(current_labels...))
+        # Catenating inputs and labels
+        current_input_cat = reduce(cat4,current_input)
+        current_labels_cat = reduce(cat4,current_labels)
+        # Form a minibatch
+        minibatch = (current_input_cat,current_labels_cat)
         set_minibatch[i] = minibatch
     end
     return set_minibatch
 end
 
+#---
+
+# Reset training related data accumulators
+function reset_training_data(training_plot_data::Training_plot_data)
+    training_plot_data.accuracy = Float32[]
+    training_plot_data.loss = Float32[]
+    training_plot_data.test_accuracy = Float32[]
+    training_plot_data.test_loss = Float32[]
+    training_plot_data.iteration = 0
+    training_plot_data.epoch = 0
+    training_plot_data.iterations_per_epoch = 0
+    training_plot_data.starting_time = now()
+    return nothing
+end
+
+# Move model between CPU and GPU
+function move(model,target::Union{typeof(cpu),typeof(gpu)})
+    model_moved = []
+    if model isa Chain
+        for i = 1:length(model)
+            # If model branches out, then apply function also to each branch
+            if model[i] isa Parallel
+                layers = model[i].layers
+                new_layers = Array{Any}(undef,length(layers))
+                for i = 1:length(layers)
+                    new_layers[i] = move(layers[i],target)
+                end
+                new_layers = (new_layers...,)
+                push!(model_moved,target(Parallel(new_layers)))
+            else
+                push!(model_moved,target(model[i]))
+            end
+        end
+    else
+        push!(model_moved,target(model))
+    end
+    # If model contains more than one layer, then form a chain
+    if length(model_moved)==1
+        model_moved = model_moved[1]
+    else
+        model_moved = target(Chain(model_moved...))
+    end
+    return model_moved
+end
+
+#---
+# Accuracy based on RMSE
 function accuracy_regular(predicted::Union{Array,CuArray},actual::Union{Array,CuArray})
     dif = predicted - actual
     acc = 1-mean(mean.(map(x->abs.(x),dif)))
     return acc
 end
 
+# Weight accuracy using inverse frequency
 function accuracy_weighted(predicted::Union{Array{Float32,4},CuArray{Float32,4}},
         actual::Union{Array{Float32,4},CuArray{Float32,4}})
-    num_feat = size(actual,3)
-    num_batch = size(actual,4)
+    # Get input dimensions
+    array_size = size(actual)
+    array_size12 = array_size[1:2]
+    num_feat = array_size[3]
+    num_batch = array_size[4]
+    # Convert to BitArray
     actual_bool = actual.>0
     predicted_bool = predicted.>0.5
-    comp_bool = predicted_bool .& actual_bool
+    # Calculate correct and incorrect feature pixels as a BitArray
+    correct_bool = predicted_bool .& actual_bool
     dif_bool = xor.(predicted_bool,actual_bool)
-    comp_background_bool = (!).(dif_bool .| actual_bool)
+    # Calculate correct and incorrect background pixels as a BitArray
+    correct_background_bool = (!).(dif_bool .| actual_bool)
     dif_background_bool = dif_bool-actual_bool
-    array_size = size(actual)[1:2]
-    numel = prod(array_size)
+    # Number of elements
+    numel = prod(array_size12)
+    # Count number of feature pixels
     pix_sum = sum(actual_bool,dims=(1,2,4))[:]
     feature_counts = Vector{Int64}(undef,num_feat)
+    # Move data to CPU if required
     if pix_sum isa CuArray
         feature_counts .= cpu(pix_sum)
     else
         feature_counts .= pix_sum
     end
+    # Calculate weight for each pixel
     fr = feature_counts./numel./num_batch
     w = 1 ./fr
     w2 = 1 ./(1 .- fr)
@@ -142,25 +241,31 @@ function accuracy_weighted(predicted::Union{Array{Float32,4},CuArray{Float32,4}}
     w2 = w2./w_sum
     w_adj = w./feature_counts
     w2_adj = w2./(numel*num_batch .- feature_counts)
-    features_correct = Vector{Float32}(undef,num_feat)
-    background_correct = Vector{Float32}(undef,num_feat)
+    # Initialize vectors for storing accuracies
+    features_accuracy = Vector{Float32}(undef,num_feat)
+    background_accuracy = Vector{Float32}(undef,num_feat)
+    # Calculate accuracies
     for i = 1:num_feat
-        sum_comp = sum(comp_bool[:,:,i,:])
+        # Calculate accuracy for a feature
+        sum_correct = sum(correct_bool[:,:,i,:])
         sum_dif = sum(dif_bool[:,:,i,:])
-        sum_comb = sum_comp*sum_comp/(sum_comp+sum_dif)
-        features_correct[i] = w_adj[i]*sum_comb
-        sum_comp = sum(comp_background_bool[:,:,i,:])
+        sum_comb = sum_correct*sum_correct/(sum_correct+sum_dif)
+        features_accuracy[i] = w_adj[i]*sum_comb
+        # Calculate accuracy for a background
+        sum_correct = sum(correct_background_bool[:,:,i,:])
         sum_dif = sum(dif_background_bool[:,:,i,:])
-        sum_comb = sum_comp*sum_comp/(sum_comp+sum_dif)
-        background_correct[i] = w2_adj[i]*sum_comb
+        sum_comb = sum_correct*sum_correct/(sum_correct+sum_dif)
+        background_accuracy[i] = w2_adj[i]*sum_comb
     end
-    acc = mean(features_correct+background_correct)
+    # Calculate final accuracy
+    acc = mean(features_accuracy+background_accuracy)
     if acc>1.0
         acc = 1.0f0
     end
     return acc
 end
 
+# Returns an accuracy function
 function get_accuracy_func(training::Training)
     if training.Options.General.weight_accuracy
         return accuracy_weighted
@@ -169,13 +274,19 @@ function get_accuracy_func(training::Training)
     end
 end
 
+# Returns an optimiser with preset parameters
 function get_optimiser(training::Training)
+    # List of possible optimisers
     optimisers = (Descent,Momentum,Nesterov,RMSProp,ADAM,
         RADAM,AdaMax,ADAGrad,ADADelta,AMSGrad,NADAM,ADAMW)
+    # Get optimiser index
     optimiser_ind = training.Options.Hyperparameters.optimiser[2]
+    # Get optimiser parameters
     parameters_in =
         training.Options.Hyperparameters.optimiser_params[optimiser_ind]
+    # Get learning rate
     learning_rate = training.Options.Hyperparameters.learning_rate
+    # Collect optimiser parameters and learning rate
     if length(parameters_in)==1
         parameters = [learning_rate,parameters_in[1]]
     elseif length(parameters_in)==2
@@ -183,17 +294,21 @@ function get_optimiser(training::Training)
     else
         parameters = [learning_rate,(parameters_in[1],parameters_in[2]),parameters_in[3]]
     end
+    # Get optimiser function
     optimiser_func = optimisers[optimiser_ind]
+    # Initialize optimiser with parameters
     optimiser = optimiser_func(parameters...)
-    return optimiser::Function
+    return optimiser
 end
 
+#---
+# Training on CPU
 function train_CPU!(model::Chain,accuracy::Function,loss::Function,
         args::Hyperparameters_training,testing_frequency::Float64,
         train_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         test_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         opt,channels::Channels)
-    # Training loop
+    # Initialize
     epochs = args.epochs
     batch_size = args.batch_size
     accuracy_array = Vector{Float32}(undef,0)
@@ -202,10 +317,10 @@ function train_CPU!(model::Chain,accuracy::Function,loss::Function,
     test_loss = Vector{Float32}(undef,0)
     test_iteration = Vector{Int64}(undef,0)
     max_iterations = 0
-    iteration = 0
-    epoch_idx = 0
+    iteration = 1
+    epoch_idx = 1
+    # Run training for n epochs
     while epoch_idx<epochs
-        epoch_idx += 1
         # Make minibatches
         num_test = length(test_set[1])
         run_test = num_test!=0
@@ -216,6 +331,7 @@ function train_CPU!(model::Chain,accuracy::Function,loss::Function,
             test_batches = Vector{Tuple{Array{Float32,4},Array{Float32,4}}}(undef,0)
         end
         num = length(train_batches)
+        # Return epoch information
         if epoch_idx==1
             testing_frequency = num/testing_frequency
             max_iterations = epochs*num
@@ -224,7 +340,7 @@ function train_CPU!(model::Chain,accuracy::Function,loss::Function,
         last_test = 0
         # Run iteration
         for i=1:num
-            iteration+=1
+            # Abort or update parameters if needed
             if isready(channels.training_modifiers)
                 modifs::Union{Vector{String},Vector{String,Float64},
                     Vector{String,Int64}} = fix_QML_types(take!(channels.training_modifiers))
@@ -244,49 +360,68 @@ function train_CPU!(model::Chain,accuracy::Function,loss::Function,
                     testing_frequency::Int64 = convert(Int64,floor(num/modif2))
                 end
             end
+            # Prepare training data
             train_minibatch = train_batches[i]
-            # Training part
-            local temp_loss = 0.0f0
-            local predicted = Array{Float32,4}(undef,0,0,0,0)
             input = train_minibatch[1]
             actual = train_minibatch[2]
+            # Initialize so we get them returned by the gradient function
+            local loss_val = 0.0f0
+            local predicted = Array{Float32,4}(undef,0,0,0,0)
+
+            # Calculate gradient
             ps = Flux.Params(params(model))
             gs = gradient(ps) do
               predicted = model(input)
-              temp_loss = loss(predicted,actual)
+              loss_val = loss(predicted,actual)
             end
+            # Update weights
             Flux.Optimise.update!(opt,ps,gs)
+            # Calculate accuracy
             accuracy_val::Float32 = accuracy(predicted,actual)
-            loss_val::Float32 = temp_loss
+            # Return training information
             data_temp = [accuracy_val,loss_val]
             put!(channels.training_progress,["Training",data_temp...])
             push!(accuracy_array,data_temp[1])
             push!(loss_array,data_temp[2])
             # Testing part
             if run_test
-              if ceil(i/testing_frequency)>last_test || iteration==max_iterations
-                  data_test = test(model,loss,channels,test_batches,length(test_batches),use_GPU)
-                  last_test += 1
-                  put!(channels.training_progress,["Testing",data_test...,iteration])
-                  push!(test_accuracy,data_test[1])
-                  push!(test_loss,data_test[2])
-                  push!(test_iteration,iteration)
-              end
+                testing_frequency_cond = ceil(i/testing_frequency)>last_test
+                training_finished_cond = iteration==max_iterations
+                # Test if testing frequency reached or training is done
+                if testing_frequency_cond || training_finished_cond
+                    # Calculate test accuracy and loss
+                    data_test = test_CPU(model,loss,channels,test_batches,length(test_batches))
+                    # Return testing information
+                    put!(channels.training_progress,["Testing",data_test...,iteration])
+                    push!(test_accuracy,data_test[1])
+                    push!(test_loss,data_test[2])
+                    push!(test_iteration,iteration)
+                    # Update test counter
+                    last_test += 1
+                end
             end
+            # Update iteration counter
+            iteration+=1
+            # Needed to avoid out of memory issue
             @everywhere GC.safepoint()
         end
+        # Update epoch counter
+        epoch_idx += 1
+        # Needed to avoid out of memory issue
         @everywhere GC.gc()
     end
+    # Return training information
     data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
     return data
 end
 
+# Training on GPU
 function train_GPU!(model::Chain,accuracy::Function,loss::Function,
         args::Hyperparameters_training,testing_frequency::Float64,
         train_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         test_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         opt,channels::Channels)
-    # Training loop
+    # Initialize
     model = move(model,gpu)
     epochs = args.epochs
     batch_size = args.batch_size
@@ -296,13 +431,13 @@ function train_GPU!(model::Chain,accuracy::Function,loss::Function,
     test_loss = Vector{Float32}(undef,0)
     test_iteration = Vector{Int64}(undef,0)
     max_iterations = 0
-    iteration = 0
-    epoch_idx = 0
-    while epoch_idx<epochs
-        epoch_idx += 1
+    iteration = 1
+    epoch_idx = 1
+    num_test = length(test_set[1])
+    run_test = num_test!=0
+    # Run training for n epochs
+    while epoch_idx<=epochs
         # Make minibatches
-        num_test = length(test_set[1])
-        run_test = num_test!=0
         train_batches = make_minibatch(train_set,batch_size)
         if run_test
             test_batches = make_minibatch(test_set,batch_size)
@@ -310,15 +445,16 @@ function train_GPU!(model::Chain,accuracy::Function,loss::Function,
             test_batches = Vector{Tuple{Array{Float32,4},Array{Float32,4}}}(undef,0)
         end
         num = length(train_batches)
+        last_test = 0
+        # Return epoch information
         if epoch_idx==1
             testing_frequency = num/testing_frequency
             max_iterations = epochs*num
             put!(channels.training_progress,[epochs,num,max_iterations])
         end
-        last_test = 0
         # Run iteration
         for i=1:num
-            iteration+=1
+            # Abort or update parameters if needed
             if isready(channels.training_modifiers)
                 modifs = fix_QML_types(take!(channels.training_modifiers))
                 while isready(channels.training_modifiers)
@@ -337,46 +473,66 @@ function train_GPU!(model::Chain,accuracy::Function,loss::Function,
                     testing_frequency::Float64 = floor(num/modif2)
                 end
             end
+            # Prepare training data
             train_minibatch = CuArray.(train_batches[i])
-            # Training part
-            local temp_loss = 0.0f0
-            local predicted = CuArray(Array{Float32,4}(undef,0,0,0,0))
             input_data = train_minibatch[1]
             actual = train_minibatch[2]
+            # Initialize so we get them returned by the gradient function
+            local loss_val = 0.0f0
+            local predicted = CuArray(Array{Float32,4}(undef,0,0,0,0))
+            # Calculate gradient
             ps = Flux.Params(params(model))
             gs = gradient(ps) do
               predicted = model(input_data)
-              temp_loss = loss(predicted,actual)
+              loss_val = loss(predicted,actual)
             end
+            # Update weights
             Flux.Optimise.update!(opt,ps,gs)
+            # Calculate accuracy
             accuracy_val::Float32 = accuracy(predicted,actual)
-            loss_val::Float32 = temp_loss
+            # Return training information
             data_temp = [accuracy_val,loss_val]
-            CUDA.unsafe_free!(predicted)
             put!(channels.training_progress,["Training",data_temp...])
             push!(accuracy_array,data_temp[1])
             push!(loss_array,data_temp[2])
+            # Needed to avoid GPU out of memory issue
+            CUDA.unsafe_free!(predicted)
             # Testing part
             if run_test
-              if ceil(i/testing_frequency)>last_test || iteration==max_iterations
-                  data_test = test(model,loss,channels,test_batches,length(test_batches),use_GPU)
-                  last_test += 1
-                  put!(channels.training_progress,["Testing",data_test...,iteration])
-                  push!(test_accuracy,data_test[1])
-                  push!(test_loss,data_test[2])
-                  push!(test_iteration,iteration)
-              end
+                testing_frequency_cond = ceil(i/testing_frequency)>last_test
+                training_finished_cond = iteration==max_iterations
+                # Test if testing frequency reached or training is done
+                if ceil(i/testing_frequency)>last_test || iteration==max_iterations
+                    # Calculate test accuracy and loss
+                    data_test = test_GPU(model,loss,channels,test_batches,
+                    length(test_batches))
+                    # Return testing information
+                    put!(channels.training_progress,["Testing",data_test...,iteration])
+                    push!(test_accuracy,data_test[1])
+                    push!(test_loss,data_test[2])
+                    push!(test_iteration,iteration)
+                    # Update test counter
+                    last_test += 1
+                end
             end
+            # Update iteration counter
+            iteration+=1
+            # Needed to avoid GPU out of memory issue
             @everywhere GC.safepoint()
         end
+        # Update epoch counter
+        epoch_idx += 1
+        # Needed to avoid GPU out of memory issue
         @everywhere GC.gc()
     end
+    # Return training information
     data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
     return data
 end
 
+# Testing on CPU
 function test_CPU(model::Chain,loss::Function,channels::Channels,
-    test_batches::Array{Tuple{Array{Float32,4},Array{Float32,4}},1},num_test::Int64)
+        test_batches::Array{Tuple{Array{Float32,4},Array{Float32,4}},1},num_test::Int64)
     test_accuracy = Vector{Float32}(undef,num_test)
     test_loss = Vector{Float32}(undef,num_test)
     for j=1:num_test
@@ -390,6 +546,7 @@ function test_CPU(model::Chain,loss::Function,channels::Channels,
     return data
 end
 
+# Testing on GPU
 function test_GPU(model::Chain,loss::Function,channels::Channels,
         test_batches::Array{Tuple{Array{Float32,4},Array{Float32,4}},1},num_test::Int64)
     test_accuracy = Vector{Float32}(undef,num_test)
@@ -405,60 +562,27 @@ function test_GPU(model::Chain,loss::Function,channels::Channels,
     return data
 end
 
-function reset_training_data(training_plot_data::Training_plot_data)
-    training_plot_data.accuracy = []
-    training_plot_data.loss = []
-    training_plot_data.test_accuracy = []
-    training_plot_data.test_loss = []
-    training_plot_data.iteration = 0
-    training_plot_data.epoch = 0
-    training_plot_data.iterations_per_epoch = 0
-    training_plot_data.starting_time = now()
-    return nothing
-end
-
-function move(model,target::Union{typeof(cpu),typeof(gpu)})
-    model_moved = []
-    if model isa Chain
-        for i = 1:length(model)
-            if model[i] isa Parallel
-                layers = model[i].layers
-                new_layers = Array{Any}(undef,length(layers))
-                for i = 1:length(layers)
-                    new_layers[i] = move(layers[i],target)
-                end
-                new_layers = (new_layers...,)
-                push!(model_moved,target(Parallel(new_layers)))
-            else
-                push!(model_moved,target(model[i]))
-            end
-        end
-    else
-        push!(model_moved,target(model))
-    end
-    if length(model_moved)==1
-        model_moved = model_moved[1]
-    else
-        model_moved = target(Chain(model_moved...))
-    end
-    return model_moved
-end
-
+# Main training function
 function train_main(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
+    # Initialization
     training = settings.Training
+    training_options = training.Options
     training_plot_data = training_data.Training_plot_data
-    model = model_data.model
-    loss = model_data.loss
-    accuracy = get_accuracy_func(training)
-    args = training.Options.Hyperparameters
-    learning_rate = args.learning_rate
-    epochs = args.epochs
+    args = training_options.Hyperparameters
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     reset_training_data(training_plot_data)
     # Preparing train and test sets
     train_set, test_set = get_train_test(training_plot_data,training)
+    # Setting functions and parameters
     opt = get_optimiser(training)
+    accuracy = get_accuracy_func(training)
+    loss = model_data.loss
+    learning_rate = args.learning_rate
+    epochs = args.epochs
+    testing_frequency = training_options.General.testing_frequency
+    model = model_data.model
+    # Check whether user wants to abort
     if isready(channels.training_modifiers)
         stop_cond::String = fetch(channels.training_modifiers)[1]
         if stop_cond=="stop"
@@ -466,7 +590,7 @@ function train_main(settings::Settings,training_data::Training_data,
             return nothing
         end
     end
-    testing_frequency = training.Options.General.testing_frequency
+    # Run training
     if use_GPU
         data = train_GPU!(model,accuracy,loss,args,testing_frequency,
             train_set,test_set,opt,channels)
@@ -474,11 +598,14 @@ function train_main(settings::Settings,training_data::Training_data,
         data = train_CPU!(model,accuracy,loss,args,testing_frequency,
             train_set,test_set,opt,channels)
     end
+    # Move model back to CPU if needed
     if use_GPU
         model = move(model,cpu)
     end
+    # Save trained model
     model_data.model = model
     save_model_main(model_data,string("models/",training.name,".model"))
+    # Return training results
     put!(channels.training_data_results,(model,data...))
     return nothing
 end

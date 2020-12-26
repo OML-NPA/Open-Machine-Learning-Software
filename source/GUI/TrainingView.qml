@@ -198,10 +198,12 @@ Component {
                                 Julia.set_settings(["Training","problem_type"],
                                     [currentText,currentIndex],"make_tuple")
                                 changeLabels()
+                                disableButtons(currentIndex,1)
                             }
                             Component.onCompleted: {
                                 currentIndex = Julia.get_settings(["Training","problem_type"],2)
                                 changeLabels()
+                                disableButtons(currentIndex,1)
                             }
                         }
                     }
@@ -235,10 +237,12 @@ Component {
                                 Julia.set_settings(["Training","input_type"],
                                     [currentText,currentIndex],"make_tuple")
                                 changeLabels()
+                                disableButtons(currentIndex,0)
                             }
                             Component.onCompleted: {
                                 currentIndex = Julia.get_settings(["Training","input_type"],2)
                                 changeLabels()
+                                disableButtons(currentIndex,0)
                             }
                         }
                     }
@@ -504,6 +508,9 @@ Component {
                         width: buttonWidth
                         height: buttonHeight
                         onClicked: {
+                            if (down) {
+                                return
+                            }
                         }
                     }
                     Button {
@@ -512,6 +519,9 @@ Component {
                         width: buttonWidth
                         height: buttonHeight
                         onClicked: {
+                            if (down) {
+                                return
+                            }
                             if (trainingoptionsLoader.sourceComponent === null) {
                                 trainingoptionsLoader.source = "TrainingOptions.qml"
                             }
@@ -523,22 +533,28 @@ Component {
                         width: buttonWidth
                         height: buttonHeight
                         onClicked: {
+                            if (down) {
+                                return
+                            }
                             if (customizationLoader.sourceComponent === null) {
                                 customizationLoader.source = "Design.qml"
                             }
                         }
                     }
                     Button {
-                        id: starttrainingButton
+                        id: trainButton
                         text: "Train"
                         width: buttonWidth
                         height: buttonHeight
                         onClicked: {
+                            if (down) {
+                                return
+                            }
                             if (imagesTextField.length===0 || labelsTextField.length===0) {
                                 return
                             }
-                            if (starttrainingButton.text==="Train") {
-                                starttrainingButton.text = "Stop data preparation"
+                            if (trainButton.text==="Train") {
+                                trainButton.text = "Stop data preparation"
                                 Julia.get_urls_training()
                                 Julia.empty_progress_channel("Training data preparation")
                                 Julia.empty_results_channel("Training data preparation")
@@ -551,7 +567,7 @@ Component {
                                 Julia.prepare_training_data()
                             }
                             else {
-                                starttrainingButton.text = "Train"
+                                trainButton.text = "Train"
                                 trainingTimer.running = false
                                 trainingTimer.value = 0
                                 trainingTimer.max_value = 0
@@ -572,7 +588,7 @@ Component {
                                 function load_window() {
                                     trainingplotLoader.source = "TrainingPlot.qml"
                                 }
-                                dataProcessingTimerFunction(starttrainingButton,trainingTimer,
+                                dataProcessingTimerFunction(trainButton,trainingTimer,
                                     "Train","Stop training","Training data preparation",
                                     "Training",load_window)
                             }
@@ -584,6 +600,9 @@ Component {
                         width: buttonWidth
                         height: buttonHeight
                         onClicked: {
+                            if (down) {
+                                return
+                            }
                             if (imagesTextField.length===0 || labelsTextField.length===0) {
                                 return
                             }
@@ -674,6 +693,21 @@ Component {
                     timer.done = false
                     button.text = start
                 }
+            }
+        }
+
+        function disableButtons(currentIndex,ind) {
+            if (currentIndex===ind) {
+                optionsButton.down = undefined
+                designButton.down = undefined
+                trainButton.down =  undefined
+                validateButton.down = undefined
+            }
+            else{
+                optionsButton.down = true
+                designButton.down = true
+                trainButton.down = true
+                validateButton.down = true
             }
         }
     }
