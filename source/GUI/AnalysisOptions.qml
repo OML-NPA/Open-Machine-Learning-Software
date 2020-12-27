@@ -258,10 +258,14 @@ ApplicationWindow {
                                 Component.onCompleted: {
                                     text = Julia.get_settings(["Analysis","Options","scaling"])
                                 }
-                                onAccepted: {
+                                onEditingFinished: {
                                     var value = parseFloat(text)
                                     Julia.set_settings(["Analysis","Options","scaling"],value)
                                 }
+                            }
+                            Label {
+                                text: "pixels per measurment unit"
+                                bottomPadding: 0.05*margin
                             }
                         }
                     }

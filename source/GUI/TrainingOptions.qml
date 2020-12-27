@@ -35,7 +35,8 @@ ApplicationWindow {
 
     onClosing: {
         trainingoptionsLoader.sourceComponent = null
-        Julia.save_settings()}
+        Julia.save_settings()
+    }
 
 
     GridLayout {
@@ -114,6 +115,81 @@ ApplicationWindow {
                     }
 
                 }
+
+                Component {
+                    id: generalView
+                    Column {
+                        spacing: 0.4*margin
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                text: "Weight accuracy:"
+                                width: testingfrLabel.width
+                            }
+                            CheckBox {
+                                padding: 0
+                                width: height
+                                checkState : Julia.get_settings(
+                                           ["Training","Options","General","weight_accuracy"]) ?
+                                           Qt.Checked : Qt.Unchecked
+                                onClicked: {
+                                    var value = checkState==Qt.Checked ? true : false
+                                    Julia.set_settings(
+                                        ["Training","Options","General","weight_accuracy"],
+                                        value)
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                Layout.alignment : Qt.AlignLeft
+                                Layout.row: 1
+                                text: "Test data fraction:"
+                                width: testingfrLabel.width
+                            }
+                            SpinBox {
+                                from: 0
+                                value: 10*Julia.get_settings(
+                                           ["Training","Options","General","test_data_fraction"])
+                                to: 9
+                                stepSize: 1
+                                editable: true
+                                property real realValue: value/10
+                                textFromValue: function(value, locale) {
+                                    return Number(value/10).toLocaleString(locale,'f',1)
+                                }
+                                onValueModified: {
+                                    Julia.set_settings(
+                                        ["Training","Options","General","test_data_fraction"],
+                                        value/10)
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                id: testingfrLabel
+                                Layout.alignment : Qt.AlignLeft
+                                Layout.row: 1
+                                text: "Testing frequency (per epoch):"
+                            }
+                            SpinBox {
+                                from: 0
+                                value: Julia.get_settings(
+                                           ["Training","Options","General","testing_frequency"])
+                                to: 10000
+                                stepSize: 1
+                                editable: true
+                                onValueModified: {
+                                    Julia.set_settings(
+                                        ["Training","Options","General","testing_frequency"],value)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Component {
                         id: processingView
                         Column {
@@ -387,79 +463,6 @@ ApplicationWindow {
                                     Julia.set_settings(
                                         ["Training","Options","Hyperparameters","learning_rate"],
                                         value/100000)
-                                }
-                            }
-                        }
-                    }
-                }
-                Component {
-                    id: generalView
-                    Column {
-                        spacing: 0.4*margin
-                        Row {
-                            spacing: 0.3*margin
-                            Label {
-                                text: "Weight accuracy:"
-                                width: testingfrLabel.width
-                            }
-                            CheckBox {
-                                padding: 0
-                                width: height
-                                checkState : Julia.get_settings(
-                                           ["Training","Options","General","weight_accuracy"]) ?
-                                           Qt.Checked : Qt.Unchecked
-                                onClicked: {
-                                    var value = checkState==Qt.Checked ? true : false
-                                    Julia.set_settings(
-                                        ["Training","Options","General","weight_accuracy"],
-                                        value)
-                                }
-                            }
-                        }
-                        Row {
-                            spacing: 0.3*margin
-                            Label {
-                                Layout.alignment : Qt.AlignLeft
-                                Layout.row: 1
-                                text: "Test data fraction:"
-                                width: testingfrLabel.width
-                            }
-                            SpinBox {
-                                from: 0
-                                value: 10*Julia.get_settings(
-                                           ["Training","Options","General","test_data_fraction"])
-                                to: 9
-                                stepSize: 1
-                                editable: true
-                                property real realValue: value/10
-                                textFromValue: function(value, locale) {
-                                    return Number(value/10).toLocaleString(locale,'f',1)
-                                }
-                                onValueModified: {
-                                    Julia.set_settings(
-                                        ["Training","Options","General","test_data_fraction"],
-                                        value/10)
-                                }
-                            }
-                        }
-                        Row {
-                            spacing: 0.3*margin
-                            Label {
-                                id: testingfrLabel
-                                Layout.alignment : Qt.AlignLeft
-                                Layout.row: 1
-                                text: "Testing frequency (iterations):"
-                            }
-                            SpinBox {
-                                from: 0
-                                value: Julia.get_settings(
-                                           ["Training","Options","General","testing_frequency"])
-                                to: 10000
-                                stepSize: 1
-                                editable: true
-                                onValueModified: {
-                                    Julia.set_settings(
-                                        ["Training","Options","General","testing_frequency"],value)
                                 }
                             }
                         }

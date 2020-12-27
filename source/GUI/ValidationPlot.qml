@@ -22,9 +22,10 @@ ApplicationWindow {
     property double buttonHeight: 0.03*Screen.height
 
     onClosing: {
-        validationplotLoader.sourceComponent = undefined
+        Julia.put_channel("Validation",["stop"])
         validateButton.text = "Validate"
         progressbar.value = 0
+        validationplotLoader.sourceComponent = undefined
     }
 
     Timer {

@@ -27,9 +27,11 @@ ApplicationWindow {
     property double buttonHeight: 0.03*Screen.height
 
     onClosing: {
+        Julia.put_channel("Training",["stop"])
+        trainButton.text = "Train"
+        progressbar.value = 0
         trainingplotLoader.sourceComponent = undefined
-        starttrainingButton.text = "Train"
-        progressbar.value = 0}
+    }
 
     Timer {
         id: validationplotTimer

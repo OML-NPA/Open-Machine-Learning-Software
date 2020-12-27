@@ -28,8 +28,11 @@ function prepare_analysis_data_main(analysis_data::Analysis_data,
         return nothing
     end
     labels_color,labels_incl,border = get_feature_data(features)
-    #data_input = Vector{Array{Float32,2}}(undef,length(images))
-    data = map(x->image_to_gray_float(x)[:,:,:,:],images)
+    num = length(images)
+    data = Vector{Array{Float32,4}}(undef,num)
+    Threads.@threads for i = 1:num
+        data[i] = image_to_gray_float(images[i])[:,:,:,:]
+    end
     put!(results,data)
     put!(progress,1)
     return nothing
@@ -115,11 +118,18 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     histograms_volume = Vector{Vector{Histogram}}(undef,num)
     objs_area = Vector{Vector{Vector{Float64}}}(undef,num)
     objs_volume = Vector{Vector{Vector{Float64}}}(undef,num)
-
+    fill!(histograms_area,Vector{Histogram}(undef,count(log_area_obj)))
+    fill!(histograms_volume,Vector{Histogram}(undef,count(log_volume_obj)))
+    fill!(objs_area,Vector{Vector{Float64}}(undef,count(log_area_obj)))
+    fill!(objs_volume,Vector{Vector{Float64}}(undef,count(log_volume_obj)))
+    # Make savepath directory if does not exist
+    if !isdir(savepath)
+        mkdir(savepath)
+    end
     # Run analysis
     cnt = 1
-    num_parts = 10
-    offset = 20
+    num_parts = 10 # For dividing input image into n parts
+    offset = 20 # For taking extra n pixels from both sides of an image part
     put!(channels.analysis_progress,2*num+1)
     @everywhere GC.gc()
     for i = 1:num
@@ -148,12 +158,13 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
             end
             masks[j] = temp_mask
         end
-        # Make and export images
         filenames = filenames_batched[i]
         for j = 1:length(masks)
             filename = filenames[j]
             mask = masks[j]
+            # Make and export images
             mask_to_img(mask,features,labels_color,border,savepath,filename,img_ext,img_sym_ext)
+            # Make data out of masks
             mask_to_data(histograms_area,histograms_volume,objs_area,objs_volume,cnt,j,
                     mask,features,border,num,num_feat,num_border,output_options,scaling)
             cnt = cnt + 1
@@ -190,12 +201,32 @@ function objects_area(components::Array{Int64,2},scaling::Float64)
     return area
 end
 
+function func2D_to_3D(objects_mask::BitArray{2})
+    D = Float32.(distance_transform(feature_transform((!).(objects_mask))))
+    w = zeros(Float32,(size(D)...,8))
+    inds = vcat(1:4,6:9)
+    Threads.@threads for i = 1:8
+      u = zeros(Float32,(9,1))
+      u[inds[i]] = 1
+      u = reshape(u,(3,3))
+      w[:,:,i] = imfilter(D,centered(u))
+    end
+    pks = all(D.>=w,dims=3)[:,:] .& objects_mask
+    mask2 = BitArray(undef,size(objects_mask))
+    fill!(mask2,true)
+    mask2[pks] .= false
+    D2 = Float32.(distance_transform(feature_transform((!).(mask2))))
+    D2[(!).(objects_mask)] .= 0
+    mask_out = sqrt.((D+D2).^2-D2.^2)
+    return mask_out
+end
+
 function objects_volume(components::Array{Int64},objects_mask::BitArray{2},scaling::Float64)
     volume_model = func2D_to_3D(objects_mask)
     num = maximum(components)
     volumes = Vector{Float64}(undef,num)
     scaling = scaling^3
-    for i = 1:num
+    Threads.@threads for i = 1:num
         logical_inds = components.==i
         pixels = volume_model[logical_inds]
         volumes[i] = 2*sum(pixels)/scaling
@@ -226,13 +257,14 @@ end
 
 function histograms_to_dataframe(df::DataFrame,histograms::Vector{Histogram},
         num::Int64,offset::Int64)
-    for j = 1:2:num
+    inds = 1:2:2*num
+    for j = 1:num
         weights = histograms[j].weights
         numel = length(weights)
         edges = collect(histograms[j].edges[1])
         edges = map(ind->mean([edges[ind],edges[ind+1]]),1:numel)
-        df[1:numel,j+offset] .= edges
-        df[1:numel,j+offset+1] .= weights
+        df[1:numel,inds[j]+offset] .= edges
+        df[1:numel,inds[j]+offset+1] .= weights
     end
 end
 
@@ -243,6 +275,77 @@ function objs_to_dataframe(df::DataFrame,objs::Vector{Vector{Float64}},
         numel = length(objs_current)
         df[1:numel,j+offset] .= objs_current
     end
+end
+
+function mask_to_data(histograms_area::Vector{Vector{Histogram}},
+        histograms_volume::Vector{Vector{Histogram}},
+        objs_area::Vector{Vector{Vector{Float64}}},
+        objs_volume::Array{Vector{Vector{Float64}}},i::Int64,j::Int64,
+        mask::BitArray{3},features::Vector{Feature},border::Vector{Bool},num::Int64,
+        num_feat::Int64,num_border::Int64,output_options::Output_options,scaling::Float64)
+    temp_histograms_area = histograms_area[i]
+    temp_histograms_volume = histograms_volume[i]
+    temp_objs_area = objs_area[i]
+    temp_objs_volume = objs_volume[i]
+    Threads.@threads for j = 1:num_feat
+        output_options = features[j].Output
+        area_dist_cond = output_options.Area.area_distribution
+        area_obj_cond = output_options.Area.individual_obj_area
+        volume_dist_cond = output_options.Area.area_distribution
+        volume_obj_cond = output_options.Area.individual_obj_area
+        ind = j
+        if border[j]==true
+            ind = j + num_border + num_feat
+        end
+        mask_current = mask[:,:,ind]
+        components = label_components(mask_current,conn(4))
+        if area_dist_cond || area_obj_cond
+            area_options = output_options.Area
+            area_values = objects_area(components,scaling)
+            if area_dist_cond
+                temp_histograms_area[j] = make_histogram(area_values,area_options)
+            end
+            if area_obj_cond
+                temp_objs_area[j] = area_values
+            end
+        end
+        if volume_dist_cond || volume_obj_cond
+            volume_options = output_options.Volume
+            volume_values = objects_volume(components,mask_current,scaling)
+            if volume_dist_cond
+                temp_histograms_volume[j] = make_histogram(volume_values,volume_options)
+            end
+            if volume_obj_cond
+                temp_objs_volume[j] = volume_values
+            end
+        end
+    end
+    histograms_area[i] = temp_histograms_area
+    histograms_volume[i] = temp_histograms_volume
+    objs_area[i] = temp_objs_area
+    objs_volume[i] = temp_objs_volume
+    return nothing
+end
+
+function make_histogram(values::Vector{<:Real}, options::Union{Output_area,Output_volume})
+    if options.binning==0
+        h = fit(Histogram, values)
+    elseif options.binning==1
+        h = fit(Histogram, values, nbins=options.value)
+    else
+        num = round(maximum(values)/options.value)
+        h = fit(Histogram, values, nbins=num)
+    end
+    if options.normalisation==0
+        h = normalize(h, mode=:pdf)
+    elseif options.normalisation==1
+        h = normalize(h, mode=:density)
+    elseif options.normalisation==2
+        h = normalize(h, mode=:probability)
+    else
+        h = normalize(h, mode=:none)
+    end
+    return h
 end
 
 function export_histograms(histograms_area::Vector{Vector{Histogram}},
@@ -261,8 +364,8 @@ function export_histograms(histograms_area::Vector{Vector{Histogram}},
         num_rows = max(num_rows_area,num_rows_volume)
         histogram_area = histograms_area[i]
         histogram_volume = histograms_volume[i]
-        rows = Vector{Union{Float64,Nothing}}(undef,num_rows)
-        fill!(rows,nothing)
+        rows = Vector{Union{Float64,String}}(undef,num_rows)
+        fill!(rows,"")
         df_dists = DataFrame(repeat(rows,1,2*num_cols_dist), :auto)
         histograms_to_dataframe(df_dists,histogram_area,num_dist_area,0)
         offset = 2*num_dist_area
@@ -297,8 +400,8 @@ function export_objs(objs_area::Vector{Vector{Vector{Float64}}},
         num_rows = max(num_rows_area,num_rows_volume)
         obj_area = objs_area[i]
         obj_volume = objs_volume[i]
-        rows = Vector{Union{Float64,Nothing}}(undef,num_rows)
-        fill!(rows,nothing)
+        rows = Vector{Union{Float64,String}}(undef,num_rows)
+        fill!(rows,"")
         df_objs = DataFrame(repeat(rows,1,num_cols_obj), :auto)
         objs_to_dataframe(df_objs,obj_area,num_obj_area,0)
         offset = num_obj_area
@@ -316,77 +419,6 @@ function export_objs(objs_area::Vector{Vector{Vector{Float64}}},
         end
     end
     return nothing
-end
-
-function mask_to_data(histograms_area::Vector{Vector{Histogram}},
-        histograms_volume::Vector{Vector{Histogram}},
-        objs_area::Vector{Vector{Vector{Float64}}},
-        objs_volume::Array{Vector{Vector{Float64}}},i::Int64,j::Int64,
-        mask::BitArray{3},features::Vector{Feature},border::Vector{Bool},num::Int64,
-        num_feat::Int64,num_border::Int64,output_options::Output_options,scaling::Float64)
-    temp_histograms_area = Histogram[]
-    temp_histograms_volume = Histogram[]
-    temp_objs_area = Vector{Float64}[]
-    temp_objs_volume = Vector{Float64}[]
-    for j = 1:num_feat
-        output_options = features[j].Output
-        area_dist_cond = output_options.Area.area_distribution
-        area_obj_cond = output_options.Area.individual_obj_area
-        volume_dist_cond = output_options.Area.area_distribution
-        volume_obj_cond = output_options.Area.individual_obj_area
-        ind = j
-        if border[j]==true
-            ind = j + num_border + num_feat
-        end
-        mask_current = mask[:,:,ind]
-        components = label_components(mask_current,conn(4))
-        if area_dist_cond || area_obj_cond
-            area_options = output_options.Area
-            area_values = objects_area(components,scaling)
-            if area_dist_cond
-                push!(temp_histograms_area,make_histogram(area_values,area_options))
-            end
-            if area_obj_cond
-                push!(temp_objs_area,area_values)
-            end
-        end
-        if volume_dist_cond || volume_obj_cond
-            volume_options = output_options.Volume
-            volume_values = objects_volume(components,mask_current,scaling)
-            if volume_dist_cond
-                push!(temp_histograms_volume,make_histogram(volume_values,volume_options))
-            end
-            if volume_obj_cond
-                push!(temp_objs_volume,volume_values)
-            end
-        end
-    end
-    histograms_area[i] = temp_histograms_area
-    histograms_volume[i] = temp_histograms_volume
-    objs_area[i] = temp_objs_area
-    objs_volume[i] = temp_objs_volume
-    return nothing
-end
-
-function make_histogram(values::Vector{<:Real}, options::Union{Output_area,Output_volume})
-    if options.binning==0
-        h = fit(Histogram, values)
-    elseif options.binning==1
-        h = fit(Histogram, values, nbins=options.value)
-    else
-        num = round(maximum(values)/options.value)
-        h = fit(Histogram, values, nbins=num)
-    end
-    if options.normalisation==0
-        h = normalize(h, mode=:pdf)
-    elseif area_options.normalisation==1
-        h = normalize(h, mode=:density)
-    elseif area_options.normalisation==2
-        h = normalize(h, mode=:probability)
-    else
-        h = normalize(h, mode=:none)
-    end
-    return h
 end
 
 #---Image related functions
@@ -434,7 +466,7 @@ function mask_to_img(mask::BitArray{3},features::Vector{Feature},
     num2 = length(labels_color)
     perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color64)
     predicted_color = Vector{Array{RGBA{Float32},2}}(undef,0)
-    for j = 1:length(inds)
+    Threads.@threads for j = 1:length(inds)
         ind = inds[j]
         mask_current = mask[:,:,ind]
         color = perm_labels_color[ind]
@@ -450,26 +482,6 @@ function mask_to_img(mask::BitArray{3},features::Vector{Feature},
         save(path,name,mask_RGB,sym_ext)
     end
     return nothing
-end
-
-function func2D_to_3D(objects_mask::BitArray{2})
-    D = Float32.(distance_transform(feature_transform((!).(objects_mask))))
-    w = zeros(Float32,(size(D)...,8))
-    inds = vcat(1:4,6:9)
-    for i = 1:8
-      u = zeros(Float32,(9,1))
-      u[inds[i]] = 1
-      u = reshape(u,(3,3))
-      w[:,:,i] = imfilter(D,centered(u))
-    end
-    pks = all(D.>=w,dims=3)[:,:] .& objects_mask
-    mask2 = BitArray(undef,size(objects_mask))
-    fill!(mask2,true)
-    mask2[pks] .= false
-    D2 = Float32.(distance_transform(feature_transform((!).(mask2))))
-    D2[(!).(objects_mask)] .= 0
-    mask_out = sqrt.((D+D2).^2-D2.^2)
-    return mask_out
 end
 
 function export_output(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},

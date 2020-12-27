@@ -183,57 +183,6 @@ function rotate_img(img::BitArray{3},angle_val::Float64)
     end
 end
 
-# Augments images using rotation and mirroring
-function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
-        num_angles::Int64,pix_num::Tuple{Int64,Int64},min_fr_pix::Float64)
-    lim = prod(pix_num)*min_fr_pix
-    angles = range(0,stop=2*pi,length=num_angles+1)
-    angles = angles[1:end-1]
-    num = length(angles)
-    imgs_out = Vector{Vector{Array{Float32,3}}}(undef,num)
-    labels_out = Vector{Vector{BitArray{3}}}(undef,num)
-    for g = 1:num
-        angle_val = angles[g]
-        img2 = rotate_img(img,angle_val)
-        label2 = rotate_img(label,angle_val)
-        num1 = Int64(floor(size(label2,1)/(pix_num[1]*0.9)))
-        num2 = Int64(floor(size(label2,2)/(pix_num[2]*0.9)))
-        step1 = Int64(floor(size(label2,1)/num1))
-        step2 = Int64(floor(size(label2,2)/num2))
-        num_batch = 2*(num1-1)*(num2-1)
-        img_temp = Vector{Array{Float32}}(undef,0)
-        label_temp = Vector{BitArray{3}}(undef,0)
-        for h = 1:2
-            if h==1
-                img3 = img2
-                label3 = label2
-            elseif h==2
-                img3 = reverse(img2, dims = 2)
-                label3 = reverse(label2, dims = 2)
-            end
-            for i = 1:num1-1
-                for j = 1:num2-1
-                    ymin = (i-1)*step1+1;
-                    xmin = (j-1)*step2+1;
-                    I1 = label3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                    if sum(I1)<lim
-                        continue
-                    end
-                    I2 = img3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                    push!(label_temp,I1)
-                    push!(img_temp,I2)
-                end
-            end
-        end
-        imgs_out[g] = img_temp
-        labels_out[g] = label_temp
-    end
-    imgs_out_flat = reduce(vcat,imgs_out)
-    labels_out_flat = reduce(vcat,labels_out)
-    data_out = (imgs_out_flat,labels_out_flat)
-    return data_out
-end
-
 # Use border data to better separate objects
 function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
@@ -269,3 +218,130 @@ function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
     return data
 end
 apply_border_data(data_in) = apply_border_data_main(data_in,model_data)
+
+#---
+# Accuracy based on RMSE
+function accuracy_regular(predicted::Union{Array,CuArray},actual::Union{Array,CuArray})
+    dif = predicted - actual
+    acc = 1-mean(mean.(map(x->abs.(x),dif)))
+    return acc
+end
+
+# Weight accuracy using inverse frequency (CPU)
+function accuracy_weighted(predicted::Array{Float32,4},actual::Array{Float32,4})
+    # Get input dimensions
+    array_size = size(actual)
+    array_size12 = array_size[1:2]
+    num_feat = array_size[3]
+    num_batch = array_size[4]
+    # Convert to BitArray
+    actual_bool = actual.>0
+    predicted_bool = predicted.>0.5
+    # Calculate correct and incorrect feature pixels as a BitArray
+    correct_bool = predicted_bool .& actual_bool
+    dif_bool = xor.(predicted_bool,actual_bool)
+    # Calculate correct and incorrect background pixels as a BitArray
+    correct_background_bool = (!).(dif_bool .| actual_bool)
+    dif_background_bool = dif_bool-actual_bool
+    # Number of elements
+    numel = prod(array_size12)
+    # Count number of feature pixels
+    pix_sum = sum(actual_bool,dims=(1,2,4))
+    pix_sum_perm = permutedims(pix_sum,[3,1,2,4])
+    feature_counts = pix_sum_perm[:,1,1,1]
+    # Calculate weight for each pixel
+    fr = feature_counts./numel./num_batch
+    w = 1 ./fr
+    w2 = 1 ./(1 .- fr)
+    w_sum = w + w2
+    w = w./w_sum
+    w2 = w2./w_sum
+    w_adj = w./feature_counts
+    w2_adj = w2./(numel*num_batch .- feature_counts)
+    # Initialize vectors for storing accuracies
+    features_accuracy = Vector{Float32}(undef,num_feat)
+    background_accuracy = Vector{Float32}(undef,num_feat)
+    # Calculate accuracies
+    for i = 1:num_feat
+        # Calculate accuracy for a feature
+        sum_correct = sum(correct_bool[:,:,i,:])
+        sum_dif = sum(dif_bool[:,:,i,:])
+        sum_comb = sum_correct*sum_correct/(sum_correct+sum_dif)
+        features_accuracy[i] = w_adj[i]*sum_comb
+        # Calculate accuracy for a background
+        sum_correct = sum(correct_background_bool[:,:,i,:])
+        sum_dif = sum(dif_background_bool[:,:,i,:])
+        sum_comb = sum_correct*sum_correct/(sum_correct+sum_dif)
+        background_accuracy[i] = w2_adj[i]*sum_comb
+    end
+    # Calculate final accuracy
+    acc = mean(features_accuracy+background_accuracy)
+    if acc>1.0
+        acc = 1.0f0
+    end
+    return acc
+end
+
+# Weight accuracy using inverse frequency (GPU)
+function accuracy_weighted(predicted::CuArray{Float32,4},actual::CuArray{Float32,4})
+    # Get input dimensions
+    array_size = size(actual)
+    array_size12 = array_size[1:2]
+    num_feat = array_size[3]
+    num_batch = array_size[4]
+    # Convert to BitArray
+    actual_bool = actual.>0
+    predicted_bool = predicted.>0.5
+    # Calculate correct and incorrect feature pixels as a BitArray
+    correct_bool = predicted_bool .& actual_bool
+    dif_bool = xor.(predicted_bool,actual_bool)
+    # Calculate correct and incorrect background pixels as a BitArray
+    correct_background_bool = (!).(dif_bool .| actual_bool)
+    dif_background_bool = dif_bool-actual_bool
+    # Number of elements
+    numel = prod(array_size12)
+    # Count number of feature pixels
+    pix_sum::Array{Float32,4} = collect(sum(actual_bool,dims=(1,2,4)))
+    pix_sum_perm = permutedims(pix_sum,[3,1,2,4])
+    feature_counts = pix_sum_perm[:,1,1,1]
+    # Calculate weight for each pixel
+    fr = feature_counts./numel./num_batch
+    w = 1 ./fr
+    w2 = 1 ./(1 .- fr)
+    w_sum = w + w2
+    w = w./w_sum
+    w2 = w2./w_sum
+    w_adj = w./feature_counts
+    w2_adj = w2./(numel*num_batch .- feature_counts)
+    # Initialize vectors for storing accuracies
+    features_accuracy = Vector{Float32}(undef,num_feat)
+    background_accuracy = Vector{Float32}(undef,num_feat)
+    # Calculate accuracies
+    for i = 1:num_feat
+        # Calculate accuracy for a feature
+        sum_correct = sum(correct_bool[:,:,i,:])
+        sum_dif = sum(dif_bool[:,:,i,:])
+        sum_comb = sum_correct*sum_correct/(sum_correct+sum_dif)
+        features_accuracy[i] = w_adj[i]*sum_comb
+        # Calculate accuracy for a background
+        sum_correct = sum(correct_background_bool[:,:,i,:])
+        sum_dif = sum(dif_background_bool[:,:,i,:])
+        sum_comb = sum_correct*sum_correct/(sum_correct+sum_dif)
+        background_accuracy[i] = w2_adj[i]*sum_comb
+    end
+    # Calculate final accuracy
+    acc = mean(features_accuracy+background_accuracy)
+    if acc>1.0
+        acc = 1.0f0
+    end
+    return acc
+end
+
+# Returns an accuracy function
+function get_accuracy_func(training::Training)
+    if training.Options.General.weight_accuracy
+        return accuracy_weighted
+    else
+        return accuracy_regular
+    end
+end
