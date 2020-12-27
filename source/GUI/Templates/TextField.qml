@@ -8,8 +8,8 @@ import QtQuick.Window 2.14
 T.TextField {
     id: control
 
-    property double defaultWidth: 0.1*Screen.width
-    property double defaultHeight: 0.03*Screen.height
+    property double defaultWidth: 384*pix
+    property double defaultHeight: buttonHeight
 
     implicitWidth: defaultWidth
     implicitHeight: defaultHeight
@@ -20,8 +20,8 @@ T.TextField {
     //                         contentHeight + topPadding + bottomPadding,
     //                         placeholder.implicitHeight + topPadding + bottomPadding)
 
-    padding: 6
-    leftPadding: padding + 4
+    padding: 6*pix
+    leftPadding: padding + 4*pix
 
     color: control.palette.text
     selectionColor: control.palette.highlight
@@ -53,7 +53,7 @@ T.TextField {
     background: Rectangle {
         implicitWidth: defaultWidth
         implicitHeight: defaultHeight
-        border.width: control.activeFocus ? 2 : 1
+        border.width: control.activeFocus ? 2*pix : 1*pix
         color: control.palette.base
         border.color: control.activeFocus ? control.palette.highlight : control.palette.mid
     }

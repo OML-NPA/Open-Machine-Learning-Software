@@ -3,26 +3,23 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
 import QtQuick.Templates 2.12 as T
-import QtQuick.Window 2.2
 
 T.Button {
     id: control
 
-    property real size: 20
-
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
+    property real size: 20*pix
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    padding: 6
-    horizontalPadding: padding + 2
-    spacing: 6
+    padding: 6*pix
+    horizontalPadding: padding + 2*pix
+    spacing: 6*pix
 
-    icon.width: 24
-    icon.height: 24
+    icon.width: 24*pix
+    icon.height: 24*pix
     icon.color: control.checked || control.highlighted ? control.palette.brightText :
                 control.flat && !control.down ? (control.visualFocus ? control.palette.highlight : control.palette.windowText) : control.palette.buttonText
 
@@ -47,7 +44,7 @@ T.Button {
         color: Color.blend(control.checked || control.highlighted ? control.palette.dark : "#fafafa",
                                                                     control.palette.mid, control.down ? 0.5 : 0.0)
         border.color: control.palette.dark
-        border.width: (Screen.width/3840)*(control.visualFocus ? 4 : 2)
+        border.width: (Screen.width/3840)*(control.visualFocus ? 4*pix : 2*pix)
         Rectangle {
             x: 1.08*size
             y: 1.08*size

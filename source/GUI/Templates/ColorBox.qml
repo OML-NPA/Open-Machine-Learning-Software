@@ -8,7 +8,6 @@ import QtQuick.Window 2.2
 T.Pane {
     id: control
     background: Rectangle {anchors.fill: parent.fill; color: "transparent"}
-    property double pix: Screen.width/3840
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             contentWidth + leftPadding + rightPadding + boxWidth)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,

@@ -189,8 +189,9 @@ ApplicationWindow {
             spacing: 0
             Frame {
                 id: leftFrame
-                height: customizationWindow.height + 1
-                width: 530*pix + 1
+                z: 1
+                height: customizationWindow.height + 1*pix
+                width: 530*pix + 1*pix
                 padding:0
                 Item {
                     id: layersItem
@@ -584,7 +585,7 @@ ApplicationWindow {
                             anchors.fill: parent.fill
                             color: defaultpalette.window
                             border.color: defaultpalette.border
-                            border.width: 2
+                            border.width: 2*pix
                         }
                     }
                     Frame {
@@ -661,6 +662,7 @@ ApplicationWindow {
             }
             Frame {
                 id: mainFrame
+                z: 0
                 width : customizationWindow.width-leftFrame.width-rightFrame.width
                 height : customizationWindow.height
                 backgroundColor: defaultpalette.listview
@@ -1101,10 +1103,10 @@ ApplicationWindow {
             }
             Frame {
                 id: rightFrame
+                z: 3
                 height: customizationWindow.height
                 width: 530*pix
                 padding:0
-
                 Item {
                     id: propertiesColumn
                     Label {
@@ -1118,7 +1120,7 @@ ApplicationWindow {
                             anchors.fill: parent.fill
                             color: defaultpalette.window
                             border.color: defaultpalette.border
-                            border.width: 2
+                            border.width: 2*pix
                         }
                     }
                     Frame {
@@ -1195,7 +1197,7 @@ ApplicationWindow {
                             anchors.fill: parent.fill
                             color: defaultpalette.window
                             border.color: defaultpalette.border
-                            border.width: 2
+                            border.width: 2*pix
                         }
                     }
                     Frame {

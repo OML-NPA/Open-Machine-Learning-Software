@@ -15,13 +15,12 @@ ApplicationWindow {
     title: qsTr("  Deep Data Analysis Software")
     minimumWidth: 1650*pix
     minimumHeight: 1240*pix
-
-    property double panel_width: window.width - menuPane.width - 2*margin
     color: defaultpalette.window
     property double pix: Screen.width/3840
-    property double margin: 0.02*Screen.width
-    property double buttonWidth: 0.1*Screen.width
-    property double buttonHeight: 0.03*Screen.height
+    property double margin: 78*pix
+    property double buttonWidth: 384*pix
+    property double buttonHeight: 65*pix
+    property double panel_width: window.width - menuPane.width - 2*margin
     property color defaultcolor: palette.window
 
     property var defaultcolors: {"light": rgbtohtml([254,254,254]),"light2": rgbtohtml([253,253,253]),

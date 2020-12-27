@@ -3,12 +3,10 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
 import QtQuick.Templates 2.12 as T
-import QtQuick.Window 2.2
 
 T.Frame {
     id: control
     property color backgroundColor: "transparent"
-    property double pix: Screen.width/3840
     property double borderWidth: pix*2
     property color borderColor: defaultpalette.border
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
@@ -16,7 +14,7 @@ T.Frame {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              contentHeight + topPadding + bottomPadding)
 
-    padding: 12
+    padding: 12*pix
 
     background: Rectangle {
         anchors.fill: parent.fill

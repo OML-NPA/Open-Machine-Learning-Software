@@ -3,7 +3,6 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
 import QtQuick.Templates 2.12 as T
-import QtQuick.Window 2.2
 
 T.ScrollBar {
     id: control
@@ -13,14 +12,14 @@ T.ScrollBar {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    padding: 2
+    padding: 2*pix
     visible: control.policy !== T.ScrollBar.AlwaysOff
     minimumSize: orientation == Qt.Horizontal ? height / width : width / height
     property double pix: Screen.width/3840
 
     contentItem: Rectangle {
-        implicitWidth: control.interactive ? 12*pix : 2
-        implicitHeight: control.interactive ? 12*pix : 2
+        implicitWidth: control.interactive ? 12*pix : 2*pix
+        implicitHeight: control.interactive ? 12*pix : 2*pix
 
         radius: width / 2
         color: control.pressed ? control.palette.dark : control.palette.mid

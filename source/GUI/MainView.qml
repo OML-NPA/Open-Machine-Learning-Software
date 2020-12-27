@@ -84,7 +84,7 @@ Component {
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                     Flickable {
                         boundsBehavior: Flickable.StopAtBounds
-                        contentHeight: newsListView.height+buttonHeight-2
+                        contentHeight: newsListView.height+buttonHeight-2*pix
                         Item {
                             ListView {
                                 id: newsListView

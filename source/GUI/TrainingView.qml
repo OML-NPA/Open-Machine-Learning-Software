@@ -392,8 +392,8 @@ Component {
                                     TreeButton {
                                         id: updateButton
                                         anchors.top: featureView.bottom
-                                        width: buttonWidth + 0.5*margin-24*pix
-                                        height: buttonHeight-2*pix
+                                        width: buttonWidth - 8*pix
+                                        height: buttonHeight - 2*pix
                                         hoverEnabled: true
                                         Label {
                                             topPadding: 0.15*margin
@@ -423,8 +423,8 @@ Component {
                                     TreeButton {
                                         id: updatemodelButton
                                         anchors.top: updateButton.bottom
-                                        width: buttonWidth + 0.5*margin-24*pix
-                                        height: buttonHeight-2*pix
+                                        width: buttonWidth - 8*pix
+                                        height: buttonHeight - 2*pix
                                         hoverEnabled: true
                                         visible: false
                                         Label {
@@ -436,7 +436,6 @@ Component {
                                             Julia.save_model("models/" + nameTextField.text + ".model")
                                         }
                                     }
-
                                     ListView {
                                         id: featureView
                                         height: childrenRect.height
@@ -446,8 +445,8 @@ Component {
                                         delegate: TreeButton {
                                             id: control
                                             hoverEnabled: true
-                                            width: buttonWidth + 0.5*margin-24*pix
-                                            height: buttonHeight-2*pix
+                                            width: buttonWidth - 8*pix
+                                            height: buttonHeight - 2*pix
                                             onClicked: {
                                                 if (featuredialogLoader.sourceComponent === null) {
                                                     indTree = index
@@ -459,7 +458,7 @@ Component {
                                                 Rectangle {
                                                     id: colorRectangle
                                                     Layout.leftMargin: 0.2*margin
-                                                    Layout.bottomMargin: 3*pix
+                                                    Layout.bottomMargin: 5*pix
                                                     Layout.alignment: Qt.AlignBottom
                                                     height: 30*pix
                                                     width: 30*pix

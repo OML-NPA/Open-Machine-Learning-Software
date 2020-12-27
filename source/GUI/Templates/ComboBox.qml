@@ -1,14 +1,13 @@
 
 import QtQuick 2.14
-import QtQuick.Window 2.14
 import QtQuick.Controls 2.14
 import QtQuick.Controls.impl 2.14
 import QtQuick.Templates 2.14 as T
 
 T.ComboBox {
     id: control
-    property double defaultWidth: 0.1*Screen.width
-    property double defaultHeight: 0.03*Screen.height
+    property double defaultWidth: 384*pix
+    property double defaultHeight: buttonHeight
     property bool wasDown: false
     implicitWidth: defaultWidth
     implicitHeight: defaultHeight
@@ -26,10 +25,10 @@ T.ComboBox {
     onFocusReasonChanged: if (down) {wasDown = true}
 
     contentItem: T.TextField {
-        leftPadding: !control.mirrored ? 12 : control.editable && activeFocus ? 3 : 1
-        rightPadding: control.mirrored ? 12 : control.editable && activeFocus ? 3 : 1
-        topPadding: 6 - control.padding
-        bottomPadding: 6 - control.padding
+        leftPadding: !control.mirrored ? 12*pix : control.editable && activeFocus ? 3*pix : 1*pix
+        rightPadding: control.mirrored ? 12*pix : control.editable && activeFocus ? 3*pix : 1*pix
+        topPadding: 6*pix - control.padding
+        bottomPadding: 6*pix - control.padding
 
         text: control.editable ? control.editText : control.displayText
 
@@ -57,6 +56,8 @@ T.ComboBox {
     indicator: ColorImage {
         x: control.mirrored ? control.padding : control.width - width - control.padding
         y: control.topPadding + (control.availableHeight - height) / 2
+        width: 40*pix
+        height: 28*pix
         color: control.palette.dark
         defaultColor: "#353637"
         source: "qrc:/qt-project.org/imports/QtQuick/Controls.2/images/double-arrow.png"
@@ -64,8 +65,8 @@ T.ComboBox {
     }
 
     background: Rectangle {
-        implicitWidth: 140
-        implicitHeight: 40
+        implicitWidth: 140*pix
+        implicitHeight: 40*pix
 
         color: control.down ? defaultpalette.buttonpressed : defaultpalette.button
         border.color: defaultpalette.controlborder
@@ -77,8 +78,8 @@ T.ComboBox {
         y: control.height
         width: control.width
         height: Math.min(contentItem.implicitHeight, control.Window.height - topMargin - bottomMargin)
-        topMargin: 6
-        bottomMargin: 6
+        topMargin: 6*pix
+        bottomMargin: 6*pix
         onOpened: {
             if (wasDown) {
                 close()
@@ -94,7 +95,7 @@ T.ComboBox {
             highlightMoveDuration: 0
 
             Rectangle {
-                z: 10
+                z: 10*pix
                 width: parent.width
                 height: parent.height
                 color: "transparent"

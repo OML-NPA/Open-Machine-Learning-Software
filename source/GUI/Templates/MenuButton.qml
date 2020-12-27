@@ -3,13 +3,10 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
 import QtQuick.Templates 2.12 as T
-import QtQuick.Window 2.2
 
 T.Button {
     id: control
 
-    property double margin: 0.02*Screen.width
-    property double pix: Screen.width/3840
     property double tabmargin: 0.5*margin
     property double font_size: 11
     property bool buttonfocus: false
@@ -20,12 +17,12 @@ T.Button {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    padding: 6
-    horizontalPadding: padding + 2
-    spacing: 6
+    padding: 6*pix
+    horizontalPadding: padding + 2*pix
+    spacing: 6*pix
 
-    icon.width: 24
-    icon.height: 24
+    icon.width: 24*pix
+    icon.height: 24*pix
     icon.color: control.checked || control.highlighted ? control.palette.brightText :
                 control.flat && !control.down ? (control.visualFocus ? control.palette.highlight : control.palette.windowText) : control.palette.buttonText
 
@@ -50,7 +47,7 @@ T.Button {
             leftPadding: horizontal ? 0 : tabmargin
             Component.onCompleted: {
                 if (horizontal) {
-                    var text_width = fontMetrics.advanceWidth(text)
+                    var text_width = fontMetrics.advanceWidth(text)*pix
                     control.width = text_width + 150*pix
                     x = (control.width - text_width)/2 - 0.23*text_width
                 }
@@ -76,6 +73,7 @@ T.Button {
         Rectangle {
                 y: horizontal ? 0 : -1*pix
                 x: horizontal ? -1*pix : 0
+                color: defaultcolors.dark2
                 border.color: defaultcolors.dark2
                 border.width: 4*pix
                 width: horizontal ? 2*pix : control.width
@@ -84,6 +82,7 @@ T.Button {
         Rectangle {
                 y: horizontal ? 0 : control.height
                 x: horizontal ? control.width : 0
+                color: defaultcolors.dark2
                 border.color: defaultcolors.dark2
                 border.width: 4*pix
                 width: horizontal ? 2*pix : control.width

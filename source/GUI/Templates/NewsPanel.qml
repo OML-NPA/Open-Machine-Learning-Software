@@ -59,6 +59,7 @@ T.Button {
         }
         Rectangle {
                 y: 1*pix
+                color: defaultcolors.dark2
                 border.color: defaultcolors.dark2
                 border.width: 4*pix
                 width: control.width
@@ -66,6 +67,7 @@ T.Button {
         }
         Rectangle {
                 y: control.height
+                color: defaultcolors.dark2
                 border.color: defaultcolors.dark2
                 border.width: 4*pix
                 width: control.width

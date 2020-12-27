@@ -3,7 +3,6 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
 import QtQuick.Templates 2.12 as T
-import QtQuick.Window 2.2
 
 T.ScrollView {
     id: control
@@ -12,8 +11,6 @@ T.ScrollView {
                             contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              contentHeight + topPadding + bottomPadding)
-
-    property double margin: 0.02*Screen.width
 
     ScrollBar.vertical: ScrollBar {
         parent: control

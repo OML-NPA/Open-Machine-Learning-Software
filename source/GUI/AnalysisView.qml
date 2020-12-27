@@ -108,7 +108,7 @@ Component {
                 RowLayout {
                     spacing: margin
                     Column {
-                        spacing: -2
+                        spacing: -2*pix
                         Label {
                             width: buttonWidth + 0.5*margin
                             text: "Folders:"
@@ -118,7 +118,7 @@ Component {
                                 anchors.fill: parent.fill
                                 color: defaultpalette.window
                                 border.color: defaultcolors.dark
-                                border.width: 2
+                                border.width: 2*pix
                             }
                         }
                         Frame {
@@ -137,15 +137,14 @@ Component {
                                     model: folderModel
                                     delegate: TreeButton {
                                         id: control
-                                        width: buttonWidth + 0.5*margin - 24*pix
-                                        height: buttonHeight-2*pix
+                                        width: buttonWidth + 8*pix
+                                        height: buttonHeight - 2*pix
                                         onDoubleClicked: { updateFolder(currentfolder+"/"+name.text) }
-                                        RowLayout {
+                                        Row {
                                             spacing: 0
+                                            leftPadding: 0*pix
                                             CheckBox {
-                                                padding: 0
-                                                Layout.leftMargin: -0.175*margin
-                                                Layout.topMargin: 0.125*margin
+                                                topPadding: 11*pix
                                                 onClicked: {
                                                     var url = currentfolder+"/"+name.text
                                                     var checkedFolders = []
@@ -163,8 +162,8 @@ Component {
                                             }
                                             Label {
                                                 id: name
-                                                topPadding: 0.10*margin
-                                                leftPadding: -0.1*margin
+                                                topPadding: 0.12*margin
+                                                leftPadding: 0.05*margin
                                                 text: fileName
                                             }
                                         }
@@ -177,7 +176,7 @@ Component {
                         }
                     }
                     Column {
-                        spacing: -2
+                        spacing: -2*pix
                         Label {
                             width: buttonWidth + 0.5*margin
                             text: "Features:"
@@ -187,7 +186,7 @@ Component {
                                 anchors.fill: parent.fill
                                 color: defaultpalette.window
                                 border.color: defaultcolors.dark
-                                border.width: 2
+                                border.width: 2*pix
                             }
                         }
                         Frame {
@@ -217,8 +216,8 @@ Component {
                                     delegate: TreeButton {
                                         id: analysisfeatureButton
                                         hoverEnabled: true
-                                        width: buttonWidth + 0.5*margin-24*pix
-                                        height: buttonHeight-2*pix
+                                        width: buttonWidth - 8*pix
+                                        height: buttonHeight - 2*pix
                                         onClicked: {
                                             if (analysisfeaturedialogLoader.sourceComponent === null) {
                                                 indTree = index
@@ -230,7 +229,7 @@ Component {
                                             Rectangle {
                                                 id: colorRectangle
                                                 Layout.leftMargin: 0.2*margin
-                                                Layout.bottomMargin: 3*pix
+                                                Layout.bottomMargin: 5*pix
                                                 Layout.alignment: Qt.AlignBottom
                                                 height: 30*pix
                                                 width: 30*pix
@@ -260,8 +259,6 @@ Component {
             Layout.alignment: Qt.AlignHCenter
             Button {
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                Layout.row: 2
-                Layout.column: 1
                 text: "Options"
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
@@ -274,8 +271,6 @@ Component {
             Button {
                 id: analysisButton
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                Layout.row: 2
-                Layout.column: 1
                 text: "Analyse"
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight

@@ -1,6 +1,5 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Window 2.2
 
 Flickable{
     id: flickable
@@ -9,7 +8,6 @@ Flickable{
     boundsBehavior: Flickable.StopAtBounds
     flickableDirection: Flickable.AutoFlickIfNeeded
     clip: true
-    property double pix: Screen.width/3840
     property bool showBackground: true
     property color backgroundColor: "white"
     property color scrollbarColor: defaultpalette.window
@@ -62,7 +60,7 @@ Flickable{
 
         contentItem:
             Rectangle {
-                implicitWidth: 100
+                implicitWidth: 100*pix
                 implicitHeight: 25*pix
                 color: "transparent"
                 Rectangle {

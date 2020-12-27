@@ -15,12 +15,12 @@ T.Button {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    padding: 6
-    horizontalPadding: padding + 2
-    spacing: 6
+    padding: 6*pix
+    horizontalPadding: padding + 2*pix
+    spacing: 6*pix
 
-    icon.width: 24
-    icon.height: 24
+    icon.width: 24*pix
+    icon.height: 24*pix
     icon.color: control.checked || control.highlighted ? control.palette.brightText :
                 control.flat && !control.down ? (control.visualFocus ? control.palette.highlight : control.palette.windowText) : control.palette.buttonText
 
