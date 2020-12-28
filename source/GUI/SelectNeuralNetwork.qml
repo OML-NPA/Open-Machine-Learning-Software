@@ -16,20 +16,9 @@ ApplicationWindow {
     minimumHeight: 885*pix
     maximumWidth: Screen.width
     maximumHeight: Screen.height
-
     color: defaultpalette.window
 
-    property double margin: 0.02*Screen.width
-    property double pix: Screen.width/3840
-    property double buttonWidth: 0.1*Screen.width
-    property double buttonHeight: 0.03*Screen.height
-
     onClosing: { selectneuralnetworkLoader.sourceComponent = null }
-
-    function debug(x) {
-        console.log(x)
-        return(x)
-    }
 
     GridLayout {
         id: gridLayout

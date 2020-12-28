@@ -16,17 +16,7 @@ ApplicationWindow {
     minimumHeight: columnLayout.height
     maximumWidth: columnLayout.width
     maximumHeight: columnLayout.height
-
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
     color: defaultpalette.window
-
-    property double margin: 0.02*Screen.width
-    property double fontsize: Math.round(11*Screen.height/2160)
-    property double buttonWidth: 0.1*Screen.width
-    property double buttonHeight: 0.03*Screen.height
-    property double tabmargin: 0.5*margin
-    property color menucolor: "#fafafa"
-    property color defaultcolor: systempalette.window
 
     onClosing: {featuredialogLoader.sourceComponent = null}
 

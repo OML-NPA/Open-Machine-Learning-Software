@@ -18,13 +18,7 @@ ApplicationWindow {
     minimumHeight: gridLayout.height
     maximumWidth: gridLayout.width
     maximumHeight: gridLayout.height
-
-    SystemPalette { id: systempalette; colorGroup: SystemPalette.Active }
     color: defaultpalette.window
-
-    property double margin: 0.02*Screen.width
-    property double buttonWidth: 0.1*Screen.width
-    property double buttonHeight: 0.03*Screen.height
 
     onClosing: {
         Julia.put_channel("Training",["stop"])

@@ -19,20 +19,11 @@ ApplicationWindow {
 
     color: defaultpalette.window
 
-    property double margin: 0.02*Screen.width
-    property double pix: Screen.width/3840
-    property double buttonWidth: 380*pix
-    property double buttonHeight: 65*pix
-
-    property double defaultWidth: buttonWidth*5/2
-    property double defaultHeight: buttonHeight*20
-
     property double paneHeight: customizationWindow.height - 4*pix
     property double paneWidth: customizationWindow.width-leftFrame.width-rightFrame.width-4*pix
 
     property bool optionsOpen: false
     property bool localtrainingOpen: false
-    property var architecture
     property double iconSize: 70*pix
 
     Loader { id: designoptionsLoader}
@@ -1588,8 +1579,8 @@ ApplicationWindow {
             }
             var unit = layers.children[i]
             var connections = getconnections(unit,1)
-            var x = layers.children[i].x
-            var y = layers.children[i].y
+            var x = layers.children[i].x/pix
+            var y = layers.children[i].y/pix
             Julia.update_layers(keys,values,"connections_up",connections["up"],
                             "connections_down",connections["down"],
                             "x",x,"y",y,"labelColor",layers.children[i].labelColor);
@@ -1761,14 +1752,6 @@ ApplicationWindow {
         var pathElement = connection_data.pathElements[0]
         pathElement.x = finishX
         pathElement.y = finishY
-        /*for (var i=0;i<data_length;i++) {
-            //connection.data[0].destroy()
-        }*/
-        /*var object = connectionShapePathComponent.createObject(connection, {
-              "beginX": connection.beginX,
-              "beginY": connection.beginY,
-              "finishX": connection.finishX,
-              "finishY": connection.finishY});*/
     }
 
     function makeConnection(unit,downNode,downNodeRectangle,upNode) {

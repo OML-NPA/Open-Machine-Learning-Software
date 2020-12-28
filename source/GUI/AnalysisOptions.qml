@@ -16,16 +16,7 @@ ApplicationWindow {
     minimumHeight: 800*pix
     maximumWidth: gridLayout.width
     maximumHeight: gridLayout.height
-
     color: defaultpalette.window
-
-    property double margin: 0.02*Screen.width
-    property double buttonWidth: 0.1*Screen.width
-    property double buttonHeight: 0.03*Screen.height
-    property double tabmargin: 0.5*margin
-    property double pix: Screen.width/3840
-
-    property bool terminate: false
 
     onClosing: { analysisoptionsLoader.sourceComponent = null }
 

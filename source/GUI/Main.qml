@@ -18,6 +18,7 @@ ApplicationWindow {
     color: defaultpalette.window
     property double pix: Screen.width/3840
     property double margin: 78*pix
+    property double tabmargin: 0.5*margin
     property double buttonWidth: 384*pix
     property double buttonHeight: 65*pix
     property double panel_width: window.width - menuPane.width - 2*margin
