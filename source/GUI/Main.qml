@@ -251,6 +251,9 @@ ApplicationWindow {
                     }
                     else {
                         if (skipStringing.includes(prop_name) || typeof(prop)==='object') {
+                            if (prop_name==="x" || prop_name==="y") {
+                                prop = prop*pix
+                            }
                             unit[prop_name] = prop
                         }
                         else {
