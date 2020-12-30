@@ -1,4 +1,5 @@
 
+# Get urls of files in a selected folder. Files are used for analysis.
 function get_urls_analysis_main(analysis::Analysis,analysis_data::Analysis_data)
     url_imgs = analysis_data.url_imgs
     empty!(url_imgs)
@@ -21,7 +22,7 @@ get_urls_analysis() =
 function prepare_analysis_data_main(analysis_data::Analysis_data,
         features::Vector{Feature},progress::RemoteChannel,results::RemoteChannel)
     put!(progress,2)
-    images = load_images(analysis_data)
+    images = load_images(analysis_data.url_imgs)
     put!(progress,1)
     if isempty(features)
         @info "empty features"
@@ -55,6 +56,7 @@ function get_filenames(data::Vector{String})
     return data
 end
 
+# Batches filenames together allowing for correct naming during export
 function batch_filenames(filenames::Vector{String},batch_size::Int64)
     len = length(filenames)
     num = len - batch_size
@@ -80,6 +82,7 @@ function batch_filenames(filenames::Vector{String},batch_size::Int64)
     return filename_batches
 end
 
+# Main function that performs analysis
 function analyse_main(settings::Settings,analysis_data::Analysis_data,
         model_data::Model_data,channels::Channels)
     # Initialize constants
@@ -201,6 +204,7 @@ function objects_area(components::Array{Int64,2},scaling::Float64)
     return area
 end
 
+# Makes a 3D representation of a 2D object based on optimising circularity
 function func2D_to_3D(objects_mask::BitArray{2})
     D = Float32.(distance_transform(feature_transform((!).(objects_mask))))
     w = zeros(Float32,(size(D)...,8))

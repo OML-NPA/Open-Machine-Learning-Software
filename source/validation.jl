@@ -1,3 +1,5 @@
+
+#---Data preparation
 function prepare_validation_data_main(training_data::Training_data,
         features::Array,progress::RemoteChannel,results::RemoteChannel)
     put!(progress,3)
@@ -52,6 +54,7 @@ function reset_validation_data(validation_plot_data::Validation_plot_data)
     return nothing
 end
 
+#---Analysing images in slices
 function prepare_data(input_data::Union{Array{Float32,4},CuArray{Float32,4}},ind_max::Int64,
         max_value::Int64,offset::Int64,ind_split::Int64,j::Int64)
     start_ind = 1 + (j-1)*ind_split-1
@@ -69,6 +72,7 @@ function prepare_data(input_data::Union{Array{Float32,4},CuArray{Float32,4}},ind
     return output_data
 end
 
+# Makes output mask to have a correct size for stiching
 function fix_size(temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}},
         num_parts::Int64,correct_size::Int64,ind_max::Int64,
         offset_add::Int64,j::Int64)
@@ -141,6 +145,7 @@ function accum_parts(model::Chain,input_data::CuArray{Float32,4},
     return predicted_out
 end
 
+#---Makes output images
 function do_target!(target_temp::Vector{Array{RGB{Float32},2}},
         target::Array{Float32,2},color::Array{Float32,3},j::Int64)
     target_img = target.*color
@@ -244,6 +249,8 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     return predicted_color,predicted_error,target_color
 end
 
+#---Main analysis funtions
+# Runs data thorugh a neural network
 function forward(model::Chain,input_data::Array{Float32};
         num_parts::Int64=1,offset::Int64=0,use_GPU::Bool=true)
     if use_GPU
@@ -264,6 +271,7 @@ function forward(model::Chain,input_data::Array{Float32};
     return predicted::Array{Float32,4}
 end
 
+# Main validation function
 function validate_main(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
     training = settings.Training

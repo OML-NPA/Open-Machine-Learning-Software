@@ -1,4 +1,5 @@
 
+# Get urls of files in a selected folder. Files are used for training and/or validation.
 function get_urls_training_main(training::Training,training_data::Training_data)
     # Get reference to url accumulators
     url_imgs = training_data.url_imgs
@@ -47,34 +48,14 @@ end
 get_urls_training() =
     get_urls_training_main(training,training_data)
 
-function get_image(url_img::String)
-    img::Array{RGB{N0f8},2} = load(url_img)
-    return img
-end
-
-function get_label(url_label::String)
-    label::Array{RGB{N0f8},2} = load(url_label)
-    return label
-end
-
-function load_images(source::Union{Training_data,Analysis_data})
-    url_imgs = source.url_imgs
-    num = length(url_imgs)
+# Imports images using urls
+function load_images(urls::Vector{String})
+    num = length(urls)
     imgs = Vector{Array{RGB{N0f8},2}}(undef,num)
     for i = 1:num
-        imgs[i] = get_image(url_imgs[i])
+        imgs[i] = load(urls[i])
     end
     return imgs
-end
-
-function load_labels(training_data::Training_data)
-    url_labels = training_data.url_labels
-    num = length(url_labels)
-    labels = Vector{Array{RGB{N0f8},2}}(undef,num)
-    for i = 1:num
-        labels[i] = get_label(url_labels[i])
-    end
-    return labels
 end
 
 # Convert images to grayscale Array{Float32,2}
@@ -97,15 +78,18 @@ function label_to_bool(labelimg::Array{RGB{Normed{UInt8,8}},2},
     inds_borders = findall(border)
     label = fill!(BitArray{3}(undef, size(labelimg)...,
         num + num_borders),0)
+    # Find features based on colors
     for i=1:num
         label[:,:,i] = .==(labelimg,colors[i])
     end
+    # Combine feature marked for that
     for i=1:num
         for j=1:length(labels_incl[i])
             label[:,:,i] = .|(label[:,:,i],
                 label[:,:,labels_incl[i][j]])
         end
     end
+    # Make features outlining object borders
     for j=1:length(inds_borders)
         dil = dilate(perim(label[:,:,inds_borders[j]]),5)
         label[:,:,length(colors)+j] = dil
@@ -136,6 +120,7 @@ function get_feature_data(features::Vector{Feature})
     return labels_color,labels_incl,border
 end
 
+# Removes rows and columns from image sides if they are uniformly black.
 function correct_view(img::Array{Float32,2},label::Array{RGB{Normed{UInt8,8}},2})
     field = dilate(imfilter(img.<0.3, Kernel.gaussian(4)).>0.5,20)
     areaopen!(field,30000)

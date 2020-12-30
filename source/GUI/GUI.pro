@@ -45,11 +45,15 @@ DISTFILES += \
     Controls/TextField.qml \
     Controls/TreeButton.qml \
     Design.qml \
+    DesignOptions.qml \
     FeatureDialog.qml \
+    GeneralOptionsView.qml \
     LocalTraining.qml \
     Main.qml \
     MainView.qml \
+    MenuButtonH.qml \
     Options.qml \
+    OutputDialog.qml \
     Plus.png \
     SelectNeuralNetwork.qml \
     Templates/Button.qml \
@@ -71,4 +75,6 @@ DISTFILES += \
     TrainingOptions.qml \
     TrainingPlot.qml \
     TrainingView.qml \
+    ValidationPlot.qml \
+    VisualisationView.qml \
     qtquickcontrols2.conf

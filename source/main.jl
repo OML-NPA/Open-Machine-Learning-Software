@@ -1,8 +1,10 @@
 
+# Initialization
 if !@isdefined master_data
     include("init.jl")
 end
 
+# Launches GUI
 @qmlfunction(
     # Model functions
     reset_layers,

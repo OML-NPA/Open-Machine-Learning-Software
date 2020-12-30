@@ -99,8 +99,8 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     # Get feature data
     labels_color,labels_incl,border = get_feature_data(features)
     # Load images and labels
-    imgs = load_images(training_data)
-    labels = load_labels(training_data)
+    imgs = load_images(training_data.url_imgs)
+    labels = load_images(training_data.url_labels)
     # Get number of images
     num = length(imgs)
     # Initialize accumulators
@@ -140,6 +140,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     put!(progress, 1)
     return nothing
 end
+# Wrapper allowing for remote execution
 function prepare_training_data_main2(training::Training,training_data::Training_data,
     model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
     @everywhere training,training_data,model_data
