@@ -146,10 +146,9 @@ Component {
                         anchors.left: parent.left
                         wrapMode: TextEdit.WordWrap
                         horizontalAlignment: TextEdit.AlignJustify
-                        text: "This software allows to design and apply neural networks and data "+
-                               "processing functions to images, videos or "+
-                                "data in any other format.\n\n"+
-                                "Copyright (C) 2020 Aleksandr Illarionov and Daria Aborneva\n"
+                        text: "Software for creation and application of machine "+
+                               "learning models without the need for programming.\n\n"+
+                                "Copyright (C) 2020 Open Machine Learning MTÜ\n"
                     }
                     Label {
                         id: licenseLabel
@@ -194,16 +193,9 @@ Component {
                             anchors.left: parent.left
                             wrapMode: TextEdit.WordWrap
                             horizontalAlignment: TextEdit.AlignJustify
-                            text: "This program is free software: you can redistribute it and/or modify "+
-                                   "it under the terms of the GNU General Public License as published "+
-                                   "by the Free Software Foundation; either version 3 of the License, "+
-                                   "or (at your option) any later version.\n\n"+
-                                   "This program is distributed in the hope that it will be useful, "+
-                                   "but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY "+
-                                   "or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public "+
-                                   "License for more details.\n\n"+
-                                   "You should have received a copy of the GNU General Public License "+
-                                   "along with this program. If not, see: https://www.gnu.org/licenses/"
+                            text: "This software is dual-licensed. All Julia code is "+
+                                  "licensed under the MIT license and all QML code under"+
+                                  " the GPL-3.0 license."
                         }
                     }
                 }
