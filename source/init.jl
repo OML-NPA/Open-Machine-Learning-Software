@@ -15,6 +15,7 @@ end
 @everywhere include("handling_channels.jl")
 @everywhere include("handling_data.jl")
 @everywhere include("helper_functions.jl")
+@everywhere include("layers.jl")
 @everywhere include("design.jl")
 @everywhere include("training.jl")
 @everywhere include("training_common.jl")
