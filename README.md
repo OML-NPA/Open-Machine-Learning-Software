@@ -1,42 +1,42 @@
 # Deep Data Analysis Software
-This software is designed to both allow people not familiar with coding or machine learning as well as for professionals in these fields to easily design and apply neural networks and data processing functions for extracting useful data from images, videos or data in any other format.
-This is a community based project similar to GIMP and Mozilla and, therefore, the software is made by users and for users.
+This software is designed to both allow people not familiar with coding or machine learning as well as professionals in these fields to easily design and apply machine learning methods and data processing functions to images or data sequences.
+
+NB! This is a pre-alpha version. Bugs and rapid changes should be expected! Release is currently scheduled for May 2021.
+
+### Preview
+
+...
 
 ### Setting up
-Binary downloads: Windows (not implemented), Mac (not implemented), Linux (not implemented)
+Download binaries: Windows (not implemented), Mac (not implemented), Linux (not implemented)
 
-Software can also be run in Julia environment by cloning the repository and executing main.jl
+Software can also be run in Julia environment by cloning the repository, installing packages mentioned in packagesjl and then executing main.jl.
 
 ### Features
-  - Design a neural network or use a community created one
+We use Flux.jl neural network library. Currently it is possible to:
+  - Design a neural network
   - Train a neural network
-  - Use a neural network to analyse data
-  - Process neural network output
-  - Visualise data
+  - Validate a neural network
+  - Analyse data with a neural network
+  
+Only image data and image segmentation is currently supported.
 
 ### Goals
 1. Ease of set-up and use
       - Simple installation
-      - Simple interface
-2. Flexibility
-      - Modularity
-      - High number of built-in functions
-      - Support of neural networks and custom functions written in different languages
-3. High processing speed
-      - Intrinsic advantage of Julia programming language
+      - Intuitive interface
+2. Ease of contribution
+      - Extensive documentation
+      - Modular design
+3. Democratic development process
+      - Built-in voting feature
+4. High processing speed
+      - Intrinsic advantage of the Julia programming language
 
 ### Project support
-We use a voluntary support scheme in order to finance the development and be able to compete with any proprietary commercial alternatives. 
-Project can be supported in three ways:
+We use a voluntary support scheme in order to finance the development. 
+Software can be supported by:
    - Direct donation
-   - Display a customizable add banner with community selected adds
-   - Commiting changes to the project source
-
-A user can decide himself what part of his monetary contribution should go towards software and how much towards used packages' development.
-
-Being a supporter allows a user to request features and affect the feature queue based on the amount of support.
+   - Voluntary add display with community selected adds
 
 Financial report detailing incomes and expenses is published monthly.
-
-
-
