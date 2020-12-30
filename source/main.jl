@@ -1,6 +1,6 @@
 
 if !@isdefined master_data
-    include("Init.jl")
+    include("init.jl")
 end
 
 @qmlfunction(
