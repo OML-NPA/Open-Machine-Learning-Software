@@ -58,11 +58,13 @@ end
     make_tuple,
     num_cores,
     has_cuda,
-    source_dir,
+    pwd,
     yield,
     info,
     time,
-    gc
+    pwd,
+    gc,
+    fix_slashes
 )
 load("GUI//Main.qml",
     display_image = CxxWrap.@safe_cfunction(display_image, Cvoid,
