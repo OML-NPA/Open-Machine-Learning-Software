@@ -1,3 +1,9 @@
+# Make urls QML compatible
+function fix_slashes(url)
+    url::String = fix_QML_types(url)
+    url = replace(url, "\\" => "/")
+    url = string(uppercase(url[1]),url[2:end])
+end
 
 # Convert QML types to Julia types
 function fix_QML_types(var)
