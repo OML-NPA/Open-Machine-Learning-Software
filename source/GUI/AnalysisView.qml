@@ -13,26 +13,25 @@ Component {
     ColumnLayout {
         id: mainLayout
         property int indTree: 0
-        property string currentfolder: Qt.resolvedUrl(".")
         property string modelName: "yeast"
 
         Component.onCompleted: {
-            var url = "file:///"+Julia.get_settings(["Analysis","folder_url"])
-            if (url!=="") {
-                currentfolder = url
-                folderModel.folder = currentfolder
-                folderView.model = folderModel
+            var temp_folder = Julia.get_settings(["Analysis","folder_url"])
+            if (temp_folder==="") {
+                folderModel.folder = "file:///"+url(Julia.fix_slashes(Julia.pwd()))
             }
+            else {
+                folderModel.folder = "file:///"+temp_folder
+            }
+            folderDialog.currentFolder = temp_folder
         }
 
         FolderListModel {
             id: folderModel
             showFiles: false
-            folder: currentfolder
         }
         FolderDialog {
             id: folderDialog
-            currentFolder: currentfolder
             onAccepted: {
                 updateFolder(folderDialog.folder)
             }
@@ -63,7 +62,9 @@ Component {
                         text: "Up"
                         Layout.preferredWidth: buttonWidth/2
                         Layout.preferredHeight: buttonHeight
-                        onClicked: {updateFolder(folderModel.parentFolder)}
+                        onClicked: {
+                            updateFolder(folderModel.parentFolder)
+                        }
                     }
                     Button {
                         id: browse
@@ -139,14 +140,17 @@ Component {
                                         id: control
                                         width: buttonWidth + 8*pix
                                         height: buttonHeight - 2*pix
-                                        onDoubleClicked: { updateFolder(currentfolder+"/"+name.text) }
+                                        onDoubleClicked: {
+                                            var url = folderModel.folder+"/"+name.text
+                                            updateFolder(url)
+                                        }
                                         Row {
                                             spacing: 0
-                                            leftPadding: 0*pix
+                                            leftPadding: - 20*pix
                                             CheckBox {
                                                 topPadding: 11*pix
                                                 onClicked: {
-                                                    var url = currentfolder+"/"+name.text
+                                                    var url = folderModel.folder+"/"+name.text
                                                     var checkedFolders = []
                                                     for (var i=0;i<folderModel.count;i++) {
                                                          var treeButton = folderView.itemAtIndex(i)
@@ -163,7 +167,7 @@ Component {
                                             Label {
                                                 id: name
                                                 topPadding: 0.12*margin
-                                                leftPadding: 0.05*margin
+                                                leftPadding: -10*pix
                                                 text: fileName
                                             }
                                         }
@@ -413,9 +417,7 @@ Component {
         }
 
         function updateFolder(path) {
-            currentfolder = path
-            folderModel.folder = currentfolder
-            folderView.model = folderModel
+            folderModel.folder = path
             path = String(path).substring(8)
             Julia.set_settings(["Analysis","folder_url"],path)
         }

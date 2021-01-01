@@ -120,6 +120,7 @@ training_data = Training_data()
 
 @with_kw mutable struct Analysis_data
     url_imgs::Vector{String} = Vector{String}(undef,0)
+    folders::Vector{String} = Vector{String}(undef,0)
     data_input::Vector{Array{Float32,4}} = Vector{Array{Float32,4}}(undef,1)
 end
 analysis_data = Analysis_data()
@@ -217,7 +218,8 @@ training = Training()
 
 # Analysis
 @with_kw mutable struct Options_analysis
-    savepath::String = replace(pwd(), "\\"=>"/")
+    savepath::String = ""
+    analyse_by::Tuple{String,Int64} = ("file",0)
     data_type::Int64 = 0
     image_type::Int64 = 0
     downsize::Int64 = 0
@@ -231,7 +233,7 @@ options_analysis = Options_analysis()
     Options::Options_analysis = options_analysis
     folder_url::String = ""
     model_url::String = ""
-    checked_folders::Vector{String} = []
+    checked_folders::Vector{String} = String[]
 end
 analysis = Analysis()
 
