@@ -19,6 +19,7 @@ T.ComboBox {
         palette.text: control.palette.text
         palette.highlightedText: control.palette.text
         font.weight: control.currentIndex === index ? Font.DemiBold : Font.Normal
+        font.pointSize: 10
         highlighted: control.highlightedIndex === index
         hoverEnabled: control.hoverEnabled
     }
@@ -77,7 +78,7 @@ T.ComboBox {
     popup: T.Popup {
         y: control.height
         width: control.width
-        height: Math.min(contentItem.implicitHeight, control.Window.height - topMargin - bottomMargin)
+        height: Math.min(contentItem.implicitHeight)
         topMargin: 6*pix
         bottomMargin: 6*pix
         onOpened: {
