@@ -3,19 +3,16 @@ import QtQuick 2.12
 import QtQuick.Templates 2.12 as T
 import QtQuick.Controls 2.12
 import QtQuick.Controls.impl 2.12
-import QtQuick.Window 2.15
-
 T.CheckBox {
     id: control
-
     implicitWidth: 1.5*Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding,
                              implicitIndicatorHeight + topPadding + bottomPadding)
 
-    padding: 6*pix
-    spacing: 6*pix
+    rightPadding: 6*pix
+    spacing: 28*pix
 
     // keep in sync with CheckDelegate.qml (shared CheckIndicator.qml was removed for performance reasons)
     indicator: Rectangle {
