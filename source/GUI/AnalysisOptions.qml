@@ -114,6 +114,10 @@ ApplicationWindow {
                                     }
                                     Label {
                                         Layout.alignment : Qt.AlignLeft
+                                        text: "Analyse by:"
+                                    }
+                                    Label {
+                                        Layout.alignment : Qt.AlignLeft
                                         text: "Output data type:"
                                     }
                                     Label {
@@ -142,6 +146,10 @@ ApplicationWindow {
                                             readOnly: true
                                             Component.onCompleted: {
                                                 text = Julia.get_settings(["Analysis","Options","savepath"])
+                                                if (text==="") {
+                                                    text = Julia.fix_slashes(Julia.pwd()+"/Output data")
+                                                    Julia.set_settings(["Analysis","Options","savepath"],text)
+                                                }
                                                 analysisoptionsFolderDialog.currentFolder = text
                                             }
                                             FolderDialog {
@@ -159,6 +167,22 @@ ApplicationWindow {
                                             width: buttonWidth/2
                                             height: buttonHeight
                                             onClicked: {analysisoptionsFolderDialog.open()}
+                                        }
+                                    }
+                                    ComboBox {
+                                        width: 0.5*buttonWidth
+                                        model: ListModel {
+                                            id: analysebyModel
+                                            ListElement { text: "file" }
+                                            ListElement { text: "folder" }
+                                        }
+                                        Component.onCompleted: {
+                                            currentIndex =
+                                                Julia.get_settings(["Analysis","Options","analyse_by"],2)
+                                        }
+                                        onAccepted: {
+                                            Julia.set_settings(["Analysis","Options","analyse_by"],
+                                                [currentText,currentIndex],"make_tuple")
                                         }
                                     }
                                     ComboBox {
