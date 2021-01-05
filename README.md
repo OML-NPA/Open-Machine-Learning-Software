@@ -5,7 +5,8 @@ NB! This is a pre-alpha version. Bugs and rapid changes should be expected! Rele
 
 ### Preview
 
-...
+<img  src="docs/scrrenshots/training.png" height = 140em> <img  src="docs/scrrenshots/designer.png" height = 140em> <img  src="docs/scrrenshots/trainingplot.png" height = 140em> <img  src="docs/scrrenshots/validationplot.png" height = 140em> <img  src="docs/scrrenshots/analysis.png" height = 140em>
+
 
 ### Setting up
 Download binaries: Windows (not implemented), Mac (not implemented), Linux (not implemented)
