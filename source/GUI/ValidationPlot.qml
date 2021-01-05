@@ -15,7 +15,7 @@ ApplicationWindow {
     visible: true
     minimumHeight: 1024*pix + margin
     minimumWidth: informationPane.width + 1024*pix + margin
-    title: qsTr("  Deep Data Analysis Software")
+    title: qsTr("  Open Machine Learning Software")
     color: defaultpalette.window
     property double margin: 0.02*Screen.width
     property double buttonWidth: 0.1*Screen.width

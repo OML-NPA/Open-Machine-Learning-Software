@@ -3,9 +3,9 @@
 function prepare_validation_data_main(training_data::Training_data,
         features::Array,progress::RemoteChannel,results::RemoteChannel)
     put!(progress,3)
-    images = load_images(training_data)
+    images = load_images(training_data.url_imgs)
     put!(progress,1)
-    labels = load_labels(training_data)
+    labels = load_images(training_data.url_labels)
     put!(progress,1)
     if isempty(features)
         @info "empty features"

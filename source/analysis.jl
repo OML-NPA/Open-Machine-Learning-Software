@@ -114,8 +114,12 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     filenames_vector = get_filenames(analysis_data.url_imgs)
     filenames_batched = batch_filenames(filenames_vector,batch_size)
     savepath = options_analysis.savepath
-    if !isdir(savepath)
-        mkdir(savepath)
+    dirs = split(savepath,"/")
+    for i=1:length(dirs)
+        temp_path = join(dirs[1:i],"/")
+        if !isdir(temp_path)
+            mkdir(temp_path)
+        end
     end
     # Get file extensions
     img_ext,img_sym_ext = get_image_ext(options_analysis.image_type)

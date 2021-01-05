@@ -11,7 +11,7 @@ import "Templates"
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("  Deep Data Analysis Software")
+    title: qsTr("  Open Machine Learning Software")
     minimumWidth: 1600*pix
     minimumHeight: 885*pix
     maximumWidth: Screen.width

@@ -13,7 +13,7 @@ import org.julialang 1.0
 ApplicationWindow {
     id: customizationWindow
     visible: true
-    title: qsTr("  Deep Data Analysis Software")
+    title: qsTr("  Open Machine Learning Software")
     minimumWidth: 2200*pix
     minimumHeight: 1500*pix
 

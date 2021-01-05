@@ -13,7 +13,7 @@ import org.julialang 1.0
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("  Deep Data Analysis Software")
+    title: qsTr("  Open Machine Learning Software")
     minimumWidth: gridLayout.width
     minimumHeight: gridLayout.height
     maximumWidth: gridLayout.width
@@ -72,6 +72,9 @@ ApplicationWindow {
                     var test_iteration = data[3]
                     accuracytestLine.append(test_iteration,100*test_accuracy)
                     losstestLine.append(test_iteration,test_loss)
+                    if (test_loss>lossLine.axisY.max) {
+                        lossLine.axisY.max = test_loss
+                    }
                 }
                 if (iteration===max_iterations && max_iterations!==0) {
                     running = false

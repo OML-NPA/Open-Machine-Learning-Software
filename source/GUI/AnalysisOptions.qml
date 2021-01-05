@@ -11,7 +11,7 @@ import org.julialang 1.0
 ApplicationWindow {
     id: window
     visible: true
-    title: qsTr("  Deep Data Analysis Software")
+    title: qsTr("  Open Machine Learning Software")
     minimumWidth: 1480*pix
     minimumHeight: 800*pix
     maximumWidth: gridLayout.width

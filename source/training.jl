@@ -341,7 +341,7 @@ function train_CPU!(model::Chain,accuracy::Function,loss::Function,
                 elseif modif1=="epochs"
                     epochs::Int64 = convert(Int64,modifs[2])
                 elseif modif1=="testing frequency"
-                    testing_frequency::Int64 = convert(Int64,floor(num/modif2))
+                    testing_frequency::Int64 = convert(Int64,floor(num/modifs[2]))
                 end
             end
             # Prepare training data
@@ -370,7 +370,7 @@ function train_CPU!(model::Chain,accuracy::Function,loss::Function,
             # Testing part
             if run_test
                 testing_frequency_cond = ceil(i/testing_frequency)>last_test
-                training_finished_cond = iteration==max_iterations
+                training_finished_cond = iteration==(max_iterations-1)
                 # Test if testing frequency reached or training is done
                 if testing_frequency_cond || training_finished_cond
                     # Calculate test accuracy and loss
@@ -456,7 +456,7 @@ function train_GPU!(model::Chain,accuracy::Function,loss::Function,
                 elseif modif1=="epochs"
                     epochs::Int64 = convert(Int64,modifs[2])
                 elseif modif1=="testing frequency"
-                    testing_frequency::Float64 = floor(num/modif2)
+                    testing_frequency::Float64 = floor(num/modifs[2])
                 end
             end
             # Prepare training data
@@ -486,9 +486,9 @@ function train_GPU!(model::Chain,accuracy::Function,loss::Function,
             # Testing part
             if run_test
                 testing_frequency_cond = ceil(i/testing_frequency)>last_test
-                training_finished_cond = iteration==max_iterations
+                training_finished_cond = iteration==(max_iterations-1)
                 # Test if testing frequency reached or training is done
-                if ceil(i/testing_frequency)>last_test || iteration==max_iterations
+                if testing_frequency_cond || training_finished_cond
                     # Calculate test accuracy and loss
                     data_test = test_GPU(model,accuracy,loss,channels,test_batches,num_test)
                     # Return testing information

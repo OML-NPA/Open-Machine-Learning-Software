@@ -44,15 +44,14 @@ T.Button {
         color: Color.blend(control.checked || control.highlighted ? control.palette.dark : "#fafafa",
                                                                     control.palette.mid, control.down ? 0.5 : 0.0)
         border.color: control.palette.dark
-        border.width: (Screen.width/3840)*(control.visualFocus ? 4*pix : 2*pix)
+        border.width: control.visualFocus ? 4*pix : 2*pix
         Rectangle {
             x: 1.08*size
             y: 1.08*size
             width: 1.15*size
             height: 1.15*size
             radius: 0.1*size
-            color: Color.blend(control.checked || control.highlighted ? "#333333" : systempalette.shadow,
-                               "#333333", control.down ? 0.5 : 0.0)
+            color: control.checked || control.highlighted ? "#333333" : defaultcolors.dark
         }
     }
 }
