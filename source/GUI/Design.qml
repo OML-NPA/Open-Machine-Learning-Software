@@ -180,6 +180,7 @@ ApplicationWindow {
             spacing: 0
             Frame {
                 id: leftFrame
+                x: -1*pix
                 z: 1
                 height: customizationWindow.height + 1*pix
                 width: 530*pix + 1*pix
@@ -1094,9 +1095,10 @@ ApplicationWindow {
             }
             Frame {
                 id: rightFrame
+                x: 1*pix
                 z: 3
                 height: customizationWindow.height
-                width: 530*pix
+                width: 530*pix + 1*pix
                 padding:0
                 Item {
                     id: propertiesColumn
