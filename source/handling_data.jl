@@ -54,7 +54,7 @@ function get_labels_colors_main2(training_data::Training_data,channels::Channels
 end
 get_labels_colors() = get_labels_colors_main2(training_data,channels)
 
-#---Data/settings realted functions
+#---Data/settings related functions
 # Allows to read data from GUI
 function get_data_main(data::Master_data,fields,inds)
     fields::Vector{String} = fix_QML_types(fields)
@@ -166,6 +166,10 @@ function load_settings!(settings::Settings)
     return nothing
 end
 load_settings() = load_settings!(settings)
+
+function source_dir()
+    return fix_slashes(pwd())
+end
 
 #---Feature output related functions
 # Allows to read feature output options from GUI
