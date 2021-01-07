@@ -696,17 +696,19 @@ Component {
         }
 
         function disableButtons(currentIndex,ind) {
-            if (currentIndex===ind) {
+            if (problemtypeComboBox.currentIndex===1 && inputtypeComboBox.currentIndex===0) {
                 optionsButton.down = undefined
                 designButton.down = undefined
                 trainButton.down =  undefined
                 validateButton.down = undefined
+                previewdataButton.down = undefined
             }
             else{
                 optionsButton.down = true
                 designButton.down = true
                 trainButton.down = true
                 validateButton.down = true
+                previewdataButton.down = true
             }
         }
     }
