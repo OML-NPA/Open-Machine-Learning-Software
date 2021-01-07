@@ -36,8 +36,7 @@ Only image data and image segmentation is currently supported.
 
 ### Project support
 We use a voluntary support scheme in order to finance the development. 
-Software can be supported by:
-   - Direct donation
-   - Voluntary add display with community selected adds
+
+Software can be supported by direct donation
 
 Financial report detailing incomes and expenses is published monthly.
