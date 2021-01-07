@@ -158,9 +158,6 @@ options = Options()
 end
 processing_training = Processing_training()
 
-
-["ADAM",5] isa Array{<:Union{String,Int64}}
-
 @with_kw mutable struct Hyperparameters_training
     optimiser::Tuple{String,Int64} = ("ADAM",5)
     optimiser_params::Vector{Vector{Float64}} = [[],[0.9],[0.9],[0.9],
