@@ -1,4 +1,6 @@
 # Open Machine Learning Software
+[![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/donate/?hosted_button_id=EJ2J3BVKYPJPY)
+
 This software is designed to both allow people not familiar with coding or machine learning as well as professionals in these fields to easily design and apply machine learning methods and data processing functions to images or data sequences.
 
 NB! This is a pre-alpha version. Bugs and rapid changes should be expected! Release is currently scheduled for May 2021.
