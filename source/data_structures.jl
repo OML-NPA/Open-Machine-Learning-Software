@@ -68,7 +68,7 @@ feature = Feature()
     model::Chain = Chain()
     layers::Vector{Dict{String,Any}} = []
     features::Vector{Feature} = []
-    loss::Function = Losses.crossentropy
+    loss::Function = Flux.Losses.crossentropy
 end
 model_data = Model_data()
 
