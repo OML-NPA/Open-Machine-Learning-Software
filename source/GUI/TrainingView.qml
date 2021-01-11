@@ -164,23 +164,22 @@ Component {
                                 if (currentIndex===0) {
                                     labelsLabel.text = "Labels:"
                                     inputtypeModel.clear()
-                                    inputtypeModel.append({text: "Image"})
+                                    inputtypeModel.append({text: "Images"})
                                     inputtypeModel.append({text: "Data series"})
                                     inputtypeComboBox.currentIndex = 0
                                     labelsRow.visible = false
-
                                 }
                                 else if (currentIndex===1) {
                                     labelsLabel.text = "Labels:"
                                     inputtypeModel.clear()
-                                    inputtypeModel.append({text: "Image"})
+                                    inputtypeModel.append({text: "Images"})
                                     inputtypeComboBox.currentIndex = 0
                                     labelsRow.visible = true
                                 }
                                 else {
                                     labelsLabel.text = "Targets:"
                                     inputtypeModel.clear()
-                                    inputtypeModel.append({text: "Image"})
+                                    inputtypeModel.append({text: "Images"})
                                     inputtypeModel.append({text: "Data series"})
                                     inputtypeComboBox.currentIndex = 0
                                     labelsRow.visible = true
@@ -198,6 +197,14 @@ Component {
                                 Julia.set_settings(["Training","problem_type"],
                                     [currentText,currentIndex],"make_tuple")
                                 changeLabels()
+                                if (inputtypeComboBox.currentIndex===0) {
+                                    inputLabel.text = "Images:"
+                                    previewdataButton.visible = false
+                                }
+                                else {
+                                    inputLabel.text = "Data:"
+                                    previewdataButton.visible = true
+                                }
                                 disableButtons(currentIndex,1)
                             }
                             Component.onCompleted: {
@@ -230,7 +237,7 @@ Component {
                             width: 0.59*buttonWidth-1*pix
                             model: ListModel {
                                 id: inputtypeModel
-                                ListElement {text: "Image"}
+                                ListElement {text: "Images"}
                                 ListElement {text: "Data series"}
                             }
                             onActivated: {
@@ -242,6 +249,9 @@ Component {
                             Component.onCompleted: {
                                 currentIndex = Julia.get_settings(["Training","input_type"],2)
                                 changeLabels()
+                                if (currentIndex==1) {
+                                    previewdataButton.visible = false
+                                }
                                 disableButtons(currentIndex,0)
                             }
                         }

@@ -90,8 +90,8 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
         model_data::Model_data,channels::Channels)
     # Initialize constants
     analysis = settings.Analysis
-    options_analysis = analysis.Options
-    analyse_by_file = options_analysis.analyse_by[1]=="file"
+    analysis_options = analysis.Options
+    analyse_by_file = analysis_options.analyse_by[1]=="file"
     model = model_data.model
     loss = model_data.loss
     features = model_data.features
@@ -100,8 +100,8 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     num_feat = length(border)
     num_border = sum(border)
     apply_border = num_border>0
-    scaling = options_analysis.scaling
-    batch_size = options_analysis.minibatch_size
+    scaling = analysis_options.scaling
+    batch_size = analysis_options.minibatch_size
     # Get savepath, folders and names
     folders = analysis.checked_folders
     urls = analysis_data.url_imgs
@@ -113,7 +113,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     end
     filenames_vector = get_filenames(analysis_data.url_imgs)
     filenames_batched = batch_filenames(filenames_vector,batch_size)
-    savepath = options_analysis.savepath
+    savepath = analysis_options.savepath
     dirs = split(savepath,"/")
     for i=1:length(dirs)
         temp_path = join(dirs[1:i],"/")
@@ -122,8 +122,8 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
         end
     end
     # Get file extensions
-    img_ext,img_sym_ext = get_image_ext(options_analysis.image_type)
-    data_ext,data_sym_ext = get_data_ext(options_analysis.data_type)
+    img_ext,img_sym_ext = get_image_ext(analysis_options.image_type)
+    data_ext,data_sym_ext = get_data_ext(analysis_options.data_type)
     # Prepare set
     set = analysis_data.data_input
     num = length(set)
@@ -603,7 +603,7 @@ end
 function export_output(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
         histograms_area::Array{Histogram},histograms_volume::Array{Histogram},
         objs_area::Array{Vector{Float64},2},objs_volume::Array{Vector{Float64},2},
-        filenames::Vector{String},options::Options_analysis)
+        filenames::Vector{String},options::Analysis_options)
     inds_bool = map(x->isassigned(mask_imgs, x),1:length(mask_imgs))
     if any(inds_bool)
         inds = findall(inds_bool)
