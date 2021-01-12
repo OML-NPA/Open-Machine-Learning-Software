@@ -7,7 +7,7 @@ NB! This is a pre-alpha version. Bugs and rapid changes should be expected! Rele
 
 ### Preview
 
-<img  src="docs/screenshots/training.png" height = 140em> <img  src="docs/screenshots/designer.png" height = 140em> <img  src="docs/screenshots/trainingplot.png" height = 140em> <img  src="docs/screenshots/validationplot.png" height = 140em> <img  src="docs/screenshots/analysis.png" height = 140em>
+<img  src="docs/screenshots/training.png" height = 205em> <img  src="docs/screenshots/designer.png" height = 205em> <img  src="docs/screenshots/trainingplot.png" height = 205em> <img  src="docs/screenshots/validationplot.png" height = 205em> <img  src="docs/screenshots/analysis.png" height = 205em>
 
 
 ### Setting up
