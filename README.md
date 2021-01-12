@@ -13,7 +13,7 @@ NB! This is a pre-alpha version. Bugs and rapid changes should be expected! Rele
 ### Setting up
 Download binaries: Windows (not implemented), Mac (not implemented), Linux (not implemented)
 
-Software can also be run in Julia environment by cloning the repository, installing packages mentioned in packagesjl and then executing main.jl.
+Software can also be run in Julia environment by cloning the repository, installing packages mentioned in packages.jl and then executing main.jl.
 
 ### Features
 We use Flux.jl neural network library. Currently it is possible to:
