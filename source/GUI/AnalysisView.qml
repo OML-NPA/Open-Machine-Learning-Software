@@ -18,7 +18,7 @@ Component {
         Component.onCompleted: {
             var temp_folder = Julia.get_settings(["Analysis","folder_url"])
             if (temp_folder==="") {
-                folderModel.folder = "file:///"+url(Julia.fix_slashes(Julia.pwd()))
+                folderModel.folder = "file:///"+Julia.fix_slashes(Julia.pwd())
             }
             else {
                 folderModel.folder = "file:///"+temp_folder
