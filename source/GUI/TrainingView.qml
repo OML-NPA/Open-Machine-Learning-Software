@@ -665,13 +665,15 @@ Component {
             if (timer.max_value!==0 && !timer.done) {
                 var value = Julia.get_progress(action)
                 if (timer.value===timer.max_value) {
-                    timer.done = true
-                    Julia.get_results(action)
-                    if (action_done==="Training") {
-                        Julia.train()
-                    }
-                    else if (action_done==="Validation") {
-                        Julia.validate()
+                    var state = Julia.get_results(action)
+                    if (state===true) {
+                        timer.done = true
+                        if (action_done==="Training") {
+                            Julia.train()
+                        }
+                        else if (action_done==="Validation") {
+                            Julia.validate()
+                        }
                     }
                 }
                 else {
