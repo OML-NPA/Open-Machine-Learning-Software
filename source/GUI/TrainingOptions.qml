@@ -250,14 +250,40 @@ ApplicationWindow {
                                                ["Training","Options","Processing","min_fr_pix"])
                                     to: 100
                                     stepSize: 10
-                                    property real realValue: value/100
+                                    property real realValue
                                     textFromValue: function(value, locale) {
-                                        return Number(value/100).toLocaleString(locale,'f',1)
+                                        realValue = value/100
+                                        return realValue.toLocaleString(locale,'f',1)
                                     }
                                     onValueModified: {
                                         Julia.set_settings(
                                             ["Training","Options","Processing","min_fr_pix"],
-                                            value/100)
+                                            realValue)
+                                    }
+                                }
+                            }
+                            Row {
+                                spacing: 0.3*margin
+                                Label {
+                                    text: "Border thickness in pixels:"
+                                    width: minfrpixLabel.width
+                                }
+                                SpinBox {
+                                    id: bordernumpixelsSpinBox
+                                    from: 1
+                                    value: (Julia.get_settings(
+                                               ["Training","Options","Processing","border_num_pixels"])-1)/2+1
+                                    to: 10
+                                    stepSize: 1
+                                    property double realValue
+                                    textFromValue: function(value, locale) {
+                                        realValue = (value-1)*2+1
+                                        return realValue.toLocaleString(locale,'f',0)
+                                    }
+                                    onValueModified: {
+                                        Julia.set_settings(
+                                            ["Training","Options","Processing","border_num_pixels"],
+                                            realValue)
                                     }
                                 }
                             }

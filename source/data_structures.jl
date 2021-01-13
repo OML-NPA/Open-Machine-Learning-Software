@@ -155,6 +155,7 @@ options = Options()
     mirroring::Bool = true
     num_angles::Int64 = 2
     min_fr_pix::Float64 = 0.1
+    border_num_pixels::Int64 = 3
 end
 processing_training = Processing_training()
 

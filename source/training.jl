@@ -94,6 +94,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     options = training.Options
     min_fr_pix = options.Processing.min_fr_pix
     num_angles = options.Processing.num_angles
+    border_num_pixels = options.Processing.border_num_pixels
     # Get output image size for dimensions 1 and 2
     pix_num = model_data.input_size[1:2]
     # Get feature data
@@ -125,7 +126,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         # Crope to remove black background
         # img,label = correct_view(img,label)
         # Convert BitArray labels to Array{Float32}
-        label = label_to_bool(label,labels_color,labels_incl,border)
+        label = label_to_bool(label,labels_color,labels_incl,border,border_num_pixels)
         # Augment images
         data_input[k],data_labels[k] = augment(k,img,label,num_angles,pix_num,min_fr_pix)
         # Return progress
@@ -140,6 +141,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     put!(progress, 1)
     return nothing
 end
+
 # Wrapper allowing for remote execution
 function prepare_training_data_main2(training::Training,training_data::Training_data,
     model_data::Model_data,progress::RemoteChannel,results::RemoteChannel)
@@ -284,8 +286,8 @@ end
 
 #---
 # Training on CPU
-function train_CPU!(model::Chain,accuracy::Function,loss::Function,
-        args::Hyperparameters_training,testing_frequency::Float64,
+function train_CPU!(model_data::Model_data,training::Training,accuracy::Function,
+        loss::Function,args::Hyperparameters_training,testing_frequency::Float64,
         train_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         test_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         opt,channels::Channels)
@@ -302,6 +304,8 @@ function train_CPU!(model::Chain,accuracy::Function,loss::Function,
     epoch_idx = 1
     num_test = length(test_set[1])
     run_test = num_test!=0
+    model = model_data.model
+    name = string("models/",training.name,".model")
     # Run training for n epochs
     while epoch_idx<epochs
         # Make minibatches
@@ -392,6 +396,9 @@ function train_CPU!(model::Chain,accuracy::Function,loss::Function,
         end
         # Update epoch counter
         epoch_idx += 1
+        # Save model
+        model_data.model = model
+        save_model_main(model_data,name)
         # Needed to avoid out of memory issue
         @everywhere GC.gc()
     end
@@ -401,13 +408,12 @@ function train_CPU!(model::Chain,accuracy::Function,loss::Function,
 end
 
 # Training on GPU
-function train_GPU!(model::Chain,accuracy::Function,loss::Function,
-        args::Hyperparameters_training,testing_frequency::Float64,
+function train_GPU!(model_data::Model_data,training::Training,accuracy::Function,
+        loss::Function,args::Hyperparameters_training,testing_frequency::Float64,
         train_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         test_set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32,3}}},
         opt,channels::Channels)
     # Initialize
-    model = move(model,gpu)
     epochs = args.epochs
     batch_size = args.batch_size
     accuracy_array = Vector{Float32}(undef,0)
@@ -420,6 +426,9 @@ function train_GPU!(model::Chain,accuracy::Function,loss::Function,
     epoch_idx = 1
     num_test = length(test_set[1])
     run_test = num_test!=0
+    model = model_data.model
+    model = move(model,gpu)
+    name = string("models/",training.name,".model")
     # Run training for n epochs
     while epoch_idx<=epochs
         # Make minibatches
@@ -507,6 +516,9 @@ function train_GPU!(model::Chain,accuracy::Function,loss::Function,
         end
         # Update epoch counter
         epoch_idx += 1
+        # Save model
+        model_data.model = move(model,cpu)
+        save_model_main(model_data,name)
         # Needed to avoid GPU out of memory issue
         @everywhere GC.gc()
     end
@@ -566,7 +578,6 @@ function train_main(settings::Settings,training_data::Training_data,
     learning_rate = args.learning_rate
     epochs = args.epochs
     testing_frequency = training_options.General.testing_frequency
-    model = model_data.model
     # Check whether user wants to abort
     if isready(channels.training_modifiers)
         stop_cond::String = fetch(channels.training_modifiers)[1]
@@ -577,19 +588,15 @@ function train_main(settings::Settings,training_data::Training_data,
     end
     # Run training
     if use_GPU
-        data = train_GPU!(model,accuracy,loss,args,testing_frequency,
-            train_set,test_set,opt,channels)
+        data = train_GPU!(model_data,training,accuracy,loss,args,
+            testing_frequency,train_set,test_set,opt,channels)
     else
-        data = train_CPU!(model,accuracy,loss,args,testing_frequency,
-            train_set,test_set,opt,channels)
+        data = train_CPU!(model_data,training,accuracy,loss,args,
+            testing_frequency,train_set,test_set,opt,channels)
     end
-    # Move model back to CPU if needed
-    if use_GPU
-        model = move(model,cpu)
-    end
-    # Save trained model
-    model_data.model = model
-    save_model_main(model_data,string("models/",training.name,".model"))
+    # Clean up
+    empty!(training_plot_data.data_input)
+    empty!(training_plot_data.data_labels)
     # Return training results
     put!(channels.training_data_results,(model,data...))
     return nothing

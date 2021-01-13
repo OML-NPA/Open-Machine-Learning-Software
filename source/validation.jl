@@ -1,6 +1,6 @@
 
 #---Data preparation
-function prepare_validation_data_main(training_data::Training_data,
+function prepare_validation_data_main(training::Training,training_data::Training_data,
         features::Array,progress::RemoteChannel,results::RemoteChannel)
     put!(progress,3)
     images = load_images(training_data.url_imgs)
@@ -12,20 +12,21 @@ function prepare_validation_data_main(training_data::Training_data,
         return false
     end
     labels_color,labels_incl,border = get_feature_data(features)
+    border_num_pixels = training.Options.Processing.border_num_pixels
     data_input = map(x->image_to_gray_float(x),images)
-    data_labels = map(x->label_to_bool(x,labels_color,labels_incl,border),labels)
+    data_labels = map(x->label_to_bool(x,labels_color,labels_incl,border,border_num_pixels),labels)
     data = (images,labels,data_input,data_labels)
     put!(results,data)
     put!(progress,1)
     return nothing
 end
-function  prepare_validation_data_main2(training_data::Training_data,
+function  prepare_validation_data_main2(training::Training,training_data::Training_data,
         features::Array,progress::RemoteChannel,results::RemoteChannel)
-    @everywhere training_data
-    remote_do(prepare_validation_data_main,workers()[end],training_data,
+    @everywhere training,training_data
+    remote_do(prepare_validation_data_main,workers()[end],training,training_data,
     features,progress,results)
 end
-prepare_validation_data() = prepare_validation_data_main2(training_data,
+prepare_validation_data() = prepare_validation_data_main2(training,training_data,
     model_data.features,channels.validation_data_progress,
     channels.validation_data_results)
 
@@ -342,3 +343,5 @@ function validate_main2(settings::Settings,training_data::Training_data,
     remote_do(validate_main,workers()[end],settings,training_data,model_data,channels)
 end
 validate() = validate_main2(settings,training_data,model_data,channels)
+
+#colorview(Gray,Float32.(predicted_bool[:,:,4]))
