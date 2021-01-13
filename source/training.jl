@@ -598,7 +598,7 @@ function train_main(settings::Settings,training_data::Training_data,
     empty!(training_plot_data.data_input)
     empty!(training_plot_data.data_labels)
     # Return training results
-    put!(channels.training_results,(model,data...))
+    put!(channels.training_results,(model_data.model,data...))
     return nothing
 end
 function train_main2(settings::Settings,training_data::Training_data,
