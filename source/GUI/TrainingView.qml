@@ -402,7 +402,7 @@ Component {
                                     TreeButton {
                                         id: updateButton
                                         anchors.top: featureView.bottom
-                                        width: buttonWidth - 8*pix
+                                        width: buttonWidth + 0.5*margin - 24*pix
                                         height: buttonHeight - 2*pix
                                         hoverEnabled: true
                                         Label {
@@ -433,7 +433,7 @@ Component {
                                     TreeButton {
                                         id: updatemodelButton
                                         anchors.top: updateButton.bottom
-                                        width: buttonWidth - 8*pix
+                                        width: buttonWidth + 0.5*margin - 24*pix
                                         height: buttonHeight - 2*pix
                                         hoverEnabled: true
                                         visible: false
@@ -455,7 +455,7 @@ Component {
                                         delegate: TreeButton {
                                             id: control
                                             hoverEnabled: true
-                                            width: buttonWidth - 8*pix
+                                            width: buttonWidth + 0.5*margin - 24*pix
                                             height: buttonHeight - 2*pix
                                             onClicked: {
                                                 if (featuredialogLoader.sourceComponent === null) {

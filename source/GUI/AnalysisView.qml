@@ -138,7 +138,7 @@ Component {
                                     model: folderModel
                                     delegate: TreeButton {
                                         id: control
-                                        width: buttonWidth + 8*pix
+                                        width: buttonWidth + 0.5*margin - 24*pix
                                         height: buttonHeight - 2*pix
                                         onDoubleClicked: {
                                             var url = folderModel.folder+"/"+name.text
@@ -149,6 +149,7 @@ Component {
                                             leftPadding: - 20*pix
                                             CheckBox {
                                                 topPadding: 11*pix
+                                                leftPadding: 10*pix
                                                 onClicked: {
                                                     var url = folderModel.folder+"/"+name.text
                                                     var checkedFolders = []
@@ -220,7 +221,7 @@ Component {
                                     delegate: TreeButton {
                                         id: analysisfeatureButton
                                         hoverEnabled: true
-                                        width: buttonWidth - 8*pix
+                                        width: buttonWidth + 0.5*margin - 24*pix
                                         height: buttonHeight - 2*pix
                                         onClicked: {
                                             if (analysisfeaturedialogLoader.sourceComponent === null) {
