@@ -71,7 +71,7 @@ end
 # Convert images to BitArray{3}
 function label_to_bool(labelimg::Array{RGB{Normed{UInt8,8}},2},
         labels_color::Vector{Vector{Float64}},labels_incl::Vector{Vector{Int64}},
-        border::Vector{Bool})
+        border::Vector{Bool},border_num_pixels::Int64)
     colors = map(x->RGB((n0f8.(./(x,255)))...),labels_color)
     num = length(colors)
     num_borders = sum(border)
@@ -91,7 +91,7 @@ function label_to_bool(labelimg::Array{RGB{Normed{UInt8,8}},2},
     end
     # Make features outlining object borders
     for j=1:length(inds_borders)
-        dil = dilate(perim(label[:,:,inds_borders[j]]),5)
+        dil = dilate(perim(label[:,:,inds_borders[j]]),border_num_pixels)
         label[:,:,length(colors)+j] = dil
     end
     return label

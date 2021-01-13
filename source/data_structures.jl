@@ -155,6 +155,7 @@ options = Options()
     mirroring::Bool = true
     num_angles::Int64 = 2
     min_fr_pix::Float64 = 0.1
+    border_num_pixels::Int64 = 3
 end
 processing_training = Processing_training()
 
@@ -171,6 +172,7 @@ processing_training = Processing_training()
       ["ρ"],["β1","β2"],
       ["β1","β2"],
       ["β1","β2","Weight decay"]]
+    allow_lr_change::Bool = false
     learning_rate::Float64 = 1e-3
     epochs::Int64 = 1
     batch_size::Int64 = 10

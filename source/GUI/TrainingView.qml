@@ -402,7 +402,7 @@ Component {
                                     TreeButton {
                                         id: updateButton
                                         anchors.top: featureView.bottom
-                                        width: buttonWidth - 8*pix
+                                        width: buttonWidth + 0.5*margin - 24*pix
                                         height: buttonHeight - 2*pix
                                         hoverEnabled: true
                                         Label {
@@ -433,7 +433,7 @@ Component {
                                     TreeButton {
                                         id: updatemodelButton
                                         anchors.top: updateButton.bottom
-                                        width: buttonWidth - 8*pix
+                                        width: buttonWidth + 0.5*margin - 24*pix
                                         height: buttonHeight - 2*pix
                                         hoverEnabled: true
                                         visible: false
@@ -455,7 +455,7 @@ Component {
                                         delegate: TreeButton {
                                             id: control
                                             hoverEnabled: true
-                                            width: buttonWidth - 8*pix
+                                            width: buttonWidth + 0.5*margin - 24*pix
                                             height: buttonHeight - 2*pix
                                             onClicked: {
                                                 if (featuredialogLoader.sourceComponent === null) {
@@ -665,13 +665,15 @@ Component {
             if (timer.max_value!==0 && !timer.done) {
                 var value = Julia.get_progress(action)
                 if (timer.value===timer.max_value) {
-                    timer.done = true
-                    Julia.get_results(action)
-                    if (action_done==="Training") {
-                        Julia.train()
-                    }
-                    else if (action_done==="Validation") {
-                        Julia.validate()
+                    var state = Julia.get_results(action)
+                    if (state===true) {
+                        timer.done = true
+                        if (action_done==="Training") {
+                            Julia.train()
+                        }
+                        else if (action_done==="Validation") {
+                            Julia.validate()
+                        }
                     }
                 }
                 else {

@@ -155,9 +155,10 @@ ApplicationWindow {
                                 to: 9
                                 stepSize: 1
                                 editable: true
-                                property real realValue: value/10
+                                property real realValue
                                 textFromValue: function(value, locale) {
-                                    return Number(value/10).toLocaleString(locale,'f',1)
+                                    realValue = value/10
+                                    return realValue.toLocaleString(locale,'f',1)
                                 }
                                 onValueModified: {
                                     Julia.set_settings(
@@ -232,8 +233,7 @@ ApplicationWindow {
                                     to: 10
                                     onValueModified: {
                                         Julia.set_settings(
-                                            ["Training","Options","Processing","num_angles"],
-                                            value)
+                                            ["Training","Options","Processing","num_angles"],value)
                                     }
                                 }
                             }
@@ -250,14 +250,40 @@ ApplicationWindow {
                                                ["Training","Options","Processing","min_fr_pix"])
                                     to: 100
                                     stepSize: 10
-                                    property real realValue: value/100
+                                    property real realValue
                                     textFromValue: function(value, locale) {
-                                        return Number(value/100).toLocaleString(locale,'f',1)
+                                        realValue = value/100
+                                        return realValue.toLocaleString(locale,'f',1)
                                     }
                                     onValueModified: {
                                         Julia.set_settings(
                                             ["Training","Options","Processing","min_fr_pix"],
-                                            value/100)
+                                            realValue)
+                                    }
+                                }
+                            }
+                            Row {
+                                spacing: 0.3*margin
+                                Label {
+                                    text: "Border thickness in pixels:"
+                                    width: minfrpixLabel.width
+                                }
+                                SpinBox {
+                                    id: bordernumpixelsSpinBox
+                                    from: 1
+                                    value: (Julia.get_settings(
+                                               ["Training","Options","Processing","border_num_pixels"])-1)/2+1
+                                    to: 10
+                                    stepSize: 1
+                                    property double realValue
+                                    textFromValue: function(value, locale) {
+                                        realValue = (value-1)*2+1
+                                        return realValue.toLocaleString(locale,'f',0)
+                                    }
+                                    onValueModified: {
+                                        Julia.set_settings(
+                                            ["Training","Options","Processing","border_num_pixels"],
+                                            realValue)
                                     }
                                 }
                             }
@@ -285,23 +311,28 @@ ApplicationWindow {
                                 model: ListModel {
                                     id: optimisersModel
                                 }
+                                property var optimisers: ["Stochastic","Momentum",
+                                    "Nesterov","RMSProp","ADAM","RADAM","AdaMax",
+                                    "ADAGrad","ADADelta","AMSGrad","NADAM","ADAMW"]
+                                property var allow_lr: [true,true,true,true,true,true,true,
+                                    true,false,true,true,true]
                                 onActivated: {
                                     Julia.set_settings(
                                         ["Training","Options","Hyperparameters","optimiser"],
                                         [currentText,currentIndex+1],"make_tuple")
+                                    Julia.set_settings(
+                                        ["Training","Options","Hyperparameters","allow_lr_change"],
+                                        allow_lr[currentIndex])
                                     change_params()
                                 }
                                 Component.onCompleted: {
-                                    var optimisers = ["Stochastic","Momentum",
-                                         "Nesterov","RMSProp","ADAM","RADAM","AdaMax",
-                                         "ADAGrad","ADADelta","AMSGrad","NADAM","ADAMW"]
-                                     for (var i=0;i<optimisers.length;i++) {
-                                         optimisersModel.append({"name": optimisers[i]})
-                                     }
-                                     var index = Julia.get_settings(
-                                         ["Training","Options","Hyperparameters","optimiser"],2)
-                                     currentIndex = index-1
-                                     change_params()
+                                    for (var i=0;i<optimisers.length;i++) {
+                                        optimisersModel.append({"name": optimisers[i]})
+                                    }
+                                    var index = Julia.get_settings(
+                                        ["Training","Options","Hyperparameters","optimiser"],2)
+                                    currentIndex = index-1
+                                    change_params()
                                 }
                                 function change_params() {
                                     var values = Julia.get_settings(
@@ -334,6 +365,9 @@ ApplicationWindow {
                                         param3Label.visible = true
                                         param3TextField.visible = true
                                     }
+                                    var visibility = allow_lr[currentIndex]
+                                    learningrateLabel.visible = visibility
+                                    learningrateSpinBox.visible = visibility
                                 }
                             }
                         }
@@ -442,11 +476,15 @@ ApplicationWindow {
                         Row {
                             spacing: 0.3*margin
                             Label {
+                                id: learningrateLabel
                                 text: "Learning rate:"
                                 bottomPadding: 0.05*margin
                                 width: numberofepochsLabel.width
                             }
                             SpinBox {
+                                id: learningrateSpinBox
+                                visible: Julia.get_settings(
+                                           ["Training","Options","Hyperparameters","allow_lr_change"])
                                 from: 1
                                 value: 100000*Julia.get_settings(
                                            ["Training","Options","Hyperparameters","learning_rate"])
@@ -454,12 +492,12 @@ ApplicationWindow {
                                 stepSize: value>100 ? 100 :
                                           value>10 ? 10 : 1
                                 editable: false
-                                property real realValue: value/100000
+                                property real realValue
                                 textFromValue: function(value, locale) {
-                                    return Number(value/100000).toLocaleString(locale,'e',0)
+                                    realValue = value/100000
+                                    return realValue.toLocaleString(locale,'e',0)
                                 }
                                 onValueModified: {
-
                                     Julia.set_settings(
                                         ["Training","Options","Hyperparameters","learning_rate"],
                                         value/100000)
