@@ -172,6 +172,7 @@ processing_training = Processing_training()
       ["ρ"],["β1","β2"],
       ["β1","β2"],
       ["β1","β2","Weight decay"]]
+    allow_lr_change::Bool = false
     learning_rate::Float64 = 1e-3
     epochs::Int64 = 1
     batch_size::Int64 = 10

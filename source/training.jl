@@ -306,6 +306,12 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
     run_test = num_test!=0
     model = model_data.model
     name = string("models/",training.name,".model")
+    composite = hasproperty(opt, :os)
+    if !composite
+        allow_lr_change = hasproperty(opt, :eta)
+    else
+        allow_lr_change = hasproperty(opt[1], :eta)
+    end
     # Run training for n epochs
     while epoch_idx<epochs
         # Make minibatches
@@ -341,7 +347,13 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
                         test_accuracy,test_loss,test_iteration)
                     return data
                 elseif modif1=="learning rate"
-                    opt.eta = convert(Float64,modifs[2])
+                    if allow_lr_change
+                        if composite
+                            opt[1].eta = convert(Float64,modifs[2])
+                        else
+                            opt.eta = convert(Float64,modifs[2])
+                        end
+                    end
                 elseif modif1=="epochs"
                     epochs::Int64 = convert(Int64,modifs[2])
                 elseif modif1=="testing frequency"
@@ -429,6 +441,12 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
     model = model_data.model
     model = move(model,gpu)
     name = string("models/",training.name,".model")
+    composite = hasproperty(opt, :os)
+    if !composite
+        allow_lr_change = hasproperty(opt, :eta)
+    else
+        allow_lr_change = hasproperty(opt[1], :eta)
+    end
     # Run training for n epochs
     while epoch_idx<=epochs
         # Make minibatches
@@ -461,7 +479,13 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
                         test_accuracy,test_loss,test_iteration)
                     return data
                 elseif modif1=="learning rate"
-                    opt.eta = convert(Float64,modifs[2])
+                    if allow_lr_change
+                        if composite
+                            opt[1].eta = convert(Float64,modifs[2])
+                        else
+                            opt.eta = convert(Float64,modifs[2])
+                        end
+                    end
                 elseif modif1=="epochs"
                     epochs::Int64 = convert(Int64,modifs[2])
                 elseif modif1=="testing frequency"

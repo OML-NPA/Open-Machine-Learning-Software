@@ -383,6 +383,8 @@ ApplicationWindow {
                                     width: iterationsperepochtextLabel.width
                                 }
                                 SpinBox {
+                                    visible: Julia.get_settings(
+                                                 ["Training","Options","Hyperparameters","allow_lr_change"])
                                     from: 1
                                     value: 100000*Julia.get_settings(
                                                ["Training","Options","Hyperparameters","learning_rate"])
