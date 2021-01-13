@@ -34,6 +34,7 @@ ApplicationWindow {
         property int epoch: 0
         property int iterations_per_epoch: 0
         property int max_iterations: 0
+        property bool done: false
         interval: 100
         running: true
         repeat: true
@@ -76,9 +77,11 @@ ApplicationWindow {
                         lossLine.axisY.max = test_loss
                     }
                 }
-                if (iteration===max_iterations && max_iterations!==0) {
-                    running = false
-                    Julia.get_results("Training")
+                if ((iteration===max_iterations && max_iterations!==0) || validationplotTimer.done) {
+                    var state = Julia.get_results("Training")
+                    if (state===true) {
+                        running = false
+                    }
                 }
                 if ((iteration/iterations_per_epoch)>epoch && max_iterations!==0) {
                     epoch += 1
@@ -265,7 +268,9 @@ ApplicationWindow {
                                 Layout.preferredWidth: buttonHeight
                                 Layout.preferredHeight: buttonHeight
                                 Layout.leftMargin: 0.3*margin
-                                onClicked: {Julia.put_channel("Training",["stop"])}
+                                onClicked: {
+                                    Julia.put_channel("Training",["stop"])
+                                }
                             }
                         }
                         Column {
