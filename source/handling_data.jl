@@ -357,25 +357,29 @@ reset_features() = reset_features_main(model_data::Model_data)
 
 # Appends model features
 function append_features_main(model_data::Model_data,output_options::Output_options,
-        name,colorR,colorG,colorB,border,parent)
+        name,colorR,colorG,colorB,border,border_remove_objs,parent)
     push!(model_data.features,Feature(String(name),Int64.([colorR,colorG,colorB]),
-        Bool(border),String(parent),output_options))
+        Bool(border),Bool(border_remove_objs),String(parent),output_options))
     return nothing
 end
-append_features(name,colorR,colorG,colorB,border,parent) =
-    append_features_main(model_data,output_options,name,colorR,colorG,colorB,border,parent)
+append_features(name,colorR,colorG,colorB,border,border_remove_objs,parent) =
+    append_features_main(model_data,output_options,name,colorR,colorG,
+    colorB,border,border_remove_objs,parent)
 
 # Updates model feature with new data
-function update_features_main(model_data,index,name,colorR,colorG,colorB,border,parent)
+function update_features_main(model_data,index,name,colorR,colorG,colorB,
+        border,border_remove_objs,parent)
     feature = model_data.features[index]
     feature.name = String(name)
     feature.color = Int64.([colorR,colorG,colorB])
     feature.border = Bool(border)
+    feature.border_remove_objs = Bool(border_remove_objs)
     feature.parent = String(parent)
     feature.Output = feature.Output
 end
-update_features(index,name,colorR,colorG,colorB,border,parent) =
-    update_features_main(model_data,index,name,colorR,colorG,colorB,border,parent)
+update_features(index,name,colorR,colorG,colorB,border,border_remove_objs,parent) =
+    update_features_main(model_data,index,name,colorR,colorG,colorB,
+    border,border_remove_objs,parent)
 
 # Returns the number of features
 function num_features_main(model_data::Model_data)

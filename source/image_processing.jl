@@ -60,7 +60,13 @@ function dilate(array::BitArray{2},num::Int64)
     return(array2)
 end
 
-function perim(array::BitArray{2})
+function outer_perim(array::BitArray{2})
+    array2 = copy(array)
+    dil = dilate(array2,1)
+    return xor.(dil,array2)
+end
+
+function inner_perim(array::BitArray{2})
     array2 = copy(array)
     array2[1:end,1] .= 0
     array2[1:end,end] .= 0

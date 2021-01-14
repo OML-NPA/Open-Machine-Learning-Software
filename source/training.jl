@@ -90,7 +90,6 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     end
     # Initialize
     features = model_data.features
-    type = training.type
     options = training.Options
     min_fr_pix = options.Processing.min_fr_pix
     num_angles = options.Processing.num_angles
@@ -213,11 +212,12 @@ end
 #---
 
 # Reset training related data accumulators
-function reset_training_data(training_plot_data::Training_plot_data)
-    training_plot_data.accuracy = Float32[]
-    training_plot_data.loss = Float32[]
-    training_plot_data.test_accuracy = Float32[]
-    training_plot_data.test_loss = Float32[]
+function reset_training_data(training_plot_data::Training_plot_data,
+        training_results_data::Training_results_data)
+    training_results_data.accuracy = Float32[]
+    training_results_data.loss = Float32[]
+    training_results_data.test_accuracy = Float32[]
+    training_results_data.test_loss = Float32[]
     training_plot_data.iteration = 0
     training_plot_data.epoch = 0
     training_plot_data.iterations_per_epoch = 0
@@ -270,7 +270,9 @@ function get_optimiser(training::Training)
     # Get learning rate
     learning_rate = training.Options.Hyperparameters.learning_rate
     # Collect optimiser parameters and learning rate
-    if length(parameters_in)==1
+    if length(parameters_in)==0
+        parameters = [learning_rate]
+    elseif length(parameters_in)==1
         parameters = [learning_rate,parameters_in[1]]
     elseif length(parameters_in)==2
         parameters = [learning_rate,(parameters_in[1],parameters_in[2])]
@@ -294,8 +296,8 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
     # Initialize
     epochs = args.epochs
     batch_size = args.batch_size
-    accuracy_array = Vector{Float32}(undef,0)
-    loss_array = Vector{Float32}(undef,0)
+    accuracy_vector = Vector{Float32}(undef,0)
+    loss_vector = Vector{Float32}(undef,0)
     test_accuracy = Vector{Float32}(undef,0)
     test_loss = Vector{Float32}(undef,0)
     test_iteration = Vector{Int64}(undef,0)
@@ -312,6 +314,9 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
     else
         allow_lr_change = hasproperty(opt[1], :eta)
     end
+    # Initialize so we get them returned by the gradient function
+    local loss_val::Float32
+    local predicted::Array{Float32,4}
     # Run training for n epochs
     while epoch_idx<epochs
         # Make minibatches
@@ -329,6 +334,8 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
         if epoch_idx==1
             testing_frequency = num/testing_frequency
             max_iterations = epochs*num
+            resize!(accuracy_vector,max_iterations)
+            resize!(loss_vector,max_iterations)
             put!(channels.training_progress,[epochs,num,max_iterations])
         end
         last_test = 0
@@ -343,7 +350,7 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
                 end
                 modif1::String = modifs[1]
                 if modif1=="stop"
-                    data = (accuracy_array,loss_array,
+                    data = (accuracy_vector,loss_vector,
                         test_accuracy,test_loss,test_iteration)
                     return data
                 elseif modif1=="learning rate"
@@ -364,10 +371,6 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
             train_minibatch = train_batches[i]
             input_data = train_minibatch[1]
             actual = train_minibatch[2]
-            # Initialize so we get them returned by the gradient function
-            local loss_val::Float32
-            local predicted::Array{Float32,4}
-
             # Calculate gradient
             ps = Flux.Params(Flux.params(model))
             gs = gradient(ps) do
@@ -379,10 +382,9 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
             # Calculate accuracy
             accuracy_val::Float32 = accuracy(predicted,actual)
             # Return training information
-            data_temp = [accuracy_val,loss_val]
-            put!(channels.training_progress,["Training",data_temp...])
-            push!(accuracy_array,data_temp[1])
-            push!(loss_array,data_temp[2])
+            put!(channels.training_progress,["Training",accuracy_val,loss_val])
+            accuracy_vector[iteration] = accuracy_val
+            loss_vector[iteration] = loss_val
             # Testing part
             if run_test
                 testing_frequency_cond = ceil(i/testing_frequency)>last_test
@@ -412,10 +414,14 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
         model_data.model = model
         save_model_main(model_data,name)
         # Needed to avoid out of memory issue
+        empty!(train_batches)
+        empty!(test_batches)
         @everywhere GC.gc()
     end
     # Return training information
-    data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
+    accuracy_vector = accuracy_vector[1:iteration]
+    loss_vector = loss_vector[1:iteration]
+    data = (accuracy_vector,loss_vector,test_accuracy,test_loss,test_iteration)
     return data
 end
 
@@ -428,8 +434,8 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
     # Initialize
     epochs = args.epochs
     batch_size = args.batch_size
-    accuracy_array = Vector{Float32}(undef,0)
-    loss_array = Vector{Float32}(undef,0)
+    accuracy_vector = Vector{Float32}(undef,0)
+    loss_vector = Vector{Float32}(undef,0)
     test_accuracy = Vector{Float32}(undef,0)
     test_loss = Vector{Float32}(undef,0)
     test_iteration = Vector{Int64}(undef,0)
@@ -447,6 +453,9 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
     else
         allow_lr_change = hasproperty(opt[1], :eta)
     end
+    # Initialize so we get them returned by the gradient function
+    local loss_val::Float32
+    local predicted::CuArray{Float32,4}
     # Run training for n epochs
     while epoch_idx<=epochs
         # Make minibatches
@@ -463,6 +472,8 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
         if epoch_idx==1
             testing_frequency = num/testing_frequency
             max_iterations = epochs*num
+            resize!(accuracy_vector,max_iterations)
+            resize!(loss_vector,max_iterations)
             put!(channels.training_progress,[epochs,num,max_iterations])
         end
         # Run iteration
@@ -475,7 +486,7 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
                 end
                 modif1::String = modifs[1]
                 if modif1=="stop"
-                    data = (accuracy_array,loss_array,
+                    data = (accuracy_vector,loss_vector,
                         test_accuracy,test_loss,test_iteration)
                     return data
                 elseif modif1=="learning rate"
@@ -488,6 +499,9 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
                     end
                 elseif modif1=="epochs"
                     epochs::Int64 = convert(Int64,modifs[2])
+                    max_iterations = epochs*num
+                    resize!(accuracy_vector,max_iterations)
+                    resize!(loss_vector,max_iterations)
                 elseif modif1=="testing frequency"
                     testing_frequency::Float64 = floor(num/modifs[2])
                 end
@@ -496,9 +510,6 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
             train_minibatch = CuArray.(train_batches[i])
             input_data = train_minibatch[1]
             actual = train_minibatch[2]
-            # Initialize so we get them returned by the gradient function
-            local loss_val::Float32
-            local predicted::CuArray{Float32,4}
             # Calculate gradient
             ps = Flux.Params(Flux.params(model))
             gs = gradient(ps) do
@@ -510,10 +521,9 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
             # Calculate accuracy
             accuracy_val::Float32 = accuracy(predicted,actual)
             # Return training information
-            data_temp = [accuracy_val,loss_val]
-            put!(channels.training_progress,["Training",data_temp...])
-            push!(accuracy_array,data_temp[1])
-            push!(loss_array,data_temp[2])
+            put!(channels.training_progress,["Training",accuracy_val,loss_val])
+            accuracy_vector[iteration] = accuracy_val
+            loss_vector[iteration] = loss_val
             # Needed to avoid GPU out of memory issue
             CUDA.unsafe_free!(predicted)
             # Testing part
@@ -543,11 +553,16 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
         # Save model
         model_data.model = move(model,cpu)
         save_model_main(model_data,name)
+        # Clean up
+        empty!(train_batches)
+        empty!(test_batches)
         # Needed to avoid GPU out of memory issue
         @everywhere GC.gc()
     end
     # Return training information
-    data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
+    accuracy_vector = accuracy_vector[1:iteration]
+    loss_vector = loss_vector[1:iteration]
+    data = (accuracy_vector,loss_vector,test_accuracy,test_loss,test_iteration)
     return data
 end
 
@@ -590,9 +605,10 @@ function train_main(settings::Settings,training_data::Training_data,
     training = settings.Training
     training_options = training.Options
     training_plot_data = training_data.Training_plot_data
+    training_results_data = training_data.Training_results_data
     args = training_options.Hyperparameters
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
-    reset_training_data(training_plot_data)
+    reset_training_data(training_plot_data,training_results_data)
     # Preparing train and test sets
     train_set, test_set = get_train_test(training_plot_data,training)
     # Setting functions and parameters

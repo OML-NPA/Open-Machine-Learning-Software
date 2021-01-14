@@ -91,7 +91,7 @@ function label_to_bool(labelimg::Array{RGB{Normed{UInt8,8}},2},
     end
     # Make features outlining object borders
     for j=1:length(inds_borders)
-        dil = dilate(perim(label[:,:,inds_borders[j]]),border_num_pixels)
+        dil = dilate(outer_perim(label[:,:,inds_borders[j]]),border_num_pixels)
         label[:,:,length(colors)+j] = dil
     end
     return label
@@ -126,8 +126,8 @@ function correct_view(img::Array{Float32,2},label::Array{RGB{Normed{UInt8,8}},2}
     areaopen!(field,30000)
     field = .!(field)
     field_area = sum(field)
-    field_perim = sum(perim(field))/1.25
-    circularity = (4*pi*field_area)/(field_perim^2)
+    field_outer_perim = sum(outer_perim(field))/1.25
+    circularity = (4*pi*field_area)/(field_outer_perim^2)
     if circularity>0.9
         row_bool = any(field,1)
         col_bool = any(field,2)
@@ -186,19 +186,24 @@ function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
         data_border = data_in[:,:,ind_border]
         border_bool = data_border
         skel = thinning(border_bool)
-        components = label_components((!).(border_bool),conn(4))
-        centroids = component_centroids(components)
-        intensities = component_intensity(components,data_feat)
-        bad_components = findall(intensities.<0.7)
-        for i = 1:length(bad_components)
-            components[components.==bad_components[i]] .= 0
+        if model_data.features[i].border_remove_objs
+            components = label_components((!).(border_bool),conn(4))
+            centroids = component_centroids(components)
+            intensities = component_intensity(components,data_feat)
+            bad_components = findall(intensities.<0.7)
+            for i = 1:length(bad_components)
+                components[components.==bad_components[i]] .= 0
+            end
+            objects = data_feat.!=0
+            objects[skel] .= false
+            segmented = segment_objects(components,objects)
+            borders = mapwindow(x->!allequal(x), segmented, (3,3))
+            segmented[borders] .= 0
+            data[:,:,ind_feat] = segmented.>0
+        else
+            data_current = data[:,:,ind_feat]
+            data_current[skel] .= false
         end
-        objects = data_feat.!=0
-        objects[skel] .= false
-        segmented = segment_objects(components,objects)
-        borders = mapwindow(x->!allequal(x), segmented, (3,3))
-        segmented[borders] .= 0
-        data[:,:,ind_feat] = segmented.>0
     end
     return data
 end

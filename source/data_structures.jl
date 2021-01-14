@@ -58,6 +58,7 @@ output_options = Output_options()
     name::String = ""
     color::Vector{Float64} = Vector{Float64}(undef,3)
     border::Bool = false
+    border_remove_objs::Bool = false
     parent::String = ""
     Output::Output_options = output_options
 end
@@ -73,34 +74,13 @@ end
 model_data = Model_data()
 
 #---Master data
-@with_kw mutable struct Training_plot_data
-    data_input::Vector{Array{Float32,3}} = Vector{Array{Float32,3}}(undef,0)
-    data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,0)
-    loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-    accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-    test_accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-    test_loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-    test_iteration::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-    iteration::Int64 = 0
-    epoch::Int64 = 0
-    iterations_per_epoch::Int64 = 0
-    starting_time::DateTime = now()
-    max_iterations::Int64 = 0
-    learning_rate_changed::Bool = false
-end
-training_plot_data = Training_plot_data()
-
 @with_kw mutable struct Validation_plot_data
-    loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-    accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-    loss_std::Union{Float32,Float64} = 0.0f0
-    accuracy_std::Union{Float32,Float64} = 0.0f0
+    data_input::Vector{Array{Float32,2}} = Vector{Array{Float32,2}}(undef,0)
+    data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,0)
     data_input_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
         Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
     data_labels_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
         Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
-    data_input::Vector{Array{Float32,2}} = Vector{Array{Float32,2}}(undef,1)
-    data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,1)
     data_predicted::Vector{Vector{Array{RGB{Float32},2}}} =
         Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
     data_error::Vector{Vector{Array{RGB{Float32},2}}} =
@@ -110,9 +90,44 @@ training_plot_data = Training_plot_data()
 end
 validation_plot_data = Validation_plot_data()
 
+@with_kw mutable struct Validation_results_data
+    loss_std::Union{Float32,Float64} = 0.0f0
+    accuracy_std::Union{Float32,Float64} = 0.0f0
+    loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+end
+validation_results_data = Validation_results_data()
+
+@with_kw mutable struct Validation_data
+    Validation_plot_data::Validation_plot_data = validation_plot_data
+    Validation_results_data::Validation_results_data = validation_results_data
+end
+validation_data = Validation_data()
+
+@with_kw mutable struct Training_plot_data
+    data_input::Vector{Array{Float32,3}} = Vector{Array{Float32,3}}(undef,0)
+    data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,0)
+    iteration::Int64 = 0
+    epoch::Int64 = 0
+    iterations_per_epoch::Int64 = 0
+    starting_time::DateTime = now()
+    max_iterations::Int64 = 0
+    learning_rate_changed::Bool = false
+end
+training_plot_data = Training_plot_data()
+
+@with_kw mutable struct Training_results_data
+    loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    test_accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    test_loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    test_iteration::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+end
+training_results_data = Training_results_data()
+
 @with_kw mutable struct Training_data
     Training_plot_data::Training_plot_data = training_plot_data
-    Validation_plot_data::Validation_plot_data = validation_plot_data
+    Training_results_data::Training_results_data = training_results_data
     url_imgs::Vector{String} = Vector{String}(undef,0)
     url_labels::Vector{String} = Vector{String}(undef,0)
 end
@@ -127,6 +142,7 @@ analysis_data = Analysis_data()
 
 @with_kw mutable struct Master_data
     Training_data::Training_data = training_data
+    Validation_data::Validation_data = validation_data
     Analysis_data::Analysis_data = analysis_data
     image::Array{RGB{Float32},2} = Array{RGB{Float32},2}(undef,10,10)
 end
@@ -172,7 +188,7 @@ processing_training = Processing_training()
       ["ρ"],["β1","β2"],
       ["β1","β2"],
       ["β1","β2","Weight decay"]]
-    allow_lr_change::Bool = false
+    allow_lr_change::Bool = true
     learning_rate::Float64 = 1e-3
     epochs::Int64 = 1
     batch_size::Int64 = 10
@@ -205,13 +221,12 @@ design = Design()
 @with_kw mutable struct Training
     Options::Training_options = training_options
     Design::Design = design
-    problem_type::Tuple{String,Int64} = ("Classification",0)
+    problem_type::Tuple{String,Int64} = ("Segmentation",1)
     input_type::Tuple{String,Int64} = ("Image",0)
     template::String = ""
     images::String = ""
     labels::String = ""
     name::String = "new"
-    type::String = "segmentation"
 end
 training = Training()
 

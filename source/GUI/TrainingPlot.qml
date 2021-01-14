@@ -379,6 +379,8 @@ ApplicationWindow {
                             Row {
                                 spacing: 0.3*margin
                                 Label {
+                                    visible: Julia.get_settings(
+                                                 ["Training","Options","Hyperparameters","allow_lr_change"])
                                     text: "Learning rate:"
                                     width: iterationsperepochtextLabel.width
                                 }
