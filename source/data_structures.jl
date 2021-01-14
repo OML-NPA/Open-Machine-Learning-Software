@@ -58,6 +58,7 @@ output_options = Output_options()
     name::String = ""
     color::Vector{Float64} = Vector{Float64}(undef,3)
     border::Bool = false
+    border_remove_objs::Bool = false
     parent::String = ""
     Output::Output_options = output_options
 end
@@ -172,7 +173,7 @@ processing_training = Processing_training()
       ["ρ"],["β1","β2"],
       ["β1","β2"],
       ["β1","β2","Weight decay"]]
-    allow_lr_change::Bool = false
+    allow_lr_change::Bool = true
     learning_rate::Float64 = 1e-3
     epochs::Int64 = 1
     batch_size::Int64 = 10
@@ -205,13 +206,12 @@ design = Design()
 @with_kw mutable struct Training
     Options::Training_options = training_options
     Design::Design = design
-    problem_type::Tuple{String,Int64} = ("Classification",0)
+    problem_type::Tuple{String,Int64} = ("Segmentation",1)
     input_type::Tuple{String,Int64} = ("Image",0)
     template::String = ""
     images::String = ""
     labels::String = ""
     name::String = "new"
-    type::String = "segmentation"
 end
 training = Training()
 

@@ -27,14 +27,16 @@ Component {
             if (num_features!==0 && featureModel.count==0) {
                 updatemodelButton.visible = true
                 for (var i=0;i<num_features;i++) {
-                    var color = Julia.get_feature_field(i+1,"color")
+                    var ind = i+1
+                    var color = Julia.get_feature_field(ind,"color")
                     var feature = {
-                        "name": Julia.get_feature_field(i+1,"name"),
+                        "name": Julia.get_feature_field(ind,"name"),
                         "colorR": color[0],
                         "colorG": color[1],
                         "colorB": color[2],
-                        "border": Julia.get_feature_field(i+1,"border"),
-                        "parent": Julia.get_feature_field(i+1,"parent")}
+                        "border": Julia.get_feature_field(ind,"border"),
+                        "borderRemoveObjs": Julia.get_feature_field(ind,"border_remove_objs"),
+                        "parent": Julia.get_feature_field(ind,"parent")}
                     featureModel.append(feature)
                 }
             }
@@ -118,6 +120,7 @@ Component {
                                 "colorG": data[i][1],
                                 "colorB": data[i][2],
                                 "border": false,
+                                "borderRemoveObjs": false,
                                 "parent": ""}
                             featureModel.append(feature)
                             Julia.append_features(feature.name,
@@ -125,6 +128,7 @@ Component {
                                                   feature.colorG,
                                                   feature.colorB,
                                                   feature.border,
+                                                  feature.borderRemoveObjs,
                                                   feature.parent)
                         }
                         max_value = 0

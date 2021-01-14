@@ -12,17 +12,15 @@ ApplicationWindow {
     id: window
     visible: true
     title: qsTr("  Open Machine Learning Software")
-    minimumWidth: columnLayout.width
-    minimumHeight: columnLayout.height
-    maximumWidth: columnLayout.width
-    maximumHeight: columnLayout.height
+    width: columnLayout.width
+    height: columnLayout.height
     color: defaultpalette.window
 
     onClosing: {featuredialogLoader.sourceComponent = null}
 
     ColumnLayout {
         id: columnLayout
-        ColumnLayout {
+        Column {
             Layout.margins: margin
             spacing: 0.4*margin
             RowLayout {
@@ -78,10 +76,12 @@ ApplicationWindow {
             }
             Row {
                 Label {
-                    topPadding: 7*pix
+                    id: borderLabel
+                    width: borderremoveobjsLabel.width
                     text: "Border is important:"
                 }
                 CheckBox {
+                    id: borderCheckBox
                     onClicked: {
                         if (checkState==Qt.Checked) {
                             featureModel.get(indTree).border = true
@@ -96,36 +96,59 @@ ApplicationWindow {
                     }
                 }
             }
-            RowLayout {
-                Layout.alignment : Qt.AlignHCenter
-                spacing: 1.5*margin
-                Button {
-                    text: "Apply"
-                    Layout.preferredWidth: buttonWidth/2
-                    Layout.preferredHeight: buttonHeight
+            Row {
+                Label {
+                    id: borderremoveobjsLabel
+                    visible: borderCheckBox.checkState==Qt.Checked
+                    width: 300*pix
+                    wrapMode: Label.WordWrap
+                    text: "Ignore objects with broken border:"
+                }
+                CheckBox {
+                    visible: borderCheckBox.checkState==Qt.Checked
                     onClicked: {
-                        var prev_name = featureModel.get(indTree).name
-                        var new_name = nameTextField.text
-                        if (prev_name!==new_name) {
-                            for (var i=0;i<featureModel.count;i++) {
-                                var element = featureModel.get(i)
-                                if (element.parent===prev_name) {
-                                    element.parent = new_name
-                                }
+                        if (checkState==Qt.Checked) {
+                            featureModel.get(indTree).borderRemoveObjs = true
+                        }
+                        if (checkState==Qt.Unchecked) {
+                            featureModel.get(indTree).borderRemoveObjs = false
+                        }
+                    }
+                    Component.onCompleted: {
+                        checkState = featureModel.get(indTree).borderRemoveObjs ?
+                            Qt.Checked : Qt.Unchecked
+                    }
+                }
+            }
+            Button {
+                id: applyButton
+                text: "Apply"
+                x: columnLayout.width/2 -applyButton.width/1.20
+                width: buttonWidth/2
+                height: buttonHeight
+                onClicked: {
+                    var prev_name = featureModel.get(indTree).name
+                    var new_name = nameTextField.text
+                    if (prev_name!==new_name) {
+                        for (var i=0;i<featureModel.count;i++) {
+                            var element = featureModel.get(i)
+                            if (element.parent===prev_name) {
+                                element.parent = new_name
                             }
                         }
-                        var feature = featureModel.get(indTree)
-                        feature.name = new_name
-                        feature.parent = parentComboBox.currentText
-                        Julia.update_features(indTree+1,
-                                              feature.name,
-                                              feature.colorR,
-                                              feature.colorG,
-                                              feature.colorB,
-                                              feature.border,
-                                              feature.parent)
-                        featuredialogLoader.sourceComponent = null
                     }
+                    var feature = featureModel.get(indTree)
+                    feature.name = new_name
+                    feature.parent = parentComboBox.currentText
+                    Julia.update_features(indTree+1,
+                                          feature.name,
+                                          feature.colorR,
+                                          feature.colorG,
+                                          feature.colorB,
+                                          feature.border,
+                                          feature.borderRemoveObjs,
+                                          feature.parent)
+                    featuredialogLoader.sourceComponent = null
                 }
             }
         }
