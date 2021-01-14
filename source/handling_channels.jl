@@ -60,7 +60,7 @@ function get_results_main(channels::Channels,master_data::Master_data,
     elseif field=="Validation data preparation"
         if isready(channels.validation_data_results)
             data = take!(channels.validation_data_results)
-            validation_plot_data = master_data.Training_data.Validation_plot_data
+            validation_plot_data = master_data.Validation_data.Validation_plot_data
             validation_plot_data.data_input_orig = data[1]
             validation_plot_data.data_labels_orig = data[2]
             validation_plot_data.data_input = data[3]
@@ -97,14 +97,14 @@ function get_results_main(channels::Channels,master_data::Master_data,
     elseif field=="Validation"
         if isready(channels.validation_results)
             data = take!(channels.validation_results)
-            validation_plot_data = master_data.Training_data.Validation_plot_data
+            validation_plot_data = master_data.Validation_data.Validation_plot_data
             validation_plot_data.data_predicted = data[1]
             validation_plot_data.data_error = data[2]
             validation_plot_data.data_target = data[3]
-            validation_plot_data.accuracy = data[4]
-            validation_plot_data.loss = data[5]
-            validation_plot_data.accuracy_std = data[6]
-            validation_plot_data.loss_std = data[7]
+            validation_results_data.accuracy = data[4]
+            validation_results_data.loss = data[5]
+            validation_results_data.accuracy_std = data[6]
+            validation_results_data.loss_std = data[7]
             return [data[4],data[5],mean(data[4]),mean(data[5]),data[6],data[7]]
         else
             return false

@@ -75,6 +75,8 @@ model_data = Model_data()
 
 #---Master data
 @with_kw mutable struct Validation_plot_data
+    data_input::Vector{Array{Float32,2}} = Vector{Array{Float32,2}}(undef,0)
+    data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,0)
     data_input_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
         Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
     data_labels_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =

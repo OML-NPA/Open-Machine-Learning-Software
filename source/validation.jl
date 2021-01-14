@@ -31,7 +31,7 @@ prepare_validation_data() = prepare_validation_data_main2(training,training_data
     channels.validation_data_results)
 
 
-function get_validation_set(validation_plot_data::Validation_plot_data,training::Training)
+function get_validation_set(validation_plot_data::Validation_plot_data)
     data_input_raw = validation_plot_data.data_input
     data_labels_raw = convert(Vector{Array{Float32,3}},
         validation_plot_data.data_labels)
@@ -41,11 +41,12 @@ function get_validation_set(validation_plot_data::Validation_plot_data,training:
     return set
 end
 
-function reset_validation_data(validation_plot_data::Validation_plot_data)
-    validation_plot_data.accuracy = Vector{Float32}(undef,0)
-    validation_plot_data.loss = Vector{Float32}(undef,0)
-    validation_plot_data.loss_std = NaN
-    validation_plot_data.accuracy_std = NaN
+function reset_validation_data(validation_plot_data::Validation_plot_data,
+        validation_results_data::Validation_results_data)
+    validation_results_data.accuracy = Vector{Float32}(undef,0)
+    validation_results_data.loss = Vector{Float32}(undef,0)
+    validation_results_data.loss_std = NaN
+    validation_results_data.accuracy_std = NaN
     validation_plot_data.data_error =
         Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
     validation_plot_data.data_target =
@@ -273,17 +274,18 @@ function forward(model::Chain,input_data::Array{Float32};
 end
 
 # Main validation function
-function validate_main(settings::Settings,training_data::Training_data,
+function validate_main(settings::Settings,validation_data::Validation_data,
         model_data::Model_data,channels::Channels)
     training = settings.Training
-    validation_plot_data = training_data.Validation_plot_data
+    validation_plot_data = validation_data.Validation_plot_data
+    validation_results_data = validation_data.Validation_results_data
     model = model_data.model
     loss = model_data.loss
     accuracy = get_accuracy_func(training)
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
-    reset_validation_data(validation_plot_data)
+    reset_validation_data(validation_plot_data,validation_results_data)
     # Preparing set
-    set = get_validation_set(validation_plot_data,training)
+    set = get_validation_set(validation_plot_data)
     num = length(set[1])
     accuracy_array = Vector{Float32}(undef,0)
     predicted_array = Vector{BitArray{3}}(undef,0)
@@ -337,11 +339,9 @@ function validate_main(settings::Settings,training_data::Training_data,
     put!(channels.validation_results,data)
     return nothing
 end
-function validate_main2(settings::Settings,training_data::Training_data,
+function validate_main2(settings::Settings,validation_data::Validation_data,
         model_data::Model_data,channels::Channels)
-    @everywhere settings,training_data,model_data
-    remote_do(validate_main,workers()[end],settings,training_data,model_data,channels)
+    @everywhere settings,validation_data,model_data
+    remote_do(validate_main,workers()[end],settings,validation_data,model_data,channels)
 end
-validate() = validate_main2(settings,training_data,model_data,channels)
-
-#colorview(Gray,Float32.(predicted_bool[:,:,4]))
+validate() = validate_main2(settings,validation_data,model_data,channels)

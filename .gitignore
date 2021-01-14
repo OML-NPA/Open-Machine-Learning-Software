@@ -7,3 +7,4 @@ source/config.bson
 *.conf
 *.cpp
 *.qrc
+*.pro
