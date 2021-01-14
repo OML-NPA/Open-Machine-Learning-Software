@@ -201,8 +201,8 @@ function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
             segmented[borders] .= 0
             data[:,:,ind_feat] = segmented.>0
         else
-            data_current = data[:,:,ind_feat]
-            data_current[skel] .= false
+            data_feat_bool[skel] .= false
+            data[:,:,i] = data_feat_bool
         end
     end
     return data
