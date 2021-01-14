@@ -90,7 +90,6 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     end
     # Initialize
     features = model_data.features
-    type = training.type
     options = training.Options
     min_fr_pix = options.Processing.min_fr_pix
     num_angles = options.Processing.num_angles
@@ -294,8 +293,8 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
     # Initialize
     epochs = args.epochs
     batch_size = args.batch_size
-    accuracy_array = Vector{Float32}(undef,0)
-    loss_array = Vector{Float32}(undef,0)
+    accuracy_vector = Vector{Float32}(undef,0)
+    loss_vector = Vector{Float32}(undef,0)
     test_accuracy = Vector{Float32}(undef,0)
     test_loss = Vector{Float32}(undef,0)
     test_iteration = Vector{Int64}(undef,0)
@@ -329,6 +328,8 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
         if epoch_idx==1
             testing_frequency = num/testing_frequency
             max_iterations = epochs*num
+            resize!(accuracy_vector,max_iterations)
+            resize!(loss_vector,max_iterations)
             put!(channels.training_progress,[epochs,num,max_iterations])
         end
         last_test = 0
@@ -343,7 +344,7 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
                 end
                 modif1::String = modifs[1]
                 if modif1=="stop"
-                    data = (accuracy_array,loss_array,
+                    data = (accuracy_vector,loss_vector,
                         test_accuracy,test_loss,test_iteration)
                     return data
                 elseif modif1=="learning rate"
@@ -379,10 +380,9 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
             # Calculate accuracy
             accuracy_val::Float32 = accuracy(predicted,actual)
             # Return training information
-            data_temp = [accuracy_val,loss_val]
-            put!(channels.training_progress,["Training",data_temp...])
-            push!(accuracy_array,data_temp[1])
-            push!(loss_array,data_temp[2])
+            put!(channels.training_progress,["Training",accuracy_val,loss_val])
+            accuracy_vector[iteration] = accuracy_val
+            loss_vector[iteration] = loss_val
             # Testing part
             if run_test
                 testing_frequency_cond = ceil(i/testing_frequency)>last_test
@@ -412,10 +412,14 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
         model_data.model = model
         save_model_main(model_data,name)
         # Needed to avoid out of memory issue
+        empty!(train_batches)
+        empty!(test_batches)
         @everywhere GC.gc()
     end
     # Return training information
-    data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
+    accuracy_vector = accuracy_vector[1:iteration]
+    loss_vector = loss_vector[1:iteration]
+    data = (accuracy_vector,loss_vector,test_accuracy,test_loss,test_iteration)
     return data
 end
 
@@ -428,8 +432,8 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
     # Initialize
     epochs = args.epochs
     batch_size = args.batch_size
-    accuracy_array = Vector{Float32}(undef,0)
-    loss_array = Vector{Float32}(undef,0)
+    accuracy_vector = Vector{Float32}(undef,0)
+    loss_vector = Vector{Float32}(undef,0)
     test_accuracy = Vector{Float32}(undef,0)
     test_loss = Vector{Float32}(undef,0)
     test_iteration = Vector{Int64}(undef,0)
@@ -463,6 +467,8 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
         if epoch_idx==1
             testing_frequency = num/testing_frequency
             max_iterations = epochs*num
+            resize!(accuracy_vector,max_iterations)
+            resize!(loss_vector,max_iterations)
             put!(channels.training_progress,[epochs,num,max_iterations])
         end
         # Run iteration
@@ -475,7 +481,7 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
                 end
                 modif1::String = modifs[1]
                 if modif1=="stop"
-                    data = (accuracy_array,loss_array,
+                    data = (accuracy_vector,loss_vector,
                         test_accuracy,test_loss,test_iteration)
                     return data
                 elseif modif1=="learning rate"
@@ -488,6 +494,9 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
                     end
                 elseif modif1=="epochs"
                     epochs::Int64 = convert(Int64,modifs[2])
+                    max_iterations = epochs*num
+                    resize!(accuracy_vector,max_iterations)
+                    resize!(loss_vector,max_iterations)
                 elseif modif1=="testing frequency"
                     testing_frequency::Float64 = floor(num/modifs[2])
                 end
@@ -510,10 +519,9 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
             # Calculate accuracy
             accuracy_val::Float32 = accuracy(predicted,actual)
             # Return training information
-            data_temp = [accuracy_val,loss_val]
-            put!(channels.training_progress,["Training",data_temp...])
-            push!(accuracy_array,data_temp[1])
-            push!(loss_array,data_temp[2])
+            put!(channels.training_progress,["Training",accuracy_val,loss_val])
+            accuracy_vector[iteration] = accuracy_val
+            loss_vector[iteration] = loss_val
             # Needed to avoid GPU out of memory issue
             CUDA.unsafe_free!(predicted)
             # Testing part
@@ -543,11 +551,16 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
         # Save model
         model_data.model = move(model,cpu)
         save_model_main(model_data,name)
+        # Clean up
+        empty!(train_batches)
+        empty!(test_batches)
         # Needed to avoid GPU out of memory issue
         @everywhere GC.gc()
     end
     # Return training information
-    data = (accuracy_array,loss_array,test_accuracy,test_loss,test_iteration)
+    accuracy_vector = accuracy_vector[1:iteration]
+    loss_vector = loss_vector[1:iteration]
+    data = (accuracy_vector,loss_vector,test_accuracy,test_loss,test_iteration)
     return data
 end
 
