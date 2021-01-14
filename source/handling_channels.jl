@@ -82,13 +82,13 @@ function get_results_main(channels::Channels,master_data::Master_data,
         if isready(channels.training_results)
             data = take!(channels.training_results)
             if data!=nothing
-                training_plot_data = master_data.Training_data.Training_plot_data
+                training_results_data = master_data.Training_data.Training_results_data
                 model_data.model = data[1]
-                training_plot_data.accuracy = data[2]
-                training_plot_data.loss = data[3]
-                training_plot_data.test_accuracy = data[4]
-                training_plot_data.test_loss = data[5]
-                training_plot_data.test_iteration = data[6]
+                training_results_data.accuracy = data[2]
+                training_results_data.loss = data[3]
+                training_results_data.test_accuracy = data[4]
+                training_results_data.test_loss = data[5]
+                training_results_data.test_iteration = data[6]
             end
             return true
         else

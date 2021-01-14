@@ -212,11 +212,12 @@ end
 #---
 
 # Reset training related data accumulators
-function reset_training_data(training_plot_data::Training_plot_data)
-    training_plot_data.accuracy = Float32[]
-    training_plot_data.loss = Float32[]
-    training_plot_data.test_accuracy = Float32[]
-    training_plot_data.test_loss = Float32[]
+function reset_training_data(training_plot_data::Training_plot_data,
+        training_results_data::Training_results_data)
+    training_results_data.accuracy = Float32[]
+    training_results_data.loss = Float32[]
+    training_results_data.test_accuracy = Float32[]
+    training_results_data.test_loss = Float32[]
     training_plot_data.iteration = 0
     training_plot_data.epoch = 0
     training_plot_data.iterations_per_epoch = 0
@@ -311,6 +312,9 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
     else
         allow_lr_change = hasproperty(opt[1], :eta)
     end
+    # Initialize so we get them returned by the gradient function
+    local loss_val::Float32
+    local predicted::Array{Float32,4}
     # Run training for n epochs
     while epoch_idx<epochs
         # Make minibatches
@@ -365,10 +369,6 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
             train_minibatch = train_batches[i]
             input_data = train_minibatch[1]
             actual = train_minibatch[2]
-            # Initialize so we get them returned by the gradient function
-            local loss_val::Float32
-            local predicted::Array{Float32,4}
-
             # Calculate gradient
             ps = Flux.Params(Flux.params(model))
             gs = gradient(ps) do
@@ -451,6 +451,9 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
     else
         allow_lr_change = hasproperty(opt[1], :eta)
     end
+    # Initialize so we get them returned by the gradient function
+    local loss_val::Float32
+    local predicted::CuArray{Float32,4}
     # Run training for n epochs
     while epoch_idx<=epochs
         # Make minibatches
@@ -505,9 +508,6 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
             train_minibatch = CuArray.(train_batches[i])
             input_data = train_minibatch[1]
             actual = train_minibatch[2]
-            # Initialize so we get them returned by the gradient function
-            local loss_val::Float32
-            local predicted::CuArray{Float32,4}
             # Calculate gradient
             ps = Flux.Params(Flux.params(model))
             gs = gradient(ps) do
@@ -603,9 +603,10 @@ function train_main(settings::Settings,training_data::Training_data,
     training = settings.Training
     training_options = training.Options
     training_plot_data = training_data.Training_plot_data
+    training_results_data = training_data.Training_results_data
     args = training_options.Hyperparameters
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
-    reset_training_data(training_plot_data)
+    reset_training_data(training_plot_data,training_results_data)
     # Preparing train and test sets
     train_set, test_set = get_train_test(training_plot_data,training)
     # Setting functions and parameters
