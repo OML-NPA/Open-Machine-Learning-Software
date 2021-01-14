@@ -1,0 +1,6 @@
+
+source/GUI/GUI.pro.user
+source/config.bson
+*.model
+*.user
+source/config.bson
