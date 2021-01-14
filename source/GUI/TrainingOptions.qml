@@ -270,20 +270,20 @@ ApplicationWindow {
                                 }
                                 SpinBox {
                                     id: bordernumpixelsSpinBox
-                                    from: 1
-                                    value: (Julia.get_settings(
-                                               ["Training","Options","Processing","border_num_pixels"])-1)/2+1
-                                    to: 10
+                                    from: 0
+                                    value: Julia.get_settings(
+                                               ["Training","Options","Processing","border_num_pixels"])
+                                    to: 9
                                     stepSize: 1
                                     property double realValue
                                     textFromValue: function(value, locale) {
-                                        realValue = (value-1)*2+1
+                                        realValue = (value)*2+1
                                         return realValue.toLocaleString(locale,'f',0)
                                     }
                                     onValueModified: {
                                         Julia.set_settings(
                                             ["Training","Options","Processing","border_num_pixels"],
-                                            realValue)
+                                            value)
                                     }
                                 }
                             }
