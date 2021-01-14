@@ -270,6 +270,8 @@ function get_optimiser(training::Training)
     # Get learning rate
     learning_rate = training.Options.Hyperparameters.learning_rate
     # Collect optimiser parameters and learning rate
+    if length(parameters_in)==0
+        parameters = [learning_rate]
     if length(parameters_in)==1
         parameters = [learning_rate,parameters_in[1]]
     elseif length(parameters_in)==2
