@@ -36,6 +36,7 @@ Component {
                         "colorB": color[2],
                         "border": Julia.get_feature_field(ind,"border"),
                         "borderRemoveObjs": Julia.get_feature_field(ind,"border_remove_objs"),
+                        "min_area": Julia.get_feature_field(ind,"min_area"),
                         "parent": Julia.get_feature_field(ind,"parent")}
                     featureModel.append(feature)
                 }
@@ -121,6 +122,7 @@ Component {
                                 "colorB": data[i][2],
                                 "border": false,
                                 "borderRemoveObjs": false,
+                                "min_area": 1,
                                 "parent": ""}
                             featureModel.append(feature)
                             Julia.append_features(feature.name,
@@ -129,6 +131,7 @@ Component {
                                                   feature.colorB,
                                                   feature.border,
                                                   feature.borderRemoveObjs,
+                                                  feature.min_area,
                                                   feature.parent)
                         }
                         max_value = 0

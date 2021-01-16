@@ -234,6 +234,19 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     else
         data_array .= predicted_array
     end
+    Threads.@threads for i=1:num
+        data_array_current = data_array[i]
+        Threads.@threads for j=1:num_border
+            min_area = model_data.features[j].min_area
+            ind = num_feat + j
+            if min_area>1
+                temp_array = data_array_current[:,:,ind]
+                areaopen!(temp_array,min_area)
+                data_array_current[:,:,ind] .= temp_array
+            end
+        end
+        data_array[i] = data_array_current
+    end
     predicted_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
     predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
     target_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
