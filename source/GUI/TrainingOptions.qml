@@ -190,105 +190,103 @@ ApplicationWindow {
                         }
                     }
                 }
-
                 Component {
-                        id: processingView
-                        Column {
-                            spacing: 0.4*margin
+                    id: processingView
+                    Column {
+                        spacing: 0.4*margin
+                        Row {
+                            spacing: 0.3*margin
                             Label {
-                                text: "Augmentation"
-                                font.bold: true
+                                text: "Border thickness in pixels:"
+                                width: minfrpixLabel.width
                             }
-                            Row {
-                                spacing: 0.3*margin
-                                Label {
-                                    text: "Mirroring:"
-                                    width: minfrpixLabel.width
+                            SpinBox {
+                                id: bordernumpixelsSpinBox
+                                from: 0
+                                value: Julia.get_settings(
+                                           ["Training","Options","Processing","border_num_pixels"])
+                                to: 9
+                                stepSize: 1
+                                property double realValue
+                                textFromValue: function(value, locale) {
+                                    realValue = (value)*2+1
+                                    return realValue.toLocaleString(locale,'f',0)
                                 }
-                                CheckBox {
-                                    padding: 0
-                                    width: height
-                                    checkState : Julia.get_settings(
-                                               ["Training","Options","Processing","mirroring"]) ?
-                                               Qt.Checked : Qt.Unchecked
-                                    onClicked: {
-                                        var value = checkState==Qt.Checked ? true : false
-                                        Julia.set_settings(
-                                            ["Training","Options","Processing","mirroring"],
-                                            value)
-                                    }
-                                }
-                            }
-                            Row {
-                                spacing: 0.3*margin
-                                Label {
-                                    text: "Rotation (number of angles):"
-                                    width: minfrpixLabel.width
-                                }
-                                SpinBox {
-                                    id: numanglesSpinBox
-                                    from: 1
-                                    value: Julia.get_settings(
-                                               ["Training","Options","Processing","num_angles"])
-                                    to: 10
-                                    onValueModified: {
-                                        Julia.set_settings(
-                                            ["Training","Options","Processing","num_angles"],value)
-                                    }
-                                }
-                            }
-                            Row {
-                                spacing: 0.3*margin
-                                Label {
-                                    id: minfrpixLabel
-                                    text: "Minimum fraction of labeled pixels:"
-                                }
-                                SpinBox {
-                                    id: minfrpixSpinBox
-                                    from: 0
-                                    value: 100*Julia.get_settings(
-                                               ["Training","Options","Processing","min_fr_pix"])
-                                    to: 100
-                                    stepSize: 10
-                                    property real realValue
-                                    textFromValue: function(value, locale) {
-                                        realValue = value/100
-                                        return realValue.toLocaleString(locale,'f',1)
-                                    }
-                                    onValueModified: {
-                                        Julia.set_settings(
-                                            ["Training","Options","Processing","min_fr_pix"],
-                                            realValue)
-                                    }
-                                }
-                            }
-                            Row {
-                                spacing: 0.3*margin
-                                Label {
-                                    text: "Border thickness in pixels:"
-                                    width: minfrpixLabel.width
-                                }
-                                SpinBox {
-                                    id: bordernumpixelsSpinBox
-                                    from: 0
-                                    value: Julia.get_settings(
-                                               ["Training","Options","Processing","border_num_pixels"])
-                                    to: 9
-                                    stepSize: 1
-                                    property double realValue
-                                    textFromValue: function(value, locale) {
-                                        realValue = (value)*2+1
-                                        return realValue.toLocaleString(locale,'f',0)
-                                    }
-                                    onValueModified: {
-                                        Julia.set_settings(
-                                            ["Training","Options","Processing","border_num_pixels"],
-                                            value)
-                                    }
+                                onValueModified: {
+                                    Julia.set_settings(
+                                        ["Training","Options","Processing","border_num_pixels"],
+                                        value)
                                 }
                             }
                         }
-
+                        Label {
+                            text: "Augmentation"
+                            font.bold: true
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                text: "Mirroring:"
+                                width: minfrpixLabel.width
+                            }
+                            CheckBox {
+                                padding: 0
+                                width: height
+                                checkState : Julia.get_settings(
+                                           ["Training","Options","Processing","mirroring"]) ?
+                                           Qt.Checked : Qt.Unchecked
+                                onClicked: {
+                                    var value = checkState==Qt.Checked ? true : false
+                                    Julia.set_settings(
+                                        ["Training","Options","Processing","mirroring"],
+                                        value)
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                text: "Rotation (number of angles):"
+                                width: minfrpixLabel.width
+                            }
+                            SpinBox {
+                                id: numanglesSpinBox
+                                from: 1
+                                value: Julia.get_settings(
+                                           ["Training","Options","Processing","num_angles"])
+                                to: 10
+                                onValueModified: {
+                                    Julia.set_settings(
+                                        ["Training","Options","Processing","num_angles"],value)
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 0.3*margin
+                            Label {
+                                id: minfrpixLabel
+                                text: "Minimum fraction of labeled pixels:"
+                            }
+                            SpinBox {
+                                id: minfrpixSpinBox
+                                from: 0
+                                value: 100*Julia.get_settings(
+                                           ["Training","Options","Processing","min_fr_pix"])
+                                to: 100
+                                stepSize: 10
+                                property real realValue
+                                textFromValue: function(value, locale) {
+                                    realValue = value/100
+                                    return realValue.toLocaleString(locale,'f',1)
+                                }
+                                onValueModified: {
+                                    Julia.set_settings(
+                                        ["Training","Options","Processing","min_fr_pix"],
+                                        realValue)
+                                }
+                            }
+                        }
+                    }
                 }
                 Component {
                     id: hyperparametersView

@@ -213,7 +213,7 @@ end
 
 function output_and_error_images(predicted_array::Vector{BitArray{3}},
         actual_array::Array{Array{Float32,4},1},
-        model_data::Model_data,channels::Channels)
+        model_data::Model_data,training::Training,channels::Channels)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     border_colors = labels_color[findall(border)]
     labels_color = vcat(labels_color,border_colors,border_colors)
@@ -229,10 +229,23 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     num_border = sum(border)
     data_array = Vector{BitArray{3}}(undef,num)
     if num_border>0
-        border_array = map(x->apply_border_data_main(x,model_data),predicted_array)
+        border_array = map(x->apply_border_data_main(x,model_data,training),predicted_array)
         data_array .= cat3.(predicted_array,border_array)
     else
         data_array .= predicted_array
+    end
+    Threads.@threads for i=1:num
+        data_array_current = data_array[i]
+        Threads.@threads for j=1:num_border
+            min_area = model_data.features[j].min_area
+            ind = num_feat + j
+            if min_area>1
+                temp_array = data_array_current[:,:,ind]
+                areaopen!(temp_array,min_area)
+                data_array_current[:,:,ind] .= temp_array
+            end
+        end
+        data_array[i] = data_array_current
     end
     predicted_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
     predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
@@ -333,7 +346,7 @@ function validate_main(settings::Settings,validation_data::Validation_data,
     end
     actual_array = set[2]
     data_predicted,data_error,target = output_and_error_images(predicted_array,
-        actual_array,model_data,channels)
+        actual_array,model_data,training,channels)
     data = (data_predicted,data_error,target,
         accuracy_array,loss_array,std(accuracy_array),std(loss_array))
     put!(channels.validation_results,data)

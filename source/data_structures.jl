@@ -59,6 +59,7 @@ output_options = Output_options()
     color::Vector{Float64} = Vector{Float64}(undef,3)
     border::Bool = false
     border_remove_objs::Bool = false
+    min_area::Int64 = 1
     parent::String = ""
     Output::Output_options = output_options
 end

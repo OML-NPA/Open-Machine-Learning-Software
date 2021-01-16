@@ -77,7 +77,7 @@ ApplicationWindow {
             Row {
                 Label {
                     id: borderLabel
-                    width: borderremoveobjsLabel.width
+                    width: 300*pix
                     text: "Border is important:"
                 }
                 CheckBox {
@@ -120,6 +120,24 @@ ApplicationWindow {
                     }
                 }
             }
+            Row {
+                spacing: 0.3*margin
+                Label {
+                    id: minareaLabel
+                    text: "Minimum object area:"
+                    width: 300*pix
+                    topPadding: 10*pix
+                }
+                TextField {
+                    id: minareaTextField
+                    width: 140*pix
+                    text: featureModel.get(indTree).min_area
+                    validator: RegExpValidator { regExp: /([1-9]\d{0,5})/ }
+                    onEditingFinished: {
+                        featureModel.get(indTree).min_area = parseInt(text)
+                    }
+                }
+            }
             Button {
                 id: applyButton
                 text: "Apply"
@@ -147,6 +165,7 @@ ApplicationWindow {
                                           feature.colorB,
                                           feature.border,
                                           feature.borderRemoveObjs,
+                                          feature.min_area,
                                           feature.parent)
                     featuredialogLoader.sourceComponent = null
                 }

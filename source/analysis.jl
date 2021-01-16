@@ -201,6 +201,14 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
                 border_mask = apply_border_data_main(temp_mask,model_data)
                 temp_mask = cat3(temp_mask,border_mask)
             end
+            Threads.@threads for i=1:num_feat
+                min_area = model_data.features[i].min_area
+                if min_area>1
+                    temp_array = data_array[:,:,i]
+                    areaopen!(temp_array,min_area)
+                    data_array[:,:,i] = temp_array
+                end
+            end
             masks[j] = temp_mask
         end
         filenames = filenames_batched[i]
