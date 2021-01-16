@@ -169,7 +169,9 @@ function rotate_img(img::BitArray{3},angle_val::Float64)
 end
 
 # Use border data to better separate objects
-function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
+function apply_border_data_main(data_in::BitArray{3},
+        model_data::Model_data,training::Training)
+    border_num_pixels = training.Options.Processing.border_num_pixels
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     inds_border = findall(border)
     if inds_border==nothing
@@ -178,14 +180,20 @@ function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
     num_border = length(inds_border)
     num_feat = length(model_data.features)
     data = BitArray{3}(undef,size(data_in)[1:2]...,num_border)
-    for i = 1:num_border
+    Threads.@threads for i = 1:num_border
         ind_feat = inds_border[i]
         ind_border = num_feat + ind_feat
         data_feat_bool = data_in[:,:,ind_feat]
         data_feat = convert(Array{Float32},data_feat_bool)
         data_border = data_in[:,:,ind_border]
         border_bool = data_border
+        background1 = erode(data_feat_bool .& border_bool,border_num_pixels)
+        background2 = outer_perim(border_bool)
+        background2[data_feat_bool] .= false
+        background2 = dilate(background2,border_num_pixels+1)
+        background = background1 .| background2
         skel = thinning(border_bool)
+        background[skel] .= true
         if model_data.features[i].border_remove_objs
             components = label_components((!).(border_bool),conn(4))
             centroids = component_centroids(components)
@@ -201,13 +209,13 @@ function apply_border_data_main(data_in::BitArray{3},model_data::Model_data)
             segmented[borders] .= 0
             data[:,:,ind_feat] = segmented.>0
         else
-            data_feat_bool[skel] .= false
+            data_feat_bool[background] .= false
             data[:,:,i] = data_feat_bool
         end
     end
     return data
 end
-apply_border_data(data_in) = apply_border_data_main(data_in,model_data)
+apply_border_data(data_in) = apply_border_data_main(data_in,model_data,training)
 
 #---
 # Accuracy based on RMSE
