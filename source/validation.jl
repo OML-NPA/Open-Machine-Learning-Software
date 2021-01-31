@@ -12,10 +12,9 @@ function prepare_validation_data_main(training::Training,training_data::Training
         return false
     end
     labels_color,labels_incl,border,border_thickness = get_feature_data(features)
-    border_num_pixels = training.Options.Processing.border_num_pixels
     data_input = map(x->image_to_gray_float(x),images)
     data_labels = map(x->label_to_bool(x,labels_color,labels_incl,
-        border,border_num_pixels,border_thickness),labels)
+        border,border_thickness),labels)
     data = (images,labels,data_input,data_labels)
     put!(results,data)
     put!(progress,1)
