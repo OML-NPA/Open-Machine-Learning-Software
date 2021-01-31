@@ -194,31 +194,6 @@ ApplicationWindow {
                     id: processingView
                     Column {
                         spacing: 0.4*margin
-                        Row {
-                            spacing: 0.3*margin
-                            Label {
-                                text: "Border thickness in pixels:"
-                                width: minfrpixLabel.width
-                            }
-                            SpinBox {
-                                id: bordernumpixelsSpinBox
-                                from: 0
-                                value: Julia.get_settings(
-                                           ["Training","Options","Processing","border_num_pixels"])
-                                to: 9
-                                stepSize: 1
-                                property double realValue
-                                textFromValue: function(value, locale) {
-                                    realValue = (value)*2+1
-                                    return realValue.toLocaleString(locale,'f',0)
-                                }
-                                onValueModified: {
-                                    Julia.set_settings(
-                                        ["Training","Options","Processing","border_num_pixels"],
-                                        value)
-                                }
-                            }
-                        }
                         Label {
                             text: "Augmentation"
                             font.bold: true

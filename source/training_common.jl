@@ -71,7 +71,7 @@ end
 # Convert images to BitArray{3}
 function label_to_bool(labelimg::Array{RGB{Normed{UInt8,8}},2},
         labels_color::Vector{Vector{Float64}},labels_incl::Vector{Vector{Int64}},
-        border::Vector{Bool},border_num_pixels::Int64)
+        border::Vector{Bool},border_thickness::Vector{Int64})
     colors = map(x->RGB((n0f8.(./(x,255)))...),labels_color)
     num = length(colors)
     num_borders = sum(border)
@@ -91,7 +91,8 @@ function label_to_bool(labelimg::Array{RGB{Normed{UInt8,8}},2},
     end
     # Make features outlining object borders
     for j=1:length(inds_borders)
-        dil = dilate(outer_perim(label[:,:,inds_borders[j]]),border_num_pixels)
+        ind = inds_borders[j]
+        dil = dilate(outer_perim(label[:,:,ind]),border_thickness[ind])
         label[:,:,length(colors)+j] = dil
     end
     return label
@@ -104,6 +105,7 @@ function get_feature_data(features::Vector{Feature})
     labels_color = Vector{Vector{Float64}}(undef,num)
     labels_incl = Vector{Vector{Int64}}(undef,num)
     border = Vector{Bool}(undef,num)
+    border_thickness = Vector{Int64}(undef,num)
     feature_names = Vector{String}(undef,num)
     feature_parents = Vector{String}(undef,num)
     for i = 1:num
@@ -114,10 +116,11 @@ function get_feature_data(features::Vector{Feature})
         feature = features[i]
         labels_color[i] = feature.color
         border[i] = feature.border
+        border_thickness[i] = feature.border_thickness
         inds = findall(feature_names[i].==feature_parents)
         labels_incl[i] = inds
     end
-    return labels_color,labels_incl,border
+    return labels_color,labels_incl,border,border_thickness
 end
 
 # Removes rows and columns from image sides if they are uniformly black.

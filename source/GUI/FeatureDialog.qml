@@ -45,12 +45,12 @@ ApplicationWindow {
                         id: nameTextField
                         text: featureModel.get(indTree).name
                         Layout.alignment : Qt.AlignLeft
-                        Layout.preferredWidth: 300*pix
+                        Layout.preferredWidth: 400*pix
                         Layout.preferredHeight: buttonHeight
                     }
                     ComboBox {
                         id: parentComboBox
-                        Layout.preferredWidth: 300*pix
+                        Layout.preferredWidth: 400*pix
                         editable: false
                         model: nameModel
                         ListModel {
@@ -77,7 +77,7 @@ ApplicationWindow {
             Row {
                 Label {
                     id: borderLabel
-                    width: 300*pix
+                    width: 400*pix
                     text: "Border is important:"
                 }
                 CheckBox {
@@ -97,10 +97,36 @@ ApplicationWindow {
                 }
             }
             Row {
+                spacing: 0.3*margin
+                Label {
+                    visible: borderCheckBox.checkState==Qt.Checked
+                    text: "Border thickness (pix):"
+                    width: 400*pix
+                }
+                SpinBox {
+                    id: bordernumpixelsSpinBox
+                    visible: borderCheckBox.checkState==Qt.Checked
+                    from: 0
+                    to: 9
+                    stepSize: 1
+                    property double realValue
+                    textFromValue: function(value, locale) {
+                        realValue = (value)*2+1
+                        return realValue.toLocaleString(locale,'f',0)
+                    }
+                    onValueModified: {
+                        featureModel.get(indTree).border_thickness = value
+                    }
+                    Component.onCompleted: {
+                        value = featureModel.get(indTree).border_thickness
+                    }
+                }
+            }
+            Row {
                 Label {
                     id: borderremoveobjsLabel
                     visible: borderCheckBox.checkState==Qt.Checked
-                    width: 300*pix
+                    width: 400*pix
                     wrapMode: Label.WordWrap
                     text: "Ignore objects with broken border:"
                 }
@@ -125,7 +151,7 @@ ApplicationWindow {
                 Label {
                     id: minareaLabel
                     text: "Minimum object area:"
-                    width: 300*pix
+                    width: 400*pix
                     topPadding: 10*pix
                 }
                 TextField {
@@ -164,6 +190,7 @@ ApplicationWindow {
                                           feature.colorG,
                                           feature.colorB,
                                           feature.border,
+                                          feature.border_thickness,
                                           feature.borderRemoveObjs,
                                           feature.min_area,
                                           feature.parent)
