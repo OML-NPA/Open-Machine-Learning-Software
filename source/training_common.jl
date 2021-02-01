@@ -35,8 +35,8 @@ function get_urls_training_main(training::Training,training_data::Training_data)
         # Intersect file names
         inds1, inds2 = intersect_inds(filenames_labels, filenames_imgs)
         # Keep files present for both images and labels
-        files_imgs = files_imgs[inds1]
-        files_labels = files_labels[inds2]
+        files_imgs = files_imgs[inds2]
+        files_labels = files_labels[inds1]
         # Push urls into accumulators
         for l = 1:length(files_imgs)
             push!(url_imgs,string(dir_imgs,"/",files_imgs[l]))
