@@ -1,7 +1,7 @@
 
 using
 # Interfacing
-QML, CxxWrap, CUDAapi,
+QML, CxxWrap, CUDA,
 # Data structuring
 Parameters, DataFrames, StaticArrays, Dates,
 # Data import/export
@@ -17,4 +17,4 @@ Random, StatsBase, Statistics, LinearAlgebra, Combinatorics, Distances,
 Plots
 
 import Base.any
-import CUDA, CUDA.CuArray, Flux.outdims
+import CUDA.CuArray, Flux.outdims
