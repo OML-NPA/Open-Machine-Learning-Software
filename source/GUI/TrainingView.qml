@@ -35,6 +35,7 @@ Component {
                         "colorG": color[1],
                         "colorB": color[2],
                         "border": Julia.get_feature_field(ind,"border"),
+                        "border_thickness": Julia.get_feature_field(ind,"border_thickness"),
                         "borderRemoveObjs": Julia.get_feature_field(ind,"border_remove_objs"),
                         "min_area": Julia.get_feature_field(ind,"min_area"),
                         "parent": Julia.get_feature_field(ind,"parent")}
@@ -121,6 +122,7 @@ Component {
                                 "colorG": data[i][1],
                                 "colorB": data[i][2],
                                 "border": false,
+                                "border_thickness": 3,
                                 "borderRemoveObjs": false,
                                 "min_area": 1,
                                 "parent": ""}
@@ -130,6 +132,7 @@ Component {
                                                   feature.colorG,
                                                   feature.colorB,
                                                   feature.border,
+                                                  feature.border_thickness,
                                                   feature.borderRemoveObjs,
                                                   feature.min_area,
                                                   feature.parent)

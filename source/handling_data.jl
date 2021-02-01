@@ -357,32 +357,33 @@ reset_features() = reset_features_main(model_data::Model_data)
 
 # Appends model features
 function append_features_main(model_data::Model_data,output_options::Output_options,
-        name,colorR,colorG,colorB,border,border_remove_objs,min_area,parent)
+        name,colorR,colorG,colorB,border,border_thickness,border_remove_objs,min_area,parent)
     push!(model_data.features,Feature(String(name),Int64.([colorR,colorG,colorB]),
-        Bool(border),Bool(border_remove_objs),Int64(min_area),
+        Bool(border),Int64(border_thickness),Bool(border_remove_objs),Int64(min_area),
         String(parent),output_options))
     return nothing
 end
-append_features(name,colorR,colorG,colorB,border,border_remove_objs,min_area,parent) =
-    append_features_main(model_data,output_options,name,colorR,colorG,
-    colorB,border,border_remove_objs,min_area,parent)
+append_features(name,colorR,colorG,colorB,border,border_thickness,border_remove_objs,
+    min_area,parent) = append_features_main(model_data,output_options,name,colorR,colorG,
+    colorB,border,border_thickness,border_remove_objs,min_area,parent)
 
 # Updates model feature with new data
 function update_features_main(model_data,index,name,colorR,colorG,colorB,
-        border,border_remove_objs,min_area,parent)
+        border,border_thickness,border_remove_objs,min_area,parent)
     feature = model_data.features[index]
     feature.name = String(name)
     feature.color = Int64.([colorR,colorG,colorB])
     feature.border = Bool(border)
+    feature.border_thickness = Int64(border_thickness)
     feature.border_remove_objs = Bool(border_remove_objs)
     feature.min_area = Int64(min_area)
     feature.parent = String(parent)
     feature.Output = feature.Output
 end
 update_features(index,name,colorR,colorG,colorB,
-        border,border_remove_objs,min_area,parent) =
+        border,border_thickness,border_remove_objs,min_area,parent) =
     update_features_main(model_data,index,name,colorR,colorG,colorB,
-    border,border_remove_objs,min_area,parent)
+    border,border_thickness,border_remove_objs,min_area,parent)
 
 # Returns the number of features
 function num_features_main(model_data::Model_data)
