@@ -93,6 +93,7 @@ ApplicationWindow {
                         model: [{"name": "Main", "stackview": mainView},
                             {"name": "Options", "stackview": generalOptionsView},
                             {"name": "Training", "stackview": trainingView},
+                            {"name": "Validation", "stackview": validationView},
                             {"name": "Analysis", "stackview": analysisView},
                             {"name": "Visualisation", "stackview": visualisationView}]
                         delegate : MenuButton {
@@ -154,9 +155,9 @@ ApplicationWindow {
                     MainView { id: mainView}
                     GeneralOptionsView { id: generalOptionsView}
                     TrainingView { id: trainingView}
+                    ValidationView { id: validationView}
                     AnalysisView { id: analysisView}
                     VisualisationView { id: visualisationView}
-
                 }
            }
         }
@@ -264,7 +265,7 @@ ApplicationWindow {
                 model.push(unit)
             }
         }
-        Julia.set_settings(["Training","template"],url)
+        Julia.set_settings(["Training","model"],url)
     }
 
     function stripURL(url) {

@@ -1,4 +1,7 @@
 
+# Get urls of files in selected folders
+get_urls_training() = get_urls2(training,training_data)
+
 # Set training starting time
 function set_training_starting_time_main(training_plot_data::Training_plot_data)
     training_plot_data.starting_time = now()
@@ -84,7 +87,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     if isempty(model_data.features)
         @info "Empty features"
         return nothing
-    elseif isempty(training_data.url_imgs)
+    elseif isempty(training_data.url_input)
         @info "Empty urls"
         return nothing
     end
@@ -99,7 +102,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     # Get feature data
     labels_color,labels_incl,border,border_thickness = get_feature_data(features)
     # Load images and labels
-    imgs = load_images(training_data.url_imgs)
+    imgs = load_images(training_data.url_input)
     labels = load_images(training_data.url_labels)
     # Get number of images
     num = length(imgs)

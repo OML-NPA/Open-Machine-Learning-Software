@@ -67,6 +67,7 @@ end
 feature = Feature()
 
 @with_kw mutable struct Model_data
+    type::Vector{String} = ["Classification","Images"]
     input_size::Tuple{Int64,Int64,Int64} = (160,160,1)
     model::Chain = Chain()
     layers::Vector{Dict{String,Any}} = []
@@ -103,6 +104,8 @@ validation_results_data = Validation_results_data()
 @with_kw mutable struct Validation_data
     Validation_plot_data::Validation_plot_data = validation_plot_data
     Validation_results_data::Validation_results_data = validation_results_data
+    url_input::Vector{String} = Vector{String}(undef,0)
+    url_labels::Vector{String} = Vector{String}(undef,0)
 end
 validation_data = Validation_data()
 
@@ -130,13 +133,13 @@ training_results_data = Training_results_data()
 @with_kw mutable struct Training_data
     Training_plot_data::Training_plot_data = training_plot_data
     Training_results_data::Training_results_data = training_results_data
-    url_imgs::Vector{String} = Vector{String}(undef,0)
+    url_input::Vector{String} = Vector{String}(undef,0)
     url_labels::Vector{String} = Vector{String}(undef,0)
 end
 training_data = Training_data()
 
 @with_kw mutable struct Analysis_data
-    url_imgs::Vector{String} = Vector{String}(undef,0)
+    url_input::Vector{String} = Vector{String}(undef,0)
     folders::Vector{String} = Vector{String}(undef,0)
     data_input::Vector{Array{Float32,4}} = Vector{Array{Float32,4}}(undef,1)
 end
@@ -225,12 +228,21 @@ design = Design()
     Design::Design = design
     problem_type::Tuple{String,Int64} = ("Segmentation",1)
     input_type::Tuple{String,Int64} = ("Image",0)
-    template::String = ""
-    images::String = ""
+    model::String = ""
+    input::String = ""
     labels::String = ""
     name::String = "new"
 end
 training = Training()
+
+# Validation
+@with_kw mutable struct Validation
+    model::String = ""
+    input::String = ""
+    use_labels::Bool = false
+    labels::String = ""
+end
+validation = Validation()
 
 # Analysis
 @with_kw mutable struct Analysis_options
@@ -264,6 +276,7 @@ visualisation = Visualisation()
     Main::Main_s = main
     Options::Options = options
     Training::Training = training
+    Validation::Validation = validation
     Analysis::Analysis = analysis
     Visualisation::Visualisation = visualisation
 end

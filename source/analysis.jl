@@ -1,7 +1,7 @@
 
 # Get urls of files in a selected folder. Files are used for analysis.
 function get_urls_analysis_main(analysis::Analysis,analysis_data::Analysis_data)
-    url_imgs = analysis_data.url_imgs
+    url_input = analysis_data.url_input
     folders = analysis_data.folders
     empty!(url_imgs)
     main_dir = analysis.folder_url
@@ -11,10 +11,10 @@ function get_urls_analysis_main(analysis::Analysis,analysis_data::Analysis_data)
     end
     for k = 1:length(dirs)
         dir = dirs[k]
-        files_imgs = getfiles(joinpath(main_dir,dir))
+        files_input = getfiles(joinpath(main_dir,dir))
         push!(folders,dir)
         for l = 1:length(files_imgs)
-            push!(url_imgs,joinpath(main_dir,dir,files_imgs[l]))
+            push!(url_input,joinpath(main_dir,dir,files_input[l]))
         end
     end
     return nothing

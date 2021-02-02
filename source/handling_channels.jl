@@ -61,10 +61,15 @@ function get_results_main(channels::Channels,master_data::Master_data,
         if isready(channels.validation_data_results)
             data = take!(channels.validation_data_results)
             validation_plot_data = master_data.Validation_data.Validation_plot_data
-            validation_plot_data.data_input_orig = data[1]
-            validation_plot_data.data_labels_orig = data[2]
-            validation_plot_data.data_input = data[3]
-            validation_plot_data.data_labels = data[4]
+            if validation.use_labels
+                validation_plot_data.data_input_orig = data[1]
+                validation_plot_data.data_labels_orig = data[2]
+                validation_plot_data.data_input = data[3]
+                validation_plot_data.data_labels = data[4]
+            else
+                validation_plot_data.data_input_orig = data[1]
+                validation_plot_data.data_input = data[2]
+            end
             return true
         else
             return false

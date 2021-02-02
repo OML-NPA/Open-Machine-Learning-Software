@@ -1,25 +1,21 @@
 
-# Get urls of files in a selected folder. Files are used for training and/or validation.
-function get_urls_training_main(training::Training,training_data::Training_data)
-    # Get reference to url accumulators
-    url_imgs = training_data.url_imgs
-    url_labels = training_data.url_labels
-    # Empty url accumulators
-    empty!(url_imgs)
-    empty!(url_labels)
-    # Get directories containing images and labels
-    dir_imgs = training.images
-    dir_labels = training.labels
+# Get urls of files in selected folders. Requires only data
+function get_urls1(settings::Union{Training,Validation},
+        data::Union{Training_data,Validation_data})
+    # Get a reference to url accumulators
+    url_input = data.url_input
+    # Empty a url accumulator
+    empty!(url_input)
+    # Get directories containing data and labels
+    dir_input = settings.input
     # Return if no directories
-    if isempty(dir_imgs) || isempty(dir_labels)
+    if isempty(dir_input)
+        @info settings
         @info "empty urls"
         return nothing
     end
     # Get directories containing our images and labels
-    dirs_imgs = getdirs(dir_imgs)
-    dirs_labels = getdirs(dir_labels)
-    # Keep only those present for both images and labels
-    dirs = intersect(dirs_imgs,dirs_labels)
+    dirs = getdirs(dir_input)
     # If no directories, then set empty string
     if length(dirs)==0
         dirs = [""]
@@ -27,26 +23,62 @@ function get_urls_training_main(training::Training,training_data::Training_data)
     # Collect urls to files
     for k = 1:length(dirs)
         # Get files in a directory
-        files_imgs = getfiles(string(dir_imgs,"/",dirs[k]))
+        files_input = getfiles(string(dir_input,"/",dirs[k]))
+        # Push urls into an accumulator
+        for l = 1:length(files_input)
+            push!(url_input,string(dir_input,"/",files_input[l]))
+        end
+    end
+    return nothing
+end
+
+# Get urls of files in selected folders. Requires data and labels
+function get_urls2(settings::Union{Training,Validation},
+        data::Union{Training_data,Validation_data})
+    # Get a reference to url accumulators
+    url_input = data.url_input
+    url_labels = data.url_labels
+    # Empty url accumulators
+    empty!(url_input)
+    empty!(url_labels)
+    # Get directories containing images and labels
+    dir_input = settings.input
+    dir_labels = settings.labels
+    # Return if no directories
+    if isempty(dir_input) || isempty(dir_labels)
+        @info "empty urls"
+        return nothing
+    end
+    # Get directories containing our images and labels
+    dirs_input= getdirs(dir_input)
+    dirs_labels = getdirs(dir_labels)
+    # Keep only those present for both images and labels
+    dirs = intersect(dirs_input,dirs_labels)
+    # If no directories, then set empty string
+    if length(dirs)==0
+        dirs = [""]
+    end
+    # Collect urls to files
+    for k = 1:length(dirs)
+        # Get files in a directory
+        files_input = getfiles(string(dir_input,"/",dirs[k]))
         files_labels = getfiles(string(dir_labels,"/",dirs[k]))
         # Remove extensions from files
-        filenames_imgs = remove_ext(files_imgs)
+        filenames_input = remove_ext(files_input)
         filenames_labels = remove_ext(files_labels)
         # Intersect file names
-        inds1, inds2 = intersect_inds(filenames_labels, filenames_imgs)
+        inds1, inds2 = intersect_inds(filenames_labels, filenames_input)
         # Keep files present for both images and labels
-        files_imgs = files_imgs[inds2]
+        files_input = files_input[inds2]
         files_labels = files_labels[inds1]
         # Push urls into accumulators
-        for l = 1:length(files_imgs)
-            push!(url_imgs,string(dir_imgs,"/",files_imgs[l]))
+        for l = 1:length(files_input)
+            push!(url_input,string(dir_input,"/",files_input[l]))
             push!(url_labels,string(dir_labels,"/",files_labels[l]))
         end
     end
     return nothing
 end
-get_urls_training() =
-    get_urls_training_main(training,training_data)
 
 # Imports images using urls
 function load_images(urls::Vector{String})
@@ -173,9 +205,8 @@ end
 
 # Use border data to better separate objects
 function apply_border_data_main(data_in::BitArray{3},
-        model_data::Model_data,training::Training)
-    border_num_pixels = training.Options.Processing.border_num_pixels
-    labels_color,labels_incl,border = get_feature_data(model_data.features)
+        model_data::Model_data)
+    labels_color,labels_incl,border,border_thickness = get_feature_data(model_data.features)
     inds_border = findall(border)
     if inds_border==nothing
         return data_in
@@ -184,6 +215,7 @@ function apply_border_data_main(data_in::BitArray{3},
     num_feat = length(model_data.features)
     data = BitArray{3}(undef,size(data_in)[1:2]...,num_border)
     Threads.@threads for i = 1:num_border
+        border_num_pixels = border_thickness[i]
         ind_feat = inds_border[i]
         ind_border = num_feat + ind_feat
         data_feat_bool = data_in[:,:,ind_feat]

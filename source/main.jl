@@ -27,6 +27,7 @@ end
     arrange,
     # Data loading
     get_urls_training,
+    get_urls_validation,
     get_urls_analysis,
     get_labels_colors,
     prepare_training_data,
@@ -40,6 +41,8 @@ end
     get_settings,
     set_settings,
     save_settings,
+    get_type,
+    set_type,
     get_image,
     get_results,
     get_progress,
