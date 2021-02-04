@@ -180,7 +180,7 @@ ApplicationWindow {
                                             currentIndex =
                                                 Julia.get_settings(["Analysis","Options","analyse_by"],2)
                                         }
-                                        onAccepted: {
+                                        onActivated: {
                                             Julia.set_settings(["Analysis","Options","analyse_by"],
                                                 [currentText,currentIndex],"make_tuple")
                                         }
@@ -197,9 +197,11 @@ ApplicationWindow {
                                         Component.onCompleted: {
                                             currentIndex =
                                                 Julia.get_settings(["Analysis","Options","data_type"])
+                                            console.log(currentIndex)
                                         }
-                                        onAccepted: {
+                                        onActivated: {
                                             Julia.set_settings(["Analysis","Options","data_type"],currentIndex)
+                                            console.log(currentIndex)
                                         }
                                     }
                                     ComboBox {
@@ -214,7 +216,7 @@ ApplicationWindow {
                                             currentIndex =
                                                 Julia.get_settings(["Analysis","Options","image_type"])
                                         }
-                                        onAccepted: {
+                                        onActivated: {
                                             Julia.set_settings(["Analysis","Options","image_type"],currentIndex)
                                         }
                                     }
@@ -232,7 +234,7 @@ ApplicationWindow {
                                             currentIndex =
                                                 Julia.get_settings(["Analysis","Options","downsize"])
                                         }
-                                        onAccepted: {
+                                        onActivated: {
                                             Julia.set_settings(
                                                 ["Analysis","Options","downsize"],currentIndex)
                                         }
@@ -250,7 +252,7 @@ ApplicationWindow {
                                             currentIndex =
                                                 Julia.get_settings(["Analysis","Options","skip_frames"])
                                         }
-                                        onAccepted: {
+                                        onActivated: {
                                             Julia.set_settings(
                                                 ["Analysis","Options","skip_frames"],currentIndex)
                                         }
