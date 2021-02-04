@@ -16,6 +16,7 @@ Component {
         property var model: []
         property string dialogtarget
 
+        Loader { id: featuredialogLoader}
         Loader { id: validationplotLoader}
 
         function load_model_features() {
@@ -390,6 +391,7 @@ Component {
                         buttonWidth)/2
                     Button {
                         id: previewdataButton
+                        visible: false
                         text: "Preview imported data"
                         width: buttonWidth
                         height: buttonHeight
