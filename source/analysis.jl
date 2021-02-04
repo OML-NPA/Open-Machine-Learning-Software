@@ -252,14 +252,14 @@ function objects_area(mask_current::BitArray{2},components::Array{Int64,2},
     ind = findfirst(incl_bool)
     if ind==nothing
         area = component_lengths(components)[2:end]
-        area_out = convert(Vector{Float64},area).*scaling
+        area_out = convert(Vector{Float64},area)./scaling
     else
         components_parent = components_vector[ind]
         num = maximum(components_parent)
         area_out = Vector{Float64}(undef,num)
         Threads.@threads for i = 1:num
             ind_bool = components_parent.==i
-            area_out[i] = count(mask_current[ind_bool]).*scaling
+            area_out[i] = count(mask_current[ind_bool])./scaling
         end
     end
     return area_out
