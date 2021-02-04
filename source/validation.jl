@@ -312,8 +312,8 @@ end
 function validate_main(settings::Settings,validation_data::Validation_data,
         model_data::Model_data,channels::Channels)
     validation = settings.Validation
-    validation_plot_data = validation_data.Validation_plot_data
-    validation_results_data = validation_data.Validation_results_data
+    validation_plot_data = validation_data.Plot_data
+    validation_results_data = validation_data.Results_data
     use_labels = validation.use_labels
     model = model_data.model
     loss = model_data.loss

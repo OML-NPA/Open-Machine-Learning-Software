@@ -607,8 +607,8 @@ function train_main(settings::Settings,training_data::Training_data,
     # Initialization
     training = settings.Training
     training_options = training.Options
-    training_plot_data = training_data.Training_plot_data
-    training_results_data = training_data.Training_results_data
+    training_plot_data = training_data.Plot_data
+    training_results_data = training_data.Results_data
     args = training_options.Hyperparameters
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     reset_training_data(training_plot_data,training_results_data)

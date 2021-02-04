@@ -102,8 +102,8 @@ end
 validation_results_data = Validation_results_data()
 
 @with_kw mutable struct Validation_data
-    Validation_plot_data::Validation_plot_data = validation_plot_data
-    Validation_results_data::Validation_results_data = validation_results_data
+    Plot_data::Validation_plot_data = validation_plot_data
+    Results_data::Validation_results_data = validation_results_data
     url_input::Vector{String} = Vector{String}(undef,0)
     url_labels::Vector{String} = Vector{String}(undef,0)
 end
@@ -131,8 +131,8 @@ end
 training_results_data = Training_results_data()
 
 @with_kw mutable struct Training_data
-    Training_plot_data::Training_plot_data = training_plot_data
-    Training_results_data::Training_results_data = training_results_data
+    Plot_data::Training_plot_data = training_plot_data
+    Results_data::Training_results_data = training_results_data
     url_input::Vector{String} = Vector{String}(undef,0)
     url_labels::Vector{String} = Vector{String}(undef,0)
 end
