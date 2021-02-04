@@ -197,11 +197,9 @@ ApplicationWindow {
                                         Component.onCompleted: {
                                             currentIndex =
                                                 Julia.get_settings(["Analysis","Options","data_type"])
-                                            console.log(currentIndex)
                                         }
                                         onActivated: {
                                             Julia.set_settings(["Analysis","Options","data_type"],currentIndex)
-                                            console.log(currentIndex)
                                         }
                                     }
                                     ComboBox {
