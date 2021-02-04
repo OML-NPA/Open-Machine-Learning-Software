@@ -22,34 +22,14 @@ end
 get_urls_analysis() =
     get_urls_analysis_main(analysis,analysis_data)
 
-function prepare_analysis_data_main(analysis_data::Analysis_data,
-        features::Vector{Feature},progress::RemoteChannel,results::RemoteChannel)
-    put!(progress,2)
-    images = load_images(analysis_data.url_input)
-    put!(progress,1)
-    if isempty(features)
-        @info "empty features"
-        return nothing
+function prepare_analysis_data(analysis_data::Analysis_data,ind::Int64)
+    image = load(analysis_data.url_input[ind])
+    if contains(analysis_data.url_input[ind],"50x")
+        image = imresize(image,ratio = 2)
     end
-    labels_color,labels_incl,border = get_feature_data(features)
-    num = length(images)
-    data = Vector{Array{Float32,4}}(undef,num)
-    Threads.@threads for i = 1:num
-        data[i] = image_to_gray_float(images[i])[:,:,:,:]
-    end
-    put!(results,data)
-    put!(progress,1)
-    return nothing
+    data = image_to_gray_float(image)[:,:,:,:]
+    return data
 end
-function prepare_analysis_data_main2(analysis_data::Analysis_data,
-        features::Vector{Feature},progress::RemoteChannel,results::RemoteChannel)
-    @everywhere analysis_data
-    remote_do(prepare_analysis_data_main,workers()[end],analysis_data,
-    features,progress,results)
-end
-prepare_analysis_data() = prepare_analysis_data_main2(analysis_data,
-    model_data.features,channels.analysis_data_progress,
-    channels.analysis_data_results)
 
 function get_filenames(data::Vector{String})
     data = split.(data,"\\")
@@ -124,10 +104,8 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     # Get file extensions
     img_ext,img_sym_ext = get_image_ext(analysis_options.image_type)
     data_ext,data_sym_ext = get_data_ext(analysis_options.data_type)
-    # Prepare set
-    set = analysis_data.data_input
-    num = length(set)
     # Initialize accumulators and constants
+    num = length(analysis_data.url_input)
     if analyse_by_file
         num_init = num
     else
@@ -173,7 +151,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     end
     # Run analysis
     cnt = 0
-    num_parts = 15 # For dividing input image into n parts
+    num_parts = 20 # For dividing input image into n parts
     offset = 20 # For taking extra n pixels from both sides of an image part
     put!(channels.analysis_progress,2*num+1)
     @everywhere GC.gc()
@@ -187,7 +165,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
             end
         end
         # Get neural network output
-        input_data = set[i]
+        input_data = prepare_analysis_data(analysis_data,i)
         predicted = forward(model,input_data,num_parts=num_parts,
             offset=offset,use_GPU=use_GPU)
         predicted_bool = predicted.>0.5
