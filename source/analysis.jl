@@ -13,7 +13,7 @@ function get_urls_analysis_main(analysis::Analysis,analysis_data::Analysis_data)
         dir = dirs[k]
         files_input = getfiles(joinpath(main_dir,dir))
         push!(folders,dir)
-        for l = 1:length(files_imgs)
+        for l = 1:length(files_input)
             push!(url_input,joinpath(main_dir,dir,files_input[l]))
         end
     end
