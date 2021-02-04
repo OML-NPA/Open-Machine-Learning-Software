@@ -3,7 +3,7 @@
 function get_urls_analysis_main(analysis::Analysis,analysis_data::Analysis_data)
     url_input = analysis_data.url_input
     folders = analysis_data.folders
-    empty!(url_imgs)
+    empty!(url_input)
     main_dir = analysis.folder_url
     dirs = analysis.checked_folders
     if isempty(main_dir) || isempty(dirs)
@@ -25,7 +25,7 @@ get_urls_analysis() =
 function prepare_analysis_data_main(analysis_data::Analysis_data,
         features::Vector{Feature},progress::RemoteChannel,results::RemoteChannel)
     put!(progress,2)
-    images = load_images(analysis_data.url_imgs)
+    images = load_images(analysis_data.url_input)
     put!(progress,1)
     if isempty(features)
         @info "empty features"
@@ -104,14 +104,14 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     batch_size = analysis_options.minibatch_size
     # Get savepath, folders and names
     folders = analysis.checked_folders
-    urls = analysis_data.url_imgs
+    urls = analysis_data.url_input
     folder_inds = Vector{Int64}(undef,length(urls))
     for i = 1:length(folders)
         pattern = folders[i]
         log_inds = occursin.(pattern,urls)
         folder_inds[log_inds] .= i
     end
-    filenames_vector = get_filenames(analysis_data.url_imgs)
+    filenames_vector = get_filenames(analysis_data.url_input)
     filenames_batched = batch_filenames(filenames_vector,batch_size)
     savepath = analysis_options.savepath
     dirs = split(savepath,"/")
@@ -173,7 +173,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     end
     # Run analysis
     cnt = 0
-    num_parts = 10 # For dividing input image into n parts
+    num_parts = 15 # For dividing input image into n parts
     offset = 20 # For taking extra n pixels from both sides of an image part
     put!(channels.analysis_progress,2*num+1)
     @everywhere GC.gc()
