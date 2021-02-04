@@ -179,12 +179,12 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
                 border_mask = apply_border_data_main(temp_mask,model_data)
                 temp_mask = cat3(temp_mask,border_mask)
             end
-            Threads.@threads for i=1:num_feat
-                min_area = model_data.features[i].min_area
+            Threads.@threads for l=1:num_feat
+                min_area = features[l].min_area
                 if min_area>1
-                    temp_array = data_array[:,:,i]
+                    temp_array = temp_mask[:,:,i]
                     areaopen!(temp_array,min_area)
-                    data_array[:,:,i] = temp_array
+                    temp_mask[:,:,i] = temp_array
                 end
             end
             masks[j] = temp_mask
@@ -392,13 +392,11 @@ function mask_to_data(objs_area::Vector{Vector{Vector{Float64}}},
     temp_objs_volume = objs_volume[cnt]
     components_vector = Vector{Array{Int64,2}}(undef,num_feat)
     for l = 1:num_feat
-        temp_objs_area2 = temp_objs_area[l]
-        temp_objs_volume2 = temp_objs_volume[l]
         output_options = features[l].Output
         area_dist_cond = output_options.Area.area_distribution
         area_obj_cond = output_options.Area.individual_obj_area
-        volume_dist_cond = output_options.Area.area_distribution
-        volume_obj_cond = output_options.Area.individual_obj_area
+        volume_dist_cond = output_options.Volume.volume_distribution
+        volume_obj_cond = output_options.Volume.individual_obj_volume
         ind = l
         if border[l]==true
             ind = l + num_border + num_feat
@@ -407,6 +405,7 @@ function mask_to_data(objs_area::Vector{Vector{Vector{Float64}}},
         components = label_components(mask_current,conn(4))
         components_vector[l] = components
         if area_dist_cond || area_obj_cond
+            temp_objs_area2 = temp_objs_area[l]
             area_options = output_options.Area
             area_values = objects_area(mask_current,components,
                 components_vector,labels_incl,scaling,l)
@@ -415,6 +414,7 @@ function mask_to_data(objs_area::Vector{Vector{Vector{Float64}}},
             end
         end
         if volume_dist_cond || volume_obj_cond
+            temp_objs_volume2 = temp_objs_volume[l]
             volume_options = output_options.Volume
             volume_values = objects_volume(mask_current,components,
                 components_vector,labels_incl,scaling,l)
