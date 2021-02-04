@@ -182,12 +182,17 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
             Threads.@threads for l=1:num_feat
                 min_area = features[l].min_area
                 if min_area>1
-                    temp_array = temp_mask[:,:,i]
+                    if border[l]
+                        ind = l + num_feat + num_border
+                    else
+                        ind = l
+                    end
+                    temp_array = temp_mask[:,:,ind]
                     # Fix areaopen not removing all objects less than min area
                     for k=1:2
                         areaopen!(temp_array,min_area)
                     end
-                    temp_mask[:,:,i] = temp_array
+                    temp_mask[:,:,ind] .= temp_array
                 end
             end
             masks[j] = temp_mask
