@@ -13,8 +13,6 @@ Component {
     ColumnLayout {
         id: mainLayout
         property int indTree: 0
-        property string modelName: "yeast"
-
         Component.onCompleted: {
             var temp_folder = Julia.get_settings(["Analysis","folder_url"])
             if (temp_folder==="") {
@@ -98,12 +96,12 @@ Component {
                             text: "Select an ML model"
                         }
                         Image {
-                                anchors.right: parent.right
-                                height: parent.height
-                                opacity: 0.3
-                                source: "qrc:/qt-project.org/imports/QtQuick/Controls.2/images/double-arrow.png"
-                                fillMode: Image.PreserveAspectFit
-                            }
+                            anchors.right: parent.right
+                            height: parent.height
+                            opacity: 0.3
+                            source: "qrc:/qt-project.org/imports/QtQuick/Controls.2/images/double-arrow.png"
+                            fillMode: Image.PreserveAspectFit
+                        }
                     }
                 }
                 RowLayout {

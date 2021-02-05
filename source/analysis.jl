@@ -111,13 +111,17 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     else
         num_init = length(folders)
     end
-    log_volume_dist = map(x->x.Output.Volume.volume_distribution,features)
-    log_volume_obj = map(x->x.Output.Volume.individual_obj_volume,features)
+    log_area_obj = map(x->x.Output.Area.obj_area,features)
+    log_area_obj_sum = map(x->x.Output.Area.obj_area_sum,features)
     log_area_dist = map(x->x.Output.Area.area_distribution,features)
-    log_area_obj = map(x->x.Output.Area.individual_obj_area,features)
+    log_volume_obj = map(x->x.Output.Volume.obj_volume,features)
+    log_volume_obj_sum = map(x->x.Output.Volume.obj_volume_sum,features)
+    log_volume_dist = map(x->x.Output.Volume.volume_distribution,features)
     num_obj_area = count(log_area_obj)
-    num_obj_volume = count(log_volume_obj)
+    num_obj_area_sum = count(log_area_obj_sum)
     num_dist_area = count(log_area_dist)
+    num_obj_volume = count(log_volume_obj)
+    num_obj_volume_sum = count(log_volume_obj_sum)
     num_dist_volume = count(log_volume_dist)
     objs_area = Vector{Vector{Vector{Float64}}}(undef,num_init)
     objs_volume = Vector{Vector{Vector{Float64}}}(undef,num_init)
@@ -215,6 +219,8 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
         put!(channels.analysis_progress,1)
         @everywhere GC.safepoint()
     end
+    objs_area_sum = map(x->sum.(x),objs_area)
+    objs_volume_sum = map(x->sum.(x),objs_volume)
     data_to_histograms(histograms_area,histograms_volume,objs_area,objs_volume,
         features,num_init,num_feat,num_border,border,output_options)
     # Export data
@@ -226,8 +232,11 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     export_histograms(histograms_area,histograms_volume,features,num_init,num_dist_area,
         num_dist_volume,log_area_dist,log_volume_dist,
         savepath,savefolders,data_ext,data_sym_ext)
-    export_objs(objs_area,objs_volume,features,num_init,num_dist_area,
+    export_objs("Objects",objs_area,objs_volume,features,num_init,num_dist_area,
         num_dist_volume,log_area_obj,log_volume_obj,
+        savepath,savefolders,data_ext,data_sym_ext)
+    export_objs("Objects sum",objs_area_sum,objs_volume_sum,features,num_init,num_dist_area,
+        num_dist_volume,log_area_obj_sum,log_volume_obj_sum,
         savepath,savefolders,data_ext,data_sym_ext)
     put!(channels.analysis_progress,1)
     return nothing
@@ -369,9 +378,9 @@ function data_to_histograms(histograms_area::Vector{Vector{Histogram}},
         Threads.@threads for l = 1:num_feat
             output_options = features[l].Output
             area_dist_cond = output_options.Area.area_distribution
-            area_obj_cond = output_options.Area.individual_obj_area
+            area_obj_cond = output_options.Area.obj_area
             volume_dist_cond = output_options.Area.area_distribution
-            volume_obj_cond = output_options.Area.individual_obj_area
+            volume_obj_cond = output_options.Area.obj_area
             ind = l
             if border[l]==true
                 ind = l + num_border + num_feat
@@ -402,9 +411,9 @@ function mask_to_data(objs_area::Vector{Vector{Vector{Float64}}},
     for l = 1:num_feat
         output_options = features[l].Output
         area_dist_cond = output_options.Area.area_distribution
-        area_obj_cond = output_options.Area.individual_obj_area
+        area_obj_cond = output_options.Area.obj_area
         volume_dist_cond = output_options.Volume.volume_distribution
-        volume_obj_cond = output_options.Volume.individual_obj_volume
+        volume_obj_cond = output_options.Volume.obj_volume
         ind = l
         if border[l]==true
             ind = l + num_border + num_feat
@@ -495,7 +504,7 @@ function export_histograms(histograms_area::Vector{Vector{Histogram}},
     return nothing
 end
 
-function export_objs(objs_area::Vector{Vector{Vector{Float64}}},
+function export_objs(type_name::String,objs_area::Vector{Vector{Vector{Float64}}},
         objs_volume::Vector{Vector{Vector{Float64}}},features::Vector{Feature},
         num::Int64,num_obj_area::Int64,num_obj_volume::Int64,
         log_area_obj::Vector{Bool},log_volume_obj::Vector{Bool},savepath::String,
@@ -532,7 +541,7 @@ function export_objs(objs_area::Vector{Vector{Vector{Float64}}},
         fname = filenames_vector[i]
         path = joinpath(savepath,fname)
         if num_cols_obj>0
-            name = string("Objects ",fname,data_ext)
+            name = string(type_name," ",fname,data_ext)
             save(path,name,df_objs,data_sym_ext)
         end
     end

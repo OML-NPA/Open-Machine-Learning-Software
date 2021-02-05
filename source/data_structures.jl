@@ -31,7 +31,8 @@ output_mask = Output_mask()
 
 @with_kw mutable struct Output_area
     area_distribution::Bool = false
-    individual_obj_area::Bool = false
+    obj_area::Bool = false
+    obj_area_sum::Bool = false
     binning::Int64 = 0
     value::Float64 = 10
     normalisation::Int64 = 0
@@ -40,7 +41,8 @@ output_area = Output_area()
 
 @with_kw mutable struct Output_volume
     volume_distribution::Bool = false
-    individual_obj_volume::Bool = false
+    obj_volume::Bool = false
+    obj_volume_sum::Bool = false
     binning::Int64 = 0
     value::Float64 = 10
     normalisation::Int64 = 0

@@ -28,7 +28,8 @@ ApplicationWindow {
     property bool terminate: false
 
     onClosing: {
-        Julia.save_model("models/" + modelName + ".model")
+        var url = Julia.get_settings(["Analysis","model_url"])
+        Julia.save_model(url)
         analysisfeaturedialogLoader.sourceComponent = null
     }
 
@@ -150,6 +151,7 @@ ApplicationWindow {
                             Component.onCompleted: {
                                 if (Julia.get_feature_field(indTree+1,"border")) {
                                     visible = true
+                                    console.log(Julia.get_output(["Mask","mask_applied_border"],indTree+1))
                                     checkState = Julia.get_output(["Mask","mask_applied_border"],indTree+1)
                                         ? Qt.Checked : Qt.Unchecked
                                 }
@@ -172,8 +174,8 @@ ApplicationWindow {
                             id: areadistributionCheckBox
                             text: "Area distribution"
                             Component.onCompleted: {
-                                areadistributionCheckBox.checkState = Julia.get_output(
-                                    ["Area","area_distribution"],indTree+1) ? Qt.Checked : Qt.Unchecked
+                                checkState = Julia.get_output(["Area","area_distribution"],
+                                    indTree+1) ? Qt.Checked : Qt.Unchecked
                             }
                             onClicked: {
                                 var value = checkState===Qt.Checked ? true : false
@@ -181,15 +183,27 @@ ApplicationWindow {
                             }
                         }
                         CheckBox {
-                            id: individualobjareaCheckBox
-                            text: "Individual object area"
+                            id: objareaCheckBox
+                            text: "Area of objects"
                             Component.onCompleted: {
-                                individualobjareaCheckBox.checkState = Julia.get_output(
-                                    ["Area","individual_obj_area"],indTree+1) ? Qt.Checked : Qt.Unchecked
+                                checkState = Julia.get_output(["Area","obj_area"],
+                                    indTree+1) ? Qt.Checked : Qt.Unchecked
                             }
                             onClicked: {
                                 var value = checkState===Qt.Checked ? true : false
-                                Julia.set_output(["Area","individual_obj_area"],indTree+1,value)
+                                Julia.set_output(["Area","obj_area"],indTree+1,value)
+                            }
+                        }
+                        CheckBox {
+                            id: objareasumCheckBox
+                            text: "Sum of areas of objects"
+                            Component.onCompleted: {
+                                checkState = Julia.get_output(["Area","obj_area_sum"],
+                                    indTree+1) ? Qt.Checked : Qt.Unchecked
+                            }
+                            onClicked: {
+                                var value = checkState===Qt.Checked ? true : false
+                                Julia.set_output(["Area","obj_area_sum"],indTree+1,value)
                             }
                         }
                         Rectangle {
@@ -323,8 +337,8 @@ ApplicationWindow {
                             id: volumedistributionCheckBox
                             text: "Volume distribution"
                             Component.onCompleted: {
-                                volumedistributionCheckBox.checkState = Julia.get_output(
-                                    ["Volume","volume_distribution"],indTree+1) ? Qt.Checked : Qt.Unchecked
+                                checkState = Julia.get_output(["Volume","volume_distribution"],
+                                    indTree+1) ? Qt.Checked : Qt.Unchecked
                             }
                             onClicked: {
                                 var value = checkState===Qt.Checked ? true : false
@@ -332,15 +346,27 @@ ApplicationWindow {
                             }
                         }
                         CheckBox {
-                            id: individualobjvolumeCheckBox
-                            text: "Individual object volume"
+                            id: objvolumeCheckBox
+                            text: "Volume of objects"
                             Component.onCompleted: {
-                                individualobjvolumeCheckBox.checkState = Julia.get_output(
-                                    ["Volume","individual_obj_volume"],indTree+1) ? Qt.Checked : Qt.Unchecked
+                                checkState = Julia.get_output(["Volume","obj_volume"],
+                                    indTree+1) ? Qt.Checked : Qt.Unchecked
                             }
                             onClicked: {
                                 var value = checkState===Qt.Checked ? true : false
-                                Julia.set_output(["Volume","individual_obj_volume"],indTree+1,value)
+                                Julia.set_output(["Volume","obj_volume"],indTree+1,value)
+                            }
+                        }
+                        CheckBox {
+                            id: objvolumesumCheckBox
+                            text: "Sum of volume of objects"
+                            Component.onCompleted: {
+                                checkState = Julia.get_output(
+                                    ["Volume","obj_volume_sum"],indTree+1) ? Qt.Checked : Qt.Unchecked
+                            }
+                            onClicked: {
+                                var value = checkState===Qt.Checked ? true : false
+                                Julia.set_output(["Volume","obj_volume_sum"],indTree+1,value)
                             }
                         }
                         Rectangle {
