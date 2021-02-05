@@ -121,7 +121,6 @@ function set_settings_main(settings::Settings,fields::QML.QListAllocated,args...
         field = Symbol(fields[i])
         data = getproperty(data,field)
     end
-    values = Array{Any}(undef,length(args))
     if length(args)==1
         value = args[1]
     elseif length(args)==2
