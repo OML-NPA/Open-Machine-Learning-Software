@@ -505,8 +505,16 @@ function export_objs(objs_area::Vector{Vector{Vector{Float64}}},
         return nothing
     end
     for i = 1:num
-        num_rows_area = maximum(map(x->length(x),objs_area[i]))
-        num_rows_volume = maximum(map(x->length(x),objs_volume[i]))
+        if num_obj_area>0
+            num_rows_area = maximum(map(x->length(x),objs_area[i]))
+        else
+            num_rows_area = 0
+        end
+        if num_obj_volume>0
+            num_rows_volume = maximum(map(x->length(x),objs_volume[i]))
+        else
+            num_rows_volume = 0
+        end
         num_rows = max(num_rows_area,num_rows_volume)
         obj_area = objs_area[i]
         obj_volume = objs_volume[i]
