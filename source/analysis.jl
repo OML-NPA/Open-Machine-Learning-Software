@@ -535,7 +535,6 @@ end
 function get_save_image_info(num_dims::Int64,features::Vector{Feature},border::Vector{Bool})
     num_feat = length(border)
     num_border = sum(border)
-
     logical_inds = BitArray{1}(undef,num_dims)
     img_names = Vector{String}(undef,num_feat+num_border*2)
     for a = 1:num_feat
@@ -546,12 +545,12 @@ function get_save_image_info(num_dims::Int64,features::Vector{Feature},border::V
             img_names[a] = feature_name
         end
         if feature.border
-            if features[a].Output.Mask.mask
+            if features[a].Output.Mask.mask_border
                 ind = a + num_feat
                 logical_inds[ind] = true
                 img_names[ind] = string(feature_name," (border)")
             end
-            if features[a].Output.Mask.mask
+            if features[a].Output.Mask.mask_applied_border
                 ind = num_feat + num_border + a
                 logical_inds[ind] = true
                 img_names[ind] = string(feature_name," (applied border)")
@@ -575,7 +574,6 @@ function mask_to_img(mask::BitArray{3},features::Vector{Feature},
     perm_labels_color64 = map(x -> permutedims(x[:,:,:]/255,[3,2,1]),labels_color)
     num2 = length(labels_color)
     perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color64)
-    predicted_color = Vector{Array{RGBA{Float32},2}}(undef,0)
     Threads.@threads for j = 1:length(inds)
         ind = inds[j]
         mask_current = mask[:,:,ind]
@@ -586,7 +584,7 @@ function mask_to_img(mask::BitArray{3},features::Vector{Feature},
         mask_dim3 = cat3(mask_dim3,mask_float)
         mask_dim3 = permutedims(mask_dim3,[3,1,2])
         mask_RGB = colorview(RGBA,mask_dim3)
-        img_name = img_names[j]
+        img_name = img_names[ind]
         path = joinpath(savepath,filename)
         name = string(img_name," ",filename,ext)
         save(path,name,mask_RGB,sym_ext)
