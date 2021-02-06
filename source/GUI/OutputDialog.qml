@@ -151,7 +151,6 @@ ApplicationWindow {
                             Component.onCompleted: {
                                 if (Julia.get_feature_field(indTree+1,"border")) {
                                     visible = true
-                                    console.log(Julia.get_output(["Mask","mask_applied_border"],indTree+1))
                                     checkState = Julia.get_output(["Mask","mask_applied_border"],indTree+1)
                                         ? Qt.Checked : Qt.Unchecked
                                 }
