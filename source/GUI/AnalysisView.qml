@@ -436,8 +436,10 @@ Component {
                         var folderName = folderModel.get(j,"fileName")
                         if (folders[i]===folderName) {
                             var treeButton = folderView.itemAtIndex(j)
-                            var checkBox = treeButton.children[0].children[0]
-                            checkBox.checkState = Qt.Checked
+                            if (treeButton!==null) {
+                                var checkBox = treeButton.children[0].children[0]
+                                checkBox.checkState = Qt.Checked
+                            }
                         }
                     }
                 }
