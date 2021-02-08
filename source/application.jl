@@ -89,28 +89,6 @@ function batch_urls_filenames(urls::Vector{Vector{String}},batch_size::Int64)
     return url_batches,filename_batches
 end
 
-filenames = get_filenames(urls)
-for i = 1:length(urls)
-    urls_current = urls[i]
-    filenames_current = filenames[i]
-    Threads.@threads for j = 1:length(urls_current)
-        url = urls_current[j]
-        filename = filenames_current[j]
-        image = load(url)
-        if contains(url,"50x")
-            image = imresize(image,ratio = 2)
-        end
-        url = split(url,"\\")
-        url = url[end-1]
-        if !isdir(string("Output data/",url))
-            mkdir(string("Output data/",url))
-        end
-        if !isfile(string("Output_data/",url,"/",filename,".png"))
-            FileIO.save(string("Output_data/",url,"/",filename,".png"),image)
-        end
-    end
-end
-
 # Main function that performs application
 function analyse_main(settings::Settings,application_data::Application_data,
         model_data::Model_data,channels::Channels)
