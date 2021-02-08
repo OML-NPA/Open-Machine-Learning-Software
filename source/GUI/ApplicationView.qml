@@ -285,7 +285,7 @@ Component {
                     if (applicationButton.text==="Analyse") {
                         applicationButton.text = "Stop data preparation"
                         Julia.get_urls_application()
-                        var num_urls = Julia.get_data(["application_data","url_input"]).length
+                        var num_urls = Julia.get_data(["Application_data","url_input"]).length
                         if (num_urls===0) {
                             return
                         }
