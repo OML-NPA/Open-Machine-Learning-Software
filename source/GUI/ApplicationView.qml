@@ -276,21 +276,19 @@ Component {
             Button {
                 id: applicationButton
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                text: "Analyse"
+                text: "Apply"
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
                     applicationProgressbar.value = 0
                     applicationprogressLabel.text = "0%"
-                    if (applicationButton.text==="Analyse") {
+                    if (applicationButton.text==="Apply") {
                         applicationButton.text = "Stop data preparation"
                         Julia.get_urls_application()
                         var num_urls = Julia.get_data(["Application_data","url_input"]).length
                         if (num_urls===0) {
                             return
                         }
-                        Julia.empty_progress_channel("Application data preparation")
-                        Julia.empty_results_channel("Application data preparation")
                         Julia.empty_progress_channel("Application")
                         Julia.empty_progress_channel("Application modifiers")
                         applicationTimer.running = true
@@ -298,14 +296,13 @@ Component {
                         Julia.gc()
                     }
                     else {
-                        applicationButton.text = "Analyse"
+                        applicationButton.text = "Apply"
                         applicationTimer.running = false
                         applicationTimer.value = 0
                         applicationTimer.max_value = 0
                         applicationTimer.done = false
                         applicationProgressbar.value = 0
                         applicationprogressLabel.visible = false
-                        Julia.put_channel("Application data preparation",["stop"])
                         Julia.put_channel("Application",["stop"])
                     }
                 }
@@ -316,7 +313,7 @@ Component {
                     property double max_value: 0
                     onTriggered: {
                         applicationTimerFunction(applicationButton,applicationTimer,
-                            "Analyse","Stop application")
+                            "Apply","Stop application")
                     }
                 }
             }
