@@ -269,7 +269,7 @@ Component {
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
                     if (applicationoptionsLoader.sourceComponent === null) {
-                       applicationoptionsLoader.source = "applicationOptions.qml"
+                       applicationoptionsLoader.source = "ApplicationOptions.qml"
                     }
                 }
             }
