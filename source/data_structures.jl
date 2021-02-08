@@ -141,7 +141,7 @@ end
 training_data = Training_data()
 
 @with_kw mutable struct Application_data
-    url_input::Vector{String} = Vector{String}(undef,0)
+    url_input::Vector{Vector{String}} = Vector{Vector{String}}(undef,0)
     folders::Vector{String} = Vector{String}(undef,0)
     data_input::Vector{Array{Float32,4}} = Vector{Array{Float32,4}}(undef,1)
 end

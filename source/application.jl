@@ -9,60 +9,106 @@ function get_urls_application_main(application::Application,application_data::Ap
     if isempty(main_dir) || isempty(dirs)
         @info "empty main dir"
     end
-    for k = 1:length(dirs)
-        dir = dirs[k]
+    for i = 1:length(dirs)
+        dir = dirs[i]
         files_input = getfiles(joinpath(main_dir,dir))
         push!(folders,dir)
-        for l = 1:length(files_input)
-            push!(url_input,joinpath(main_dir,dir,files_input[l]))
+        temp = Vector{String}(undef,0)
+        for j = 1:length(files_input)
+            push!(temp,joinpath(main_dir,dir,files_input[j]))
         end
+        push!(url_input,temp)
     end
     return nothing
 end
 get_urls_application() =
     get_urls_application_main(application,application_data)
 
-function prepare_application_data(application_data::Application_data,ind::Int64)
-    image = load(application_data.url_input[ind])
-    if contains(application_data.url_input[ind],"50x")
-        image = imresize(image,ratio = 2)
+function prepare_application_data(urls::Vector{String})
+    num = length(urls)
+    data = Vector{Array{Float32,4}}(undef,length(urls))
+    Threads.@threads for i = 1:num
+        image::Array{RGB{Normed{UInt8,8}},2} = load(urls[i])
+        if contains(urls[i],"50x")
+            image = imresize(image,ratio = 2)
+        end
+        data[i] = image_to_gray_float(image)[:,:,:,:]
     end
-    data = image_to_gray_float(image)[:,:,:,:]
-    return data
+    data_out = reduce(cat4,data)
+    return data_out
 end
 
-function get_filenames(data::Vector{String})
-    data = split.(data,"\\")
-    data = map(x->x[end],data)
-    data = split.(data,".")
-    data = map(x->string(x[1:end-1]...),data)
+function get_filenames(urls::Vector{Vector{String}})
+    num = length(urls)
+    data = Vector{Vector{String}}(undef,num)
+    for i = 1:num
+        data_temp = copy(urls[i])
+        data_temp = split.(data_temp,"\\")
+        data_temp = map(x->x[end],data_temp)
+        data_temp = split.(data_temp,".")
+        data[i] = map(x->string(x[1:end-1]...),data_temp)
+    end
     return data
 end
 
 # Batches filenames together allowing for correct naming during export
-function batch_filenames(filenames::Vector{String},batch_size::Int64)
-    len = length(filenames)
-    num = len - batch_size
-    val = max(0.0,floor(num/batch_size))
-    finish = Int64(val*batch_size)
-    inds = Vector(0:batch_size:finish)
-    if isempty(inds)
-        inds = [0]
-    end
-    num = length(inds)
-    filename_batches = Vector{Vector{String}}(undef,num)
+function batch_urls_filenames(urls::Vector{Vector{String}},batch_size::Int64)
+    num = length(urls)
+    filenames = get_filenames(urls)
+    filename_batches = Vector{Vector{Vector{String}}}(undef,num)
+    url_batches = Vector{Vector{Vector{String}}}(undef,num)
     for i = 1:num
-        ind = inds[i]
-        if i==num
-            ind1 = ind+1
-            ind2 = len
-        else
-            ind1 = ind+1
-            ind2 = ind+batch_size
+        urls_temp = urls[i]
+        filenames_temp = filenames[i]
+        len = length(urls_temp)
+        url_batches_temp = Vector{Vector{String}}(undef,0)
+        filename_batches_temp = Vector{Vector{String}}(undef,0)
+        num = len - batch_size
+        val = max(0.0,floor(num/batch_size))
+        finish = Int64(val*batch_size)
+        inds = collect(0:batch_size:finish)
+        if isempty(inds)
+            inds = [0]
         end
-        filename_batches[i] = filenames[ind1:ind2]
+        num = length(inds)
+        for j = 1:num
+            ind = inds[j]
+            if j==num
+                ind1 = ind+1
+                ind2 = len
+            else
+                ind1 = ind+1
+                ind2 = ind+batch_size
+            end
+            push!(url_batches_temp,urls_temp[ind1:ind2])
+            push!(filename_batches_temp,filenames_temp[ind1:ind2])
+        end
+        url_batches[i] = url_batches_temp
+        filename_batches[i] = filename_batches_temp
     end
-    return filename_batches
+    return url_batches,filename_batches
+end
+
+filenames = get_filenames(urls)
+for i = 1:length(urls)
+    urls_current = urls[i]
+    filenames_current = filenames[i]
+    Threads.@threads for j = 1:length(urls_current)
+        url = urls_current[j]
+        filename = filenames_current[j]
+        image = load(url)
+        if contains(url,"50x")
+            image = imresize(image,ratio = 2)
+        end
+        url = split(url,"\\")
+        url = url[end-1]
+        if !isdir(string("Output data/",url))
+            mkdir(string("Output data/",url))
+        end
+        if !isfile(string("Output_data/",url,"/",filename,".png"))
+            FileIO.save(string("Output_data/",url,"/",filename,".png"),image)
+        end
+    end
 end
 
 # Main function that performs application
@@ -85,14 +131,7 @@ function analyse_main(settings::Settings,application_data::Application_data,
     # Get savepath, folders and names
     folders = application.checked_folders
     urls = application_data.url_input
-    folder_inds = Vector{Int64}(undef,length(urls))
-    for i = 1:length(folders)
-        pattern = folders[i]
-        log_inds = occursin.(pattern,urls)
-        folder_inds[log_inds] .= i
-    end
-    filenames_vector = get_filenames(application_data.url_input)
-    filenames_batched = batch_filenames(filenames_vector,batch_size)
+    urls_batched,filenames_batched = batch_urls_filenames(urls,batch_size)
     savepath = application_options.savepath
     dirs = split(savepath,"/")
     for i=1:length(dirs)
@@ -104,51 +143,6 @@ function analyse_main(settings::Settings,application_data::Application_data,
     # Get file extensions
     img_ext,img_sym_ext = get_image_ext(application_options.image_type)
     data_ext,data_sym_ext = get_data_ext(application_options.data_type)
-    # Initialize accumulators and constants
-    num = length(application_data.url_input)
-    if analyse_by_file
-        num_init = num
-    else
-        num_init = length(folders)
-    end
-    log_area_obj = map(x->x.Output.Area.obj_area,features)
-    log_area_obj_sum = map(x->x.Output.Area.obj_area_sum,features)
-    log_area_dist = map(x->x.Output.Area.area_distribution,features)
-    log_volume_obj = map(x->x.Output.Volume.obj_volume,features)
-    log_volume_obj_sum = map(x->x.Output.Volume.obj_volume_sum,features)
-    log_volume_dist = map(x->x.Output.Volume.volume_distribution,features)
-    num_obj_area = count(log_area_obj)
-    num_obj_area_sum = count(log_area_obj_sum)
-    num_dist_area = count(log_area_dist)
-    num_obj_volume = count(log_volume_obj)
-    num_obj_volume_sum = count(log_volume_obj_sum)
-    num_dist_volume = count(log_volume_dist)
-    objs_area = Vector{Vector{Vector{Float64}}}(undef,num_init)
-    objs_volume = Vector{Vector{Vector{Float64}}}(undef,num_init)
-    histograms_area = Vector{Vector{Histogram}}(undef,num_init)
-    histograms_volume = Vector{Vector{Histogram}}(undef,num_init)
-    for i = 1:num_init
-        objs_area[i] = Vector{Vector{Float64}}(undef,num_obj_area)
-    end
-    for i = 1:num_init
-        objs_volume[i] = Vector{Vector{Float64}}(undef,num_obj_volume)
-    end
-    for i = 1:num_init
-        histograms_area[i] = Vector{Histogram}(undef,num_dist_area)
-    end
-    for i = 1:num_init
-        histograms_volume[i] = Vector{Histogram}(undef,num_dist_volume)
-    end
-    for i = 1:num_init
-        for j = 1:num_obj_area
-            objs_area[i][j] = Float64[]
-        end
-    end
-    for i = 1:num_init
-        for j = 1:num_obj_volume
-            objs_volume[i][j] = Float64[]
-        end
-    end
     # Make savepath directory if does not exist
     if !isdir(savepath)
         mkdir(savepath)
@@ -159,65 +153,109 @@ function analyse_main(settings::Settings,application_data::Application_data,
     offset = 20 # For taking extra n pixels from both sides of an image part
     put!(channels.application_progress,2*num+1)
     @everywhere GC.gc()
-    for i = 1:num
-        # Stop if asked
-        if isready(channels.application_modifiers)
-            stop_cond::String = fetch(channels.training_modifiers)[1]
-            if stop_cond=="stop"
-                take!(channels.application_modifiers)
-                break
+    for k = 1:num
+        # Initialize constants and accumulators
+        urls_batch = urls_batched[k]
+        filenames_batch = filenames_batched[k]
+        num_batch = length(urls_batch)
+        log_area_obj = map(x->x.Output.Area.obj_area,features)
+        log_area_obj_sum = map(x->x.Output.Area.obj_area_sum,features)
+        log_area_dist = map(x->x.Output.Area.area_distribution,features)
+        log_volume_obj = map(x->x.Output.Volume.obj_volume,features)
+        log_volume_obj_sum = map(x->x.Output.Volume.obj_volume_sum,features)
+        log_volume_dist = map(x->x.Output.Volume.volume_distribution,features)
+        num_obj_area = count(log_area_obj)
+        num_obj_area_sum = count(log_area_obj_sum)
+        num_dist_area = count(log_area_dist)
+        num_obj_volume = count(log_volume_obj)
+        num_obj_volume_sum = count(log_volume_obj_sum)
+        num_dist_volume = count(log_volume_dist)
+        objs_area = Vector{Vector{Vector{Float64}}}(undef,num_batch)
+        objs_volume = Vector{Vector{Vector{Float64}}}(undef,num_batch)
+        histograms_area = Vector{Vector{Histogram}}(undef,num_batch)
+        histograms_volume = Vector{Vector{Histogram}}(undef,num_batch)
+        for i = 1:num_batch
+            objs_area[i] = Vector{Vector{Float64}}(undef,num_obj_area)
+        end
+        for i = 1:num_batch
+            objs_volume[i] = Vector{Vector{Float64}}(undef,num_obj_volume)
+        end
+        for i = 1:num_batch
+            histograms_area[i] = Vector{Histogram}(undef,num_dist_area)
+        end
+        for i = 1:num_batch
+            histograms_volume[i] = Vector{Histogram}(undef,num_dist_volume)
+        end
+        for i = 1:num_batch
+            for j = 1:num_obj_area
+                objs_area[i][j] = Float64[]
             end
         end
-        # Get neural network output
-        input_data = prepare_application_data(application_data,i)
-        predicted = forward(model,input_data,num_parts=num_parts,
-            offset=offset,use_GPU=use_GPU)
-        predicted_bool = predicted.>0.5
-        size_dim4 = size(predicted_bool,4)
-        put!(channels.application_progress,1)
-        # Flatten and use border info if present
-        masks = Vector{BitArray{3}}(undef,size_dim4)
-        for j = 1:size_dim4
-            temp_mask = predicted_bool[:,:,:,j]
-            if apply_border
-                border_mask = apply_border_data_main(temp_mask,model_data)
-                temp_mask = cat3(temp_mask,border_mask)
+        for i = 1:num_batch
+            for j = 1:num_obj_volume
+                objs_volume[i][j] = Float64[]
             end
-            Threads.@threads for l=1:num_feat
-                min_area = features[l].min_area
-                if min_area>1
-                    if border[l]
-                        ind = l + num_feat + num_border
-                    else
-                        ind = l
-                    end
-                    temp_array = temp_mask[:,:,ind]
-                    # Fix areaopen not removing all objects less than min area
-                    for k=1:2
-                        areaopen!(temp_array,min_area)
-                    end
-                    temp_mask[:,:,ind] .= temp_array
+        end
+        for l = 1:length(num_batch)
+            # Stop if asked
+            if isready(channels.application_modifiers)
+                stop_cond::String = fetch(channels.training_modifiers)[1]
+                if stop_cond=="stop"
+                    take!(channels.application_modifiers)
+                    break
                 end
             end
-            masks[j] = temp_mask
-        end
-        filenames = filenames_batched[i]
-        for j = 1:length(masks)
-            if analyse_by_file
-                cnt = cnt + 1
-            else
-                cnt = folder_inds[i]
+            # Get neural network output
+            input_data = prepare_application_data(urls_batch[l])
+            predicted = forward(model,input_data,num_parts=num_parts,
+                offset=offset,use_GPU=use_GPU)
+            predicted_bool = predicted.>0.5
+            size_dim4 = size(predicted_bool,4)
+            put!(channels.application_progress,1)
+            # Flatten and use border info if present
+            masks = Vector{BitArray{3}}(undef,size_dim4)
+            for j = 1:size_dim4
+                temp_mask = predicted_bool[:,:,:,j]
+                if apply_border
+                    border_mask = apply_border_data_main(temp_mask,model_data)
+                    temp_mask = cat3(temp_mask,border_mask)
+                end
+                Threads.@threads for l=1:num_feat
+                    min_area = features[l].min_area
+                    if min_area>1
+                        if border[l]
+                            ind = l + num_feat + num_border
+                        else
+                            ind = l
+                        end
+                        temp_array = temp_mask[:,:,ind]
+                        # Fix areaopen not removing all objects less than min area
+                        for k=1:2
+                            areaopen!(temp_array,min_area)
+                        end
+                        temp_mask[:,:,ind] .= temp_array
+                    end
+                end
+                masks[j] = temp_mask
             end
-            filename = filenames[j]
-            mask = masks[j]
-            # Make and export images
-            mask_to_img(mask,features,labels_color,border,savepath,filename,img_ext,img_sym_ext)
-            # Make data out of masks
-            mask_to_data(objs_area,objs_volume,cnt,mask,features,labels_incl,border,
-                    num,num_feat,num_border,output_options,scaling)
+            filenames = filenames_batch[i]
+            for j = 1:length(masks)
+                if analyse_by_file
+                    cnt = cnt + 1
+                else
+                    cnt = folder_inds[i]
+                end
+                filename = filenames[j]
+                mask = masks[j]
+                # Make and export images
+                mask_to_img(mask,features,labels_color,border,savepath,filename,img_ext,img_sym_ext)
+                # Make data out of masks
+                mask_to_data(objs_area,objs_volume,cnt,mask,features,labels_incl,border,
+                        num,num_feat,num_border,output_options,scaling)
+            end
+            put!(channels.application_progress,1)
+            @everywhere GC.safepoint()
         end
-        put!(channels.application_progress,1)
-        @everywhere GC.safepoint()
     end
     objs_area_sum = map(x->sum.(x),objs_area)
     objs_volume_sum = map(x->sum.(x),objs_volume)
