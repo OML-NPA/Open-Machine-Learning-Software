@@ -283,7 +283,7 @@ Component {
                     applicationProgressbar.value = 0
                     applicationprogressLabel.text = "0%"
                     if (applicationButton.text==="Apply") {
-                        applicationButton.text = "Stop data preparation"
+                        applicationButton.text = "Stop application"
                         Julia.get_urls_application()
                         var num_urls = Julia.get_data(["Application_data","url_input"]).length
                         if (num_urls===0) {
@@ -300,7 +300,6 @@ Component {
                         applicationTimer.running = false
                         applicationTimer.value = 0
                         applicationTimer.max_value = 0
-                        applicationTimer.done = false
                         applicationProgressbar.value = 0
                         applicationprogressLabel.visible = false
                         Julia.put_channel("Application",["stop"])
