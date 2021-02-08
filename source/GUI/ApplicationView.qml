@@ -153,10 +153,12 @@ Component {
                                                     var checkedFolders = []
                                                     for (var i=0;i<folderModel.count;i++) {
                                                          var treeButton = folderView.itemAtIndex(i)
-                                                         var checkBox = treeButton.children[0].children[0]
-                                                         if (checkBox.checked) {
-                                                            var fileName = folderModel.get(i, "fileName")
-                                                            checkedFolders.push(fileName)
+                                                         if (treeButton!==null) {
+                                                             var checkBox = treeButton.children[0].children[0]
+                                                             if (checkBox.checked) {
+                                                                var fileName = folderModel.get(i, "fileName")
+                                                                checkedFolders.push(fileName)
+                                                             }
                                                          }
                                                     }
                                                     Julia.set_settings(["Application","checked_folders"],
