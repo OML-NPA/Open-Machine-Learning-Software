@@ -296,7 +296,6 @@ Component {
                         applicationTimer.running = true
                         applicationprogressLabel.visible = true
                         Julia.gc()
-                        Julia.prepare_application_data()
                     }
                     else {
                         applicationButton.text = "Analyse"
@@ -315,7 +314,6 @@ Component {
                     interval: 1000; running: false; repeat: true
                     property double value: 0
                     property double max_value: 0
-                    property bool done: false
                     onTriggered: {
                         applicationTimerFunction(applicationButton,applicationTimer,
                             "Analyse","Stop application")
@@ -341,70 +339,28 @@ Component {
         }
 
         function applicationTimerFunction(button,timer,start,stop) {
-            if (timer.done) {
-                if (timer.max_value!==0) {
-                    var value = Julia.get_progress("Application")
-                    if (timer.value===timer.max_value) {
-                        timer.running = false
-                        timer.done = false
-                        timer.value = 0
-                        timer.max_value = 0
-                        button.text = start
-                    }
-                    else {
-                        if (value!==false) {
-                            timer.value += value
-                            var progressvalue = timer.value/timer.max_value
-                            applicationProgressbar.value = progressvalue
-                            applicationprogressLabel.text = Math.round(100*progressvalue)+"%"
-                        }
-                    }
+            if (timer.max_value!==0) {
+                var value = Julia.get_progress("Application")
+                if (timer.value===timer.max_value) {
+                    timer.running = false
+                    timer.done = false
+                    timer.value = 0
+                    timer.max_value = 0
+                    button.text = start
                 }
                 else {
-                    value = Julia.get_progress("Application")
-                    if (value===false) { return }
-                    timer.max_value = value
-                }
-            }
-            else {
-                if (timer.max_value!==0) {
-                    value = Julia.get_progress("Application data preparation")
-                    if (timer.value===timer.max_value) {
-                        timer.done = true
-                        Julia.get_results("Application data preparation")
-                        Julia.analyse()
-                        timer.value = 0
-                        timer.max_value = 0
-                        button.text = stop
-                        progressvalue = 0
+                    if (value!==false) {
+                        timer.value += value
+                        var progressvalue = timer.value/timer.max_value
                         applicationProgressbar.value = progressvalue
                         applicationprogressLabel.text = Math.round(100*progressvalue)+"%"
                     }
-                    else {
-                        if (value!==false) {
-                            timer.value += value
-                            progressvalue = timer.value/timer.max_value
-                            applicationProgressbar.value = progressvalue
-                            applicationprogressLabel.text = Math.round(100*progressvalue)+"%"
-                        }
-                    }
                 }
-                else {
-                    value = Julia.get_progress("Application data preparation")
-                    if (value===false) { return }
-                    if (value!==0) {
-                        timer.max_value = value
-                    }
-                    else {
-                        timer.running = false
-                        timer.value = 0
-                        timer.max_value = 0
-                        timer.done = false
-                        button.text = start
-                        applicationprogressLabel.visible = false
-                        applicationprogressLabel.text = "0%"
-                    }
-                }
+            }
+            else {
+                value = Julia.get_progress("Application")
+                if (value===false) { return }
+                timer.max_value = value
             }
         }
 
