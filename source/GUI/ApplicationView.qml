@@ -14,7 +14,7 @@ Component {
         id: mainLayout
         property int indTree: 0
         Component.onCompleted: {
-            var temp_folder = Julia.get_settings(["Analysis","folder_url"])
+            var temp_folder = Julia.get_settings(["Application","folder_url"])
             if (temp_folder==="") {
                 folderModel.folder = "file:///"+Julia.fix_slashes(Julia.pwd())
             }
@@ -39,12 +39,12 @@ Component {
             folder: Qt.resolvedUrl(".")
             onAccepted: {
                 var url = stripURL(file)
-                import_model_analysis(url)
+                import_model_application(url)
             }
         }
 
-        Loader { id: analysisoptionsLoader }
-        Loader { id: analysisfeaturedialogLoader}
+        Loader { id: applicationoptionsLoader }
+        Loader { id: applicationfeaturedialogLoader}
         Loader { id: selectneuralnetworkLoader }
         RowLayout {
             id: rowLayout
@@ -78,9 +78,9 @@ Component {
                         Layout.leftMargin: 0.5*margin
                         backgroundRadius: 0
                         Component.onCompleted: {
-                            var url = Julia.get_settings(["Analysis","model_url"])
+                            var url = Julia.get_settings(["Application","model_url"])
                             if (Julia.isfile(url)) {
-                                import_model_analysis(url)
+                                import_model_application(url)
                             }
                         }
                         onClicked: {
@@ -159,7 +159,7 @@ Component {
                                                             checkedFolders.push(fileName)
                                                          }
                                                     }
-                                                    Julia.set_settings(["Analysis","checked_folders"],
+                                                    Julia.set_settings(["Application","checked_folders"],
                                                                        checkedFolders)
                                                 }
                                             }
@@ -207,24 +207,24 @@ Component {
                                     height: childrenRect.height
                                     spacing: 0
                                     boundsBehavior: Flickable.StopAtBounds
-                                    model: ListModel {id: analysisfeatureModel}
+                                    model: ListModel {id: applicationfeatureModel}
                                     Component.onCompleted: {
-                                        var url = Julia.get_settings(["Analysis","model_url"])
+                                        var url = Julia.get_settings(["Application","model_url"])
                                         if (url!=="") {
-                                            load_model_features(analysisfeatureModel)
+                                            load_model_features(applicationfeatureModel)
                                             var url_split = url.split('/')
                                             nnselectLabel.text = url_split[url_split.length-1]
                                         }
                                     }
                                     delegate: TreeButton {
-                                        id: analysisfeatureButton
+                                        id: applicationfeatureButton
                                         hoverEnabled: true
                                         width: buttonWidth + 0.5*margin - 24*pix
                                         height: buttonHeight - 2*pix
                                         onClicked: {
-                                            if (analysisfeaturedialogLoader.sourceComponent === null) {
+                                            if (applicationfeaturedialogLoader.sourceComponent === null) {
                                                 indTree = index
-                                                analysisfeaturedialogLoader.source = "OutputDialog.qml"
+                                                applicationfeaturedialogLoader.source = "OutputDialog.qml"
                                             }
                                         }
                                         RowLayout {
@@ -266,57 +266,57 @@ Component {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
-                    if (analysisoptionsLoader.sourceComponent === null) {
-                       analysisoptionsLoader.source = "AnalysisOptions.qml"
+                    if (applicationoptionsLoader.sourceComponent === null) {
+                       applicationoptionsLoader.source = "applicationOptions.qml"
                     }
                 }
             }
             Button {
-                id: analysisButton
+                id: applicationButton
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 text: "Analyse"
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
-                    analysisProgressbar.value = 0
-                    analysisprogressLabel.text = "0%"
-                    if (analysisButton.text==="Analyse") {
-                        analysisButton.text = "Stop data preparation"
-                        Julia.get_urls_analysis()
-                        var num_urls = Julia.get_data(["Analysis_data","url_input"]).length
+                    applicationProgressbar.value = 0
+                    applicationprogressLabel.text = "0%"
+                    if (applicationButton.text==="Analyse") {
+                        applicationButton.text = "Stop data preparation"
+                        Julia.get_urls_application()
+                        var num_urls = Julia.get_data(["application_data","url_input"]).length
                         if (num_urls===0) {
                             return
                         }
-                        Julia.empty_progress_channel("Analysis data preparation")
-                        Julia.empty_results_channel("Analysis data preparation")
-                        Julia.empty_progress_channel("Analysis")
-                        Julia.empty_progress_channel("Analysis modifiers")
-                        analysisTimer.running = true
-                        analysisprogressLabel.visible = true
+                        Julia.empty_progress_channel("Application data preparation")
+                        Julia.empty_results_channel("Application data preparation")
+                        Julia.empty_progress_channel("Application")
+                        Julia.empty_progress_channel("Application modifiers")
+                        applicationTimer.running = true
+                        applicationprogressLabel.visible = true
                         Julia.gc()
-                        Julia.prepare_analysis_data()
+                        Julia.prepare_application_data()
                     }
                     else {
-                        analysisButton.text = "Analyse"
-                        analysisTimer.running = false
-                        analysisTimer.value = 0
-                        analysisTimer.max_value = 0
-                        analysisTimer.done = false
-                        analysisProgressbar.value = 0
-                        analysisprogressLabel.visible = false
-                        Julia.put_channel("Analysis data preparation",["stop"])
-                        Julia.put_channel("Analysis",["stop"])
+                        applicationButton.text = "Analyse"
+                        applicationTimer.running = false
+                        applicationTimer.value = 0
+                        applicationTimer.max_value = 0
+                        applicationTimer.done = false
+                        applicationProgressbar.value = 0
+                        applicationprogressLabel.visible = false
+                        Julia.put_channel("Application data preparation",["stop"])
+                        Julia.put_channel("Application",["stop"])
                     }
                 }
                 Timer {
-                    id: analysisTimer
+                    id: applicationTimer
                     interval: 1000; running: false; repeat: true
                     property double value: 0
                     property double max_value: 0
                     property bool done: false
                     onTriggered: {
-                        analysisTimerFunction(analysisButton,analysisTimer,
-                            "Analyse","Stop analysis")
+                        applicationTimerFunction(applicationButton,applicationTimer,
+                            "Analyse","Stop application")
                     }
                 }
             }
@@ -325,12 +325,12 @@ Component {
                 spacing: 0.1*margin
                 Layout.alignment: Qt.AlignHCenter
                 ProgressBar {
-                    id: analysisProgressbar
+                    id: applicationProgressbar
                     Layout.alignment: Qt.AlignHCenter
                     width: buttonWidth
                 }
                 Label {
-                    id: analysisprogressLabel
+                    id: applicationprogressLabel
                     Layout.alignment: Qt.AlignHCenter
                     visible: false
                     text: "0%"
@@ -338,10 +338,10 @@ Component {
             }
         }
 
-        function analysisTimerFunction(button,timer,start,stop) {
+        function applicationTimerFunction(button,timer,start,stop) {
             if (timer.done) {
                 if (timer.max_value!==0) {
-                    var value = Julia.get_progress("Analysis")
+                    var value = Julia.get_progress("Application")
                     if (timer.value===timer.max_value) {
                         timer.running = false
                         timer.done = false
@@ -353,42 +353,42 @@ Component {
                         if (value!==false) {
                             timer.value += value
                             var progressvalue = timer.value/timer.max_value
-                            analysisProgressbar.value = progressvalue
-                            analysisprogressLabel.text = Math.round(100*progressvalue)+"%"
+                            applicationProgressbar.value = progressvalue
+                            applicationprogressLabel.text = Math.round(100*progressvalue)+"%"
                         }
                     }
                 }
                 else {
-                    value = Julia.get_progress("Analysis")
+                    value = Julia.get_progress("Application")
                     if (value===false) { return }
                     timer.max_value = value
                 }
             }
             else {
                 if (timer.max_value!==0) {
-                    value = Julia.get_progress("Analysis data preparation")
+                    value = Julia.get_progress("Application data preparation")
                     if (timer.value===timer.max_value) {
                         timer.done = true
-                        Julia.get_results("Analysis data preparation")
+                        Julia.get_results("Application data preparation")
                         Julia.analyse()
                         timer.value = 0
                         timer.max_value = 0
                         button.text = stop
                         progressvalue = 0
-                        analysisProgressbar.value = progressvalue
-                        analysisprogressLabel.text = Math.round(100*progressvalue)+"%"
+                        applicationProgressbar.value = progressvalue
+                        applicationprogressLabel.text = Math.round(100*progressvalue)+"%"
                     }
                     else {
                         if (value!==false) {
                             timer.value += value
                             progressvalue = timer.value/timer.max_value
-                            analysisProgressbar.value = progressvalue
-                            analysisprogressLabel.text = Math.round(100*progressvalue)+"%"
+                            applicationProgressbar.value = progressvalue
+                            applicationprogressLabel.text = Math.round(100*progressvalue)+"%"
                         }
                     }
                 }
                 else {
-                    value = Julia.get_progress("Analysis data preparation")
+                    value = Julia.get_progress("Application data preparation")
                     if (value===false) { return }
                     if (value!==0) {
                         timer.max_value = value
@@ -399,18 +399,18 @@ Component {
                         timer.max_value = 0
                         timer.done = false
                         button.text = start
-                        analysisprogressLabel.visible = false
-                        analysisprogressLabel.text = "0%"
+                        applicationprogressLabel.visible = false
+                        applicationprogressLabel.text = "0%"
                     }
                 }
             }
         }
 
-        function import_model_analysis(url) {
-            Julia.set_settings(["Analysis","model_url"],url)
+        function import_model_application(url) {
+            Julia.set_settings(["Application","model_url"],url)
             Julia.load_model(url)
-            analysisfeatureModel.clear()
-            load_model_features(analysisfeatureModel)
+            applicationfeatureModel.clear()
+            load_model_features(applicationfeatureModel)
             url = url.split('/')
             nnselectLabel.text = url[url.length-1]
         }
@@ -418,14 +418,14 @@ Component {
         function updateFolder(path) {
             folderModel.folder = path
             path = String(path).substring(8)
-            Julia.set_settings(["Analysis","folder_url"],path)
+            Julia.set_settings(["Application","folder_url"],path)
         }
 
         function initialize_checked() {
             if (folderModel.status!==1) {
                 delay(10, initialize_checked)
             }
-            var folders = Julia.get_settings(["Analysis","checked_folders"])
+            var folders = Julia.get_settings(["Application","checked_folders"])
             var num = folders.length
             if (num===0) {
                 return

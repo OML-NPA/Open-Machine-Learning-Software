@@ -28,9 +28,9 @@ ApplicationWindow {
     property bool terminate: false
 
     onClosing: {
-        var url = Julia.get_settings(["Analysis","model_url"])
+        var url = Julia.get_settings(["Application","model_url"])
         Julia.save_model(url)
-        analysisfeaturedialogLoader.sourceComponent = null
+        applicationfeaturedialogLoader.sourceComponent = null
     }
 
     GridLayout {

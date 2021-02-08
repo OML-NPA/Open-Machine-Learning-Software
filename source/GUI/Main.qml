@@ -94,7 +94,7 @@ ApplicationWindow {
                             {"name": "Options", "stackview": generalOptionsView},
                             {"name": "Training", "stackview": trainingView},
                             {"name": "Validation", "stackview": validationView},
-                            {"name": "Analysis", "stackview": analysisView},
+                            {"name": "Application", "stackview": applicationView},
                             {"name": "Visualisation", "stackview": visualisationView}]
                         delegate : MenuButton {
                             id: general
@@ -156,7 +156,7 @@ ApplicationWindow {
                     GeneralOptionsView { id: generalOptionsView}
                     TrainingView { id: trainingView}
                     ValidationView { id: validationView}
-                    AnalysisView { id: analysisView}
+                    ApplicationView { id: applicationView}
                     VisualisationView { id: visualisationView}
                 }
            }

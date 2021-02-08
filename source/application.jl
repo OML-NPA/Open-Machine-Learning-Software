@@ -1,11 +1,11 @@
 
-# Get urls of files in a selected folder. Files are used for analysis.
-function get_urls_analysis_main(analysis::Analysis,analysis_data::Analysis_data)
-    url_input = analysis_data.url_input
-    folders = analysis_data.folders
+# Get urls of files in a selected folder. Files are used for application.
+function get_urls_application_main(application::Application,application_data::Application_data)
+    url_input = application_data.url_input
+    folders = application_data.folders
     empty!(url_input)
-    main_dir = analysis.folder_url
-    dirs = analysis.checked_folders
+    main_dir = application.folder_url
+    dirs = application.checked_folders
     if isempty(main_dir) || isempty(dirs)
         @info "empty main dir"
     end
@@ -19,12 +19,12 @@ function get_urls_analysis_main(analysis::Analysis,analysis_data::Analysis_data)
     end
     return nothing
 end
-get_urls_analysis() =
-    get_urls_analysis_main(analysis,analysis_data)
+get_urls_application() =
+    get_urls_application_main(application,application_data)
 
-function prepare_analysis_data(analysis_data::Analysis_data,ind::Int64)
-    image = load(analysis_data.url_input[ind])
-    if contains(analysis_data.url_input[ind],"50x")
+function prepare_application_data(application_data::Application_data,ind::Int64)
+    image = load(application_data.url_input[ind])
+    if contains(application_data.url_input[ind],"50x")
         image = imresize(image,ratio = 2)
     end
     data = image_to_gray_float(image)[:,:,:,:]
@@ -65,13 +65,13 @@ function batch_filenames(filenames::Vector{String},batch_size::Int64)
     return filename_batches
 end
 
-# Main function that performs analysis
-function analyse_main(settings::Settings,analysis_data::Analysis_data,
+# Main function that performs application
+function analyse_main(settings::Settings,application_data::Application_data,
         model_data::Model_data,channels::Channels)
     # Initialize constants
-    analysis = settings.Analysis
-    analysis_options = analysis.Options
-    analyse_by_file = analysis_options.analyse_by[1]=="file"
+    application = settings.Application
+    application_options = application.Options
+    analyse_by_file = application_options.analyse_by[1]=="file"
     model = model_data.model
     loss = model_data.loss
     features = model_data.features
@@ -80,20 +80,20 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     num_feat = length(border)
     num_border = sum(border)
     apply_border = num_border>0
-    scaling = analysis_options.scaling
-    batch_size = analysis_options.minibatch_size
+    scaling = application_options.scaling
+    batch_size = application_options.minibatch_size
     # Get savepath, folders and names
-    folders = analysis.checked_folders
-    urls = analysis_data.url_input
+    folders = application.checked_folders
+    urls = application_data.url_input
     folder_inds = Vector{Int64}(undef,length(urls))
     for i = 1:length(folders)
         pattern = folders[i]
         log_inds = occursin.(pattern,urls)
         folder_inds[log_inds] .= i
     end
-    filenames_vector = get_filenames(analysis_data.url_input)
+    filenames_vector = get_filenames(application_data.url_input)
     filenames_batched = batch_filenames(filenames_vector,batch_size)
-    savepath = analysis_options.savepath
+    savepath = application_options.savepath
     dirs = split(savepath,"/")
     for i=1:length(dirs)
         temp_path = join(dirs[1:i],"/")
@@ -102,10 +102,10 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
         end
     end
     # Get file extensions
-    img_ext,img_sym_ext = get_image_ext(analysis_options.image_type)
-    data_ext,data_sym_ext = get_data_ext(analysis_options.data_type)
+    img_ext,img_sym_ext = get_image_ext(application_options.image_type)
+    data_ext,data_sym_ext = get_data_ext(application_options.data_type)
     # Initialize accumulators and constants
-    num = length(analysis_data.url_input)
+    num = length(application_data.url_input)
     if analyse_by_file
         num_init = num
     else
@@ -153,28 +153,28 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     if !isdir(savepath)
         mkdir(savepath)
     end
-    # Run analysis
+    # Run application
     cnt = 0
     num_parts = 20 # For dividing input image into n parts
     offset = 20 # For taking extra n pixels from both sides of an image part
-    put!(channels.analysis_progress,2*num+1)
+    put!(channels.application_progress,2*num+1)
     @everywhere GC.gc()
     for i = 1:num
         # Stop if asked
-        if isready(channels.analysis_modifiers)
+        if isready(channels.application_modifiers)
             stop_cond::String = fetch(channels.training_modifiers)[1]
             if stop_cond=="stop"
-                take!(channels.analysis_modifiers)
+                take!(channels.application_modifiers)
                 break
             end
         end
         # Get neural network output
-        input_data = prepare_analysis_data(analysis_data,i)
+        input_data = prepare_application_data(application_data,i)
         predicted = forward(model,input_data,num_parts=num_parts,
             offset=offset,use_GPU=use_GPU)
         predicted_bool = predicted.>0.5
         size_dim4 = size(predicted_bool,4)
-        put!(channels.analysis_progress,1)
+        put!(channels.application_progress,1)
         # Flatten and use border info if present
         masks = Vector{BitArray{3}}(undef,size_dim4)
         for j = 1:size_dim4
@@ -216,7 +216,7 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
             mask_to_data(objs_area,objs_volume,cnt,mask,features,labels_incl,border,
                     num,num_feat,num_border,output_options,scaling)
         end
-        put!(channels.analysis_progress,1)
+        put!(channels.application_progress,1)
         @everywhere GC.safepoint()
     end
     objs_area_sum = map(x->sum.(x),objs_area)
@@ -238,13 +238,13 @@ function analyse_main(settings::Settings,analysis_data::Analysis_data,
     export_objs("Objects sum",objs_area_sum,objs_volume_sum,features,num_init,num_dist_area,
         num_dist_volume,log_area_obj_sum,log_volume_obj_sum,
         savepath,savefolders,data_ext,data_sym_ext)
-    put!(channels.analysis_progress,1)
+    put!(channels.application_progress,1)
     return nothing
 end
 function analyse_main2(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
-    @everywhere settings,analysis_data,model_data
-    remote_do(analyse_main,workers()[end],settings,analysis_data,model_data,channels)
+    @everywhere settings,application_data,model_data
+    remote_do(analyse_main,workers()[end],settings,application_data,model_data,channels)
 end
 analyse() = analyse_main2(settings,training_data,
 model_data,channels)
@@ -612,7 +612,7 @@ end
 function export_output(mask_imgs::Vector{Vector{Array{RGBA{Float32},2}}},
         histograms_area::Array{Histogram},histograms_volume::Array{Histogram},
         objs_area::Array{Vector{Float64},2},objs_volume::Array{Vector{Float64},2},
-        filenames::Vector{String},options::Analysis_options)
+        filenames::Vector{String},options::Application_options)
     inds_bool = map(x->isassigned(mask_imgs, x),1:length(mask_imgs))
     if any(inds_bool)
         inds = findall(inds_bool)

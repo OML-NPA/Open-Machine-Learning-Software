@@ -286,7 +286,7 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     return predicted_color,predicted_error,target_color
 end
 
-#---Main analysis funtions
+#---Main application funtions
 # Runs data thorugh a neural network
 function forward(model::Chain,input_data::Array{Float32};
         num_parts::Int64=1,offset::Int64=0,use_GPU::Bool=true)

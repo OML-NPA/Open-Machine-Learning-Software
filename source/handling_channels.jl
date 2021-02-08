@@ -26,14 +26,14 @@ function get_progress_main(channels::Channels,field)
         channel_temp = channels.training_data_progress
     elseif field=="Validation data preparation"
         channel_temp = channels.validation_data_progress
-    elseif field=="Analysis data preparation"
-        channel_temp = channels.analysis_data_progress
+    elseif field=="Application data preparation"
+        channel_temp = channels.application_data_progress
     elseif field=="Training"
         channel_temp = channels.training_progress
     elseif field=="Validation"
         channel_temp = channels.validation_progress
-    elseif field=="Analysis"
-        channel_temp = channels.analysis_progress
+    elseif field=="Application"
+        channel_temp = channels.application_progress
     end
     if isready(channel_temp)
         return take!(channel_temp)
@@ -74,11 +74,11 @@ function get_results_main(channels::Channels,master_data::Master_data,
         else
             return false
         end
-    elseif field=="Analysis data preparation"
-        if isready(channels.analysis_data_results)
-            data = take!(channels.analysis_data_results)
-            analysis_data = master_data.Analysis_data
-            analysis_data.data_input = data
+    elseif field=="Application data preparation"
+        if isready(channels.application_data_results)
+            data = take!(channels.application_data_results)
+            application_data = master_data.Application_data
+            application_data.data_input = data
             return true
         else
             return false
@@ -134,8 +134,8 @@ function empty_progress_channel_main(channels::Channels,field)
         channel_temp = channels.training_data_progress
     elseif field=="Validation data preparation"
         channel_temp = channels.validation_data_progress
-    elseif field=="Analysis data preparation"
-        channel_temp = channels.analysis_data_progress
+    elseif field=="Application data preparation"
+        channel_temp = channels.application_data_progress
     elseif field=="Training data preparation modifiers"
         channel_temp = channels.training_data_modifiers
     elseif field=="Validation data preparation modifiers"
@@ -144,14 +144,14 @@ function empty_progress_channel_main(channels::Channels,field)
         channel_temp = channels.training_progress
     elseif field=="Validation"
         channel_temp = channels.validation_progress
-    elseif field=="Analysis"
-        channel_temp = channels.analysis_progress
+    elseif field=="Application"
+        channel_temp = channels.application_progress
     elseif field=="Training modifiers"
         channel_temp = channels.training_modifiers
     elseif field=="Validation modifiers"
         channel_temp = channels.validation_modifiers
-    elseif field=="Analysis modifiers"
-        channel_temp = channels.analysis_modifiers
+    elseif field=="Application modifiers"
+        channel_temp = channels.application_modifiers
     elseif field=="Labels colors"
         channel_temp = channels.training_labels_colors
     end
@@ -172,8 +172,8 @@ function empty_results_channel_main(channels::Channels,field)
         channel_temp = channels.training_data_results
     elseif field=="Validation data preparation"
         channel_temp = channels.validation_data_results
-    elseif field=="Analysis data preparation"
-        channel_temp = channels.analysis_data_results
+    elseif field=="Application data preparation"
+        channel_temp = channels.application_data_results
     elseif field=="Training"
         channel_temp = channels.training_results
     elseif field=="Validation"

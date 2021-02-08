@@ -20,7 +20,7 @@ end
 @everywhere include("training.jl")
 @everywhere include("training_common.jl")
 @everywhere include("validation.jl")
-@everywhere include("analysis.jl")
+@everywhere include("application.jl")
 
 # Other
 CUDA.allowscalar(false)

@@ -28,11 +28,11 @@ end
     # Data loading
     get_urls_training,
     get_urls_validation,
-    get_urls_analysis,
+    get_urls_application,
     get_labels_colors,
     prepare_training_data,
     prepare_validation_data,
-    prepare_analysis_data,
+    prepare_application_data,
     # Data handling
     isfile,
     isdir,

@@ -14,10 +14,10 @@
     validation_results::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     validation_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     training_labels_colors::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
-    analysis_data_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
-    analysis_data_results::RemoteChannel = RemoteChannel(()->Channel{Any}(1))
-    analysis_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
-    analysis_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    application_data_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    application_data_results::RemoteChannel = RemoteChannel(()->Channel{Any}(1))
+    application_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    application_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
 end
 channels = Channels()
 
@@ -140,17 +140,17 @@ training_results_data = Training_results_data()
 end
 training_data = Training_data()
 
-@with_kw mutable struct Analysis_data
+@with_kw mutable struct Application_data
     url_input::Vector{String} = Vector{String}(undef,0)
     folders::Vector{String} = Vector{String}(undef,0)
     data_input::Vector{Array{Float32,4}} = Vector{Array{Float32,4}}(undef,1)
 end
-analysis_data = Analysis_data()
+application_data = Application_data()
 
 @with_kw mutable struct Master_data
     Training_data::Training_data = training_data
     Validation_data::Validation_data = validation_data
-    Analysis_data::Analysis_data = analysis_data
+    Application_data::Application_data = application_data
     image::Array{RGB{Float32},2} = Array{RGB{Float32},2}(undef,10,10)
 end
 master_data = Master_data()
@@ -246,8 +246,8 @@ training = Training()
 end
 validation = Validation()
 
-# Analysis
-@with_kw mutable struct Analysis_options
+# Application
+@with_kw mutable struct Application_options
     savepath::String = ""
     analyse_by::Tuple{String,Int64} = ("file",0)
     data_type::Int64 = 0
@@ -257,15 +257,15 @@ validation = Validation()
     scaling::Float64 = 1
     minibatch_size::Int64 = 1
 end
-analysis_options = Analysis_options()
+application_options = Application_options()
 
-@with_kw mutable struct Analysis
-    Options::Analysis_options = analysis_options
+@with_kw mutable struct Application
+    Options::Application_options = application_options
     folder_url::String = ""
     model_url::String = ""
     checked_folders::Vector{String} = String[]
 end
-analysis = Analysis()
+application = Application()
 
 # Visualisation
 @with_kw mutable struct Visualisation
@@ -279,7 +279,7 @@ visualisation = Visualisation()
     Options::Options = options
     Training::Training = training
     Validation::Validation = validation
-    Analysis::Analysis = analysis
+    Application::Application = application
     Visualisation::Visualisation = visualisation
 end
 settings = Settings()
