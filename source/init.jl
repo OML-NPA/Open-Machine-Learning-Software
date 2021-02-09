@@ -18,7 +18,7 @@ end
 @everywhere include("image_processing.jl")
 @everywhere include("design.jl")
 @everywhere include("training.jl")
-@everywhere include("training_common.jl")
+@everywhere include("common.jl")
 @everywhere include("validation.jl")
 @everywhere include("application.jl")
 
