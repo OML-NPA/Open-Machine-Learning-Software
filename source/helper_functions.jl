@@ -96,7 +96,7 @@ function allcmp(inds)
     return true
 end
 
-function any(array::BitArray,dim::Int64)
+function anydim(array::BitArray,dim::Int64)
     vec = BitArray(undef, size(array,dim), 1)
     if dim==1
         for i=1:length(vec)

@@ -164,8 +164,8 @@ function correct_view(img::Array{Float32,2},label::Array{RGB{Normed{UInt8,8}},2}
     field_outer_perim = sum(outer_perim(field))/1.25
     circularity = (4*pi*field_area)/(field_outer_perim^2)
     if circularity>0.9
-        row_bool = any(field,1)
-        col_bool = any(field,2)
+        row_bool = anydim(field,1)
+        col_bool = anydim(field,2)
         col1 = findfirst(col_bool)[1]
         col2 = findlast(col_bool)[1]
         row1 = findfirst(row_bool)[1]
@@ -208,7 +208,7 @@ function apply_border_data_main(data_in::BitArray{3},
         model_data::Model_data)
     labels_color,labels_incl,border,border_thickness = get_feature_data(model_data.features)
     inds_border = findall(border)
-    if inds_border==nothing
+    if isnothing(inds_border)
         return data_in
     end
     num_border = length(inds_border)
@@ -250,7 +250,7 @@ function apply_border_data_main(data_in::BitArray{3},
     end
     return data
 end
-apply_border_data(data_in) = apply_border_data_main(data_in,model_data,training)
+apply_border_data(data_in) = apply_border_data_main(data_in,model_data)
 
 #---
 # Accuracy based on RMSE

@@ -275,7 +275,7 @@ function objects_area(mask_current::BitArray{2},components::Array{Int64,2},
         scaling::Float64,l::Int64)
     incl_bool = map(x->any(x.==l),labels_incl)
     ind = findfirst(incl_bool)
-    if ind==nothing
+    if isnothing(ind)
         area = component_lengths(components)[2:end]
         area_out = convert(Vector{Float64},area)./scaling
     else
@@ -319,7 +319,7 @@ function objects_volume(objects_mask::BitArray{2},components::Array{Int64,2},
     num = maximum(components)
     incl_bool = map(x->any(x.==l),labels_incl)
     ind = findfirst(incl_bool)
-    if ind==nothing
+    if isnothing(ind)
         num = maximum(components)
         volumes_out = Vector{Float64}(undef,num)
         Threads.@threads for i = 1:num

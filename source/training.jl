@@ -184,7 +184,7 @@ function make_minibatch(set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32
     val = max(0.0,floor(num/batch_size))
     finish = Int64(val*batch_size)
     # Get a vector of initial-1 indices
-    range_array = Vector(0:batch_size:finish)
+    range_array = collect(0:batch_size:finish)
     # Shuffle indices
     inds = shuffle!(range_array)
     # Separate set into inputs and labels

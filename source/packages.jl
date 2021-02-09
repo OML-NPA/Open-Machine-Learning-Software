@@ -16,5 +16,4 @@ Random, StatsBase, Statistics, LinearAlgebra, Combinatorics, Distances,
 # Other
 Plots
 
-import Base.any
 import CUDA.CuArray, Flux.outdims

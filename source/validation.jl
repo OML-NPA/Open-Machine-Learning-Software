@@ -117,7 +117,7 @@ function fix_size(temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}},
                 (1+offset_temp+offset_add1):(end-offset_temp2-offset_add2),:,:]
         end
     elseif offset_temp<0
-        temp_predicted = pad(temp_predicted,[0,-offset_temp])
+        temp_predicted = pad(temp_predicted,[0,-offset_temp],same)
     end
 end
 

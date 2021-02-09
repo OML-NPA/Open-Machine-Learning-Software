@@ -291,7 +291,7 @@ function update_layers_main(model_data::Model_data,keys,values,ext...)
         var = values[i]
         if var isa String
             var_num = tryparse(Float64, var)
-            if var_num == nothing
+            if isnothing(var_num)
               if occursin(",", var) && !occursin("[", var)
                  dict[keys[i]] = str2tuple(Int64,var)
               else

@@ -112,7 +112,7 @@ function getresizing(type::String, d, in_size)
         return (Upscaling(multiplier, out, dims), out)
     elseif type == "Flattening"
         out = (prod(size(x)), 1, 1)
-        return (Flux.flatten(), out)
+        return (x -> Flux.flatten(x), out)
     end
 end
 
@@ -162,7 +162,7 @@ function topology_split(layers_arranged::Vector,inds_arranged::Vector,
         if isempty(inds_temp)
             inds_temp = [0]
         end
-        if (type=="Catenation" || type=="Addition") && inds_temp[1]==nothing
+        if (type=="Catenation" || type=="Addition") && isnothing(inds_temp[1])
             # Happens if one of input nodes is empty
         else
             par_layers_arranged[i] = layers_temp

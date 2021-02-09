@@ -86,7 +86,7 @@ function get_results_main(channels::Channels,master_data::Master_data,
     elseif field=="Training"
         if isready(channels.training_results)
             data = take!(channels.training_results)
-            if data!=nothing
+            if !isnothing(data)
                 training_results_data = master_data.Training_data.Training_results_data
                 model_data.model = data[1]
                 training_results_data.accuracy = data[2]
