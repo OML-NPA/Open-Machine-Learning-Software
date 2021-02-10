@@ -79,7 +79,7 @@ end
 function prepare_data(input_data::Union{Array{Float32,4},CuArray{Float32,4}},ind_max::Int64,
         max_value::Int64,offset::Int64,ind_split::Int64,j::Int64)
     start_ind = 1 + (j-1)*ind_split-1
-    end_ind = start_ind + ind_split-1
+    end_ind = min(start_ind + ind_split-1,max_value)
     correct_size = end_ind-start_ind+1
     start_ind = start_ind - offset
     end_ind = end_ind + offset
@@ -117,7 +117,7 @@ function fix_size(temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}},
                 (1+offset_temp+offset_add1):(end-offset_temp2-offset_add2),:,:]
         end
     elseif offset_temp<0
-        temp_predicted = pad(temp_predicted,[0,-offset_temp],same)
+        throw(DomainError("offset_temp should be greater or equal to zero"))
     end
 end
 
