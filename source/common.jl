@@ -382,13 +382,17 @@ end
 #--- Applying a neural network
 # Getting a slice and its information
 function prepare_data(input_data::Union{Array{Float32,4},CuArray{Float32,4}},ind_max::Int64,
-        max_value::Int64,offset::Int64,ind_split::Int64,j::Int64)
-    start_ind = 1 + (j-1)*ind_split-1
-    end_ind = min(start_ind + ind_split-1,max_value)
+        max_value::Int64,offset::Int64,num_parts::Int64,ind_split::Int64,j::Int64)
+    start_ind = 1 + (j-1)*ind_split
+    if j==num_parts
+        end_ind = max_value
+    else
+        end_ind = start_ind + ind_split-1
+    end
     correct_size = end_ind-start_ind+1
     start_ind = start_ind - offset
-    end_ind = end_ind + offset
     start_ind = start_ind<1 ? 1 : start_ind
+    end_ind = end_ind + offset
     end_ind = end_ind>max_value ? max_value : end_ind
     temp_data = input_data[:,start_ind:end_ind,:,:]
     max_dim_size = size(temp_data,ind_max)
@@ -435,11 +439,8 @@ function accum_parts(model::Chain,input_data::Array{Float32,4},
     ind_split = convert(Int64,floor(max_value/num_parts))
     predicted = Vector{Array{Float32,4}}(undef,0)
     for j = 1:num_parts
-        if j==num_parts
-            ind_split = ind_split+rem(max_value,num_parts)
-        end
         temp_data,correct_size,offset_add =
-            prepare_data(input_data,ind_max,max_value,offset,ind_split,j)
+            prepare_data(input_data,ind_max,max_value,num_parts,offset,ind_split,j)
         temp_predicted::Array{Float32,4} = model(temp_data)
         temp_predicted =
             fix_size(temp_predicted,num_parts,correct_size,ind_max,offset_add,j)
@@ -462,12 +463,9 @@ function accum_parts(model::Chain,input_data::CuArray{Float32,4},
     ind_split = convert(Int64,floor(max_value/num_parts))
     predicted = Vector{CuArray{Float32,4}}(undef,0)
     for j = 1:num_parts
-        if j==num_parts
-            ind_split = ind_split+rem(max_value,num_parts)
-        end
         temp_data,correct_size,offset_add =
-            prepare_data(input_data,ind_max,max_value,offset,ind_split,j)
-        temp_predicted::CuArray{Float32,4} = model(temp_data)
+            prepare_data(input_data,ind_max,max_value,offset,num_parts,ind_split,j)
+        temp_predicted = model(temp_data)
         temp_predicted =
             fix_size(temp_predicted,num_parts,correct_size,ind_max,offset_add,j)
         push!(predicted,collect(temp_predicted))
