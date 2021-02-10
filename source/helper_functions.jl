@@ -59,9 +59,9 @@ function pad(array::Union{AbstractArray{Float32},AbstractArray{Float64}},
         vec2 = array[end,:]'
         array = vcat(fun(el_type,leftpad[1],size(array,2),vec1),
             array,fun(el_type,rightpad[1],size(array,2),vec2))
-    else
-        vec1 = array[:,1]
-        vec2 = array[:,end]
+    else       
+        vec1 = array[:,1,:,:]
+        vec2 = array[:,end,:,:]
         array = hcat(fun(el_type,size(array,1),leftpad[2],vec1),
             array,fun(el_type,size(array,1),rightpad[2],vec2))
     end
