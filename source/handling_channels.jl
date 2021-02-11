@@ -50,7 +50,7 @@ function get_results_main(channels::Channels,master_data::Master_data,
     if field=="Training data preparation"
         if isready(channels.training_data_results)
             data = take!(channels.training_data_results)
-            training_plot_data = master_data.Training_data.Training_plot_data
+            training_plot_data = master_data.Training_data.Plot_data
             training_plot_data.data_input = data[1]
             training_plot_data.data_labels = data[2]
             return true
@@ -60,7 +60,7 @@ function get_results_main(channels::Channels,master_data::Master_data,
     elseif field=="Validation data preparation"
         if isready(channels.validation_data_results)
             data = take!(channels.validation_data_results)
-            validation_plot_data = master_data.Validation_data.Validation_plot_data
+            validation_plot_data = master_data.Validation_data.Plot_data
             if validation.use_labels
                 validation_plot_data.data_input_orig = data[1]
                 validation_plot_data.data_labels_orig = data[2]
@@ -102,7 +102,7 @@ function get_results_main(channels::Channels,master_data::Master_data,
     elseif field=="Validation"
         if isready(channels.validation_results)
             data = take!(channels.validation_results)
-            validation_plot_data = master_data.Validation_data.Validation_plot_data
+            validation_plot_data = master_data.Validation_data.Plot_data
             validation_plot_data.data_predicted = data[1]
             validation_plot_data.data_error = data[2]
             validation_plot_data.data_target = data[3]
