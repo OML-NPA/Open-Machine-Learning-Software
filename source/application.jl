@@ -226,7 +226,7 @@ function analyse_main(settings::Settings,application_data::Application_data,
                 filename = filenames[j]
                 mask = masks[j]
                 # Make and export images
-                #mask_to_img(mask,features,labels_color,border,savepath,filename,img_ext,img_sym_ext)
+                mask_to_img(mask,features,labels_color,border,savepath,filename,img_ext,img_sym_ext)
                 # Make data out of masks
                 mask_to_data(objs_area,objs_volume,cnt,mask,features,labels_incl,border,
                     num_feat,num_border,scaling)
