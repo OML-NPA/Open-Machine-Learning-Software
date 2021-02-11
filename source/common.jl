@@ -85,9 +85,15 @@ function load_images(urls::Vector{String})
     num = length(urls)
     imgs = Vector{Array{RGB{N0f8},2}}(undef,num)
     for i = 1:num
-        imgs[i] = load(urls[i])
+        imgs[i] = load_image(urls[i])
     end
     return imgs
+end
+
+# Imports image
+function load_image(url::String)
+    img::Array{RGB{N0f8},2} = load(url)
+    return img
 end
 
 # Convert images to grayscale Array{Float32,2}

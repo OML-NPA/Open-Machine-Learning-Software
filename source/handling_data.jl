@@ -170,6 +170,24 @@ function source_dir()
     return fix_slashes(pwd())
 end
 
+function filter_ext(urls::Vector{String},allowed_ext::Vector{String})
+    urls_split = split.(urls,'.')
+    ext = map(x->string(x[end]),urls_split)
+    ext = lowercase.(ext)
+    log_inds = map(x->x in allowed_ext,ext)
+    urls_out = urls[log_inds]
+    return urls_out
+end
+
+function filter_ext(urls::Vector{String},allowed_ext::String)
+    urls_split = split.(urls,'.')
+    ext = map(x->string(x[end]),urls_split)
+    ext = lowercase.(ext)
+    log_inds = map(x->x == allowed_ext,ext)
+    urls = urls[log_inds]
+    return urls
+end
+
 #---Feature output related functions
 # Allows to read feature output options from GUI
 function get_output_main(model_data::Model_data,fields,ind)

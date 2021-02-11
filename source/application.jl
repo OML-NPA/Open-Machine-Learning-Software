@@ -28,7 +28,8 @@ function prepare_application_data(urls::Vector{String})
     num = length(urls)
     data = Vector{Array{Float32,4}}(undef,length(urls))
     Threads.@threads for i = 1:num
-        image::Array{RGB{Normed{UInt8,8}},2} = load(urls[i])
+        url = urls[i]
+        image = load_image(url)
         data[i] = image_to_gray_float(image)[:,:,:,:]
     end
     data_out = reduce(cat4,data)
@@ -120,9 +121,11 @@ function analyse_main(settings::Settings,application_data::Application_data,
     folders = application.checked_folders
     num = length(folders)
     urls = application_data.url_input
+    allowed_ext = ["png","jpg","jpeg"]
+    urls = map(x->filter_ext(x,allowed_ext),urls)
     urls_batched,filenames_batched = batch_urls_filenames(urls,batch_size)
     savepath_main = application_options.savepath
-    dirs = split(savepath,"/")
+    dirs = split(savepath_main,"/")
     for i=1:length(dirs)
         temp_path = join(dirs[1:i],"/")
         if !isdir(temp_path)
@@ -160,28 +163,18 @@ function analyse_main(settings::Settings,application_data::Application_data,
         objs_volume_sum = Vector{Vector{Float64}}(undef,num_init)
         histograms_area = Vector{Vector{Histogram}}(undef,num_init)
         histograms_volume = Vector{Vector{Histogram}}(undef,num_init)
+        fill_no_ref!(objs_area,Vector{Vector{Float64}}(undef,num_obj_area))
         for i = 1:num_init
-            objs_area[i] = Vector{Vector{Float64}}(undef,num_obj_area)
+            fill_no_ref!(objs_area[i],Float64[])
         end
+        fill_no_ref!(objs_volume,Vector{Vector{Float64}}(undef,num_obj_volume))
         for i = 1:num_init
-            objs_volume[i] = Vector{Vector{Float64}}(undef,num_obj_volume)
+            fill_no_ref!(objs_volume[i],Float64[])
         end
-        for i = 1:num_init
-            histograms_area[i] = Vector{Histogram}(undef,num_dist_area)
-        end
-        for i = 1:num_init
-            histograms_volume[i] = Vector{Histogram}(undef,num_dist_volume)
-        end
-        for i = 1:num_init
-            for j = 1:(num_obj_area+num_obj_area_sum)
-                push!(objs_area[i],Float64[])
-            end
-        end
-        for i = 1:num_init
-            for j = 1:(num_obj_volume+num_obj_volume_sum)
-                push!(objs_volume[i],Float64[])
-            end
-        end
+        fill_no_ref!(objs_area_sum,Vector{Float64}(undef,num_obj_area_sum))
+        fill_no_ref!(objs_volume_sum,Vector{Float64}(undef,num_obj_volume_sum))
+        fill_no_ref!(histograms_area,Vector{Histogram}(undef,num_dist_area))
+        fill_no_ref!(histograms_volume,Vector{Histogram}(undef,num_dist_volume))
         for l = 1:num_batch
             # Stop if asked
             if isready(channels.application_modifiers)
@@ -242,12 +235,24 @@ function analyse_main(settings::Settings,application_data::Application_data,
             @everywhere GC.safepoint()
         end
         if num_obj_area_sum>0 
-            objs_area_sum .= map(x->sum.(x),objs_area)
+            for i = 1:num_init
+                for j = 1:num_feat
+                    if features[j].Output.Area.obj_area_sum
+                        objs_area_sum[i][j] = sum(objs_area[i][j])
+                    end
+                end
+            end
         else
             objs_area_sum .= map(Vector{Float64},objs_area)
         end
         if num_obj_volume_sum>0 
-            objs_volume_sum .= map(x->sum.(x),objs_volume)
+            for i = 1:num_init
+                for j = 1:num_feat
+                    if features[j].Output.Volume.obj_volume_sum
+                        objs_volume_sum[i][j] = sum(objs_volume[i][j])
+                    end
+                end
+            end
         else
             objs_volume_sum .= map(Vector{Float64},objs_volume)
         end
@@ -288,6 +293,7 @@ end
 function objects_area(mask_current::BitArray{2},components::Array{Int64,2},
         components_vector::Vector{Array{Int64,2}},labels_incl::Vector{Vector{Int64}},
         scaling::Float64,l::Int64)
+    scaling = scaling^2
     incl_bool = map(x->any(x.==l),labels_incl)
     ind = findfirst(incl_bool)
     if isnothing(ind)
@@ -400,7 +406,9 @@ end
 
 function objs_to_dataframe(df::DataFrame,objs::Vector{Float64},
         num::Int64,offset::Int64)
-    df[1,j+offset:num] .= objs
+    start = offset + 1
+    finish = num + start -1
+    df[1,start:finish] .= objs
 end
 
 function data_to_histograms(histograms_area::Vector{Vector{Histogram}},
@@ -630,7 +638,7 @@ function mask_to_img(mask::BitArray{3},features::Vector{Feature},
     perm_labels_color64 = map(x -> permutedims(x[:,:,:]/255,[3,2,1]),labels_color)
     num2 = length(labels_color)
     perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color64)
-    Threads.@threads for j = 1:length(inds)
+    for j = 1:length(inds) #Threads.@threads 
         ind = inds[j]
         mask_current = mask[:,:,ind]
         color = perm_labels_color[ind]
@@ -678,7 +686,14 @@ end
 
 function save(path::String,name::String,data,ext::Symbol)
     if !isdir(path)
-        mkdir(path)
+        dirs = splitpath(path)
+        start = length(dirs) - 3
+        for i=start:length(dirs)
+            temp_path = join(dirs[1:i],'/')
+            if !isdir(temp_path)
+                mkdir(temp_path)
+            end
+        end
     end
     url = joinpath(path,name)
     if isfile(url)

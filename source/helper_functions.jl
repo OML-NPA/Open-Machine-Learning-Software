@@ -221,3 +221,10 @@ cat4(A::AbstractArray, B::AbstractArray) = cat(A, B; dims=Val(4))
 cat4(A::AbstractArray...) = cat(A...; dims=Val(4))
 
 gc() = GC.gc()
+
+# Works as fill!, but does not use a reference
+function fill_no_ref!(target::AbstractArray,el)
+    for i = 1:length(target)
+        target[i] = copy(el)
+    end
+end
