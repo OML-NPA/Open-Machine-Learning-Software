@@ -178,10 +178,10 @@ ApplicationWindow {
                                         }
                                         Component.onCompleted: {
                                             currentIndex =
-                                                Julia.get_settings(["Application","Options","analyse_by"],2)
+                                                Julia.get_settings(["Application","Options","apply_by"],2)
                                         }
                                         onActivated: {
-                                            Julia.set_settings(["Application","Options","analyse_by"],
+                                            Julia.set_settings(["Application","Options","apply_by"],
                                                 [currentText,currentIndex],"make_tuple")
                                         }
                                     }

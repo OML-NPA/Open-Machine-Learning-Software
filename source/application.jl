@@ -88,12 +88,12 @@ function batch_urls_filenames(urls::Vector{Vector{String}},batch_size::Int64)
 end
 
 # Main function that performs application
-function analyse_main(settings::Settings,application_data::Application_data,
+function apply_main(settings::Settings,application_data::Application_data,
         model_data::Model_data,channels::Channels)
     # Initialize constants
     application = settings.Application
     application_options = application.Options
-    analyse_by_file = application_options.analyse_by[1]=="file"
+    apply_by_file = application_options.apply_by[1]=="file"
     model = model_data.model
     loss = model_data.loss
     features = model_data.features
@@ -152,7 +152,7 @@ function analyse_main(settings::Settings,application_data::Application_data,
         num_batch = length(urls_batch)
         savepath = joinpath(savepath_main,folders[k])
         # Initialize accumulators
-        if analyse_by_file
+        if apply_by_file
             num_init = num_batch
         else
             num_init = 1
@@ -218,7 +218,7 @@ function analyse_main(settings::Settings,application_data::Application_data,
             end
             filenames = filenames_batch[l]
             for j = 1:length(masks)
-                if analyse_by_file
+                if apply_by_file
                     cnt = cnt + 1
                 else
                     cnt = 1
@@ -259,7 +259,7 @@ function analyse_main(settings::Settings,application_data::Application_data,
         data_to_histograms(histograms_area,histograms_volume,objs_area,objs_volume,
         features,num_init,num_feat,num_border,border)
         # Export data
-        if analyse_by_file
+        if apply_by_file
             filenames = filenames_batch
         else
             filenames = [folders[k]]
@@ -277,12 +277,12 @@ function analyse_main(settings::Settings,application_data::Application_data,
     end
     return nothing
 end
-function analyse_main2(settings::Settings,training_data::Training_data,
+function apply_main2(settings::Settings,training_data::Training_data,
         model_data::Model_data,channels::Channels)
     @everywhere settings,application_data,model_data
-    remote_do(analyse_main,workers()[end],settings,application_data,model_data,channels)
+    remote_do(apply_main,workers()[end],settings,application_data,model_data,channels)
 end
-analyse() = analyse_main2(settings,training_data,
+apply() = apply_main2(settings,training_data,
 model_data,channels)
 
 #---Histogram and objects related functions

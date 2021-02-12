@@ -491,7 +491,7 @@ ApplicationWindow {
         onClicked: mouse.accepted = false;
     }
     function get_image(display,type,inds) {
-        var size = Julia.get_image(["Validation_data","Validation_plot_data",type],
+        var size = Julia.get_image(["Validation_data","Plot_data",type],
             [0,0],inds)
 
 

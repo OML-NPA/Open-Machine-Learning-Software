@@ -249,7 +249,7 @@ validation = Validation()
 # Application
 @with_kw mutable struct Application_options
     savepath::String = ""
-    analyse_by::Tuple{String,Int64} = ("file",0)
+    apply_by::Tuple{String,Int64} = ("file",0)
     data_type::Int64 = 0
     image_type::Int64 = 0
     downsize::Int64 = 0

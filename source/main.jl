@@ -53,7 +53,7 @@ end
     # Main actions
     train,
     validate,
-    analyse,
+    apply,
     # Training related
     set_training_starting_time,
     training_elapsed_time,
