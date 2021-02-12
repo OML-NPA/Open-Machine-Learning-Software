@@ -163,11 +163,11 @@ function apply_main(settings::Settings,application_data::Application_data,
         objs_volume_sum = Vector{Vector{Float64}}(undef,num_init)
         histograms_area = Vector{Vector{Histogram}}(undef,num_init)
         histograms_volume = Vector{Vector{Histogram}}(undef,num_init)
-        fill_no_ref!(objs_area,Vector{Vector{Float64}}(undef,num_obj_area))
+        fill_no_ref!(objs_area,Vector{Vector{Float64}}(undef,num_feat))
         for i = 1:num_init
             fill_no_ref!(objs_area[i],Float64[])
         end
-        fill_no_ref!(objs_volume,Vector{Vector{Float64}}(undef,num_obj_volume))
+        fill_no_ref!(objs_volume,Vector{Vector{Float64}}(undef,num_feat))
         for i = 1:num_init
             fill_no_ref!(objs_volume[i],Float64[])
         end
@@ -242,8 +242,6 @@ function apply_main(settings::Settings,application_data::Application_data,
                     end
                 end
             end
-        else
-            objs_area_sum .= map(Vector{Float64},objs_area)
         end
         if num_obj_volume_sum>0 
             for i = 1:num_init
@@ -253,8 +251,6 @@ function apply_main(settings::Settings,application_data::Application_data,
                     end
                 end
             end
-        else
-            objs_volume_sum .= map(Vector{Float64},objs_volume)
         end
         data_to_histograms(histograms_area,histograms_volume,objs_area,objs_volume,
         features,num_init,num_feat,num_border,border)
@@ -267,11 +263,11 @@ function apply_main(settings::Settings,application_data::Application_data,
         export_histograms(histograms_area,histograms_volume,features,num_init,num_dist_area,
             num_dist_volume,log_area_dist,log_volume_dist,
             savepath,filenames,data_ext,data_sym_ext)
-        export_objs("Objects",objs_area,objs_volume,features,num_init,num_dist_area,
-            num_dist_volume,log_area_obj,log_volume_obj,
+        export_objs("Objects",objs_area,objs_volume,features,num_init,num_obj_area,
+            num_obj_volume,log_area_obj,log_volume_obj,
             savepath,filenames,data_ext,data_sym_ext)
-        export_objs("Objects sum",objs_area_sum,objs_volume_sum,features,num_init,num_dist_area,
-            num_dist_volume,log_area_obj_sum,log_volume_obj_sum,
+        export_objs("Objects sum",objs_area_sum,objs_volume_sum,features,num_init,num_obj_area_sum,
+            num_obj_volume_sum,log_area_obj_sum,log_volume_obj_sum,
             savepath,filenames,data_ext,data_sym_ext)
         put!(channels.application_progress,1)
     end
@@ -443,7 +439,7 @@ function data_to_histograms(histograms_area::Vector{Vector{Histogram}},
 end
 
 function mask_to_data(objs_area::Vector{Vector{Vector{Float64}}},
-        objs_volume::Array{Vector{Vector{Float64}}},cnt::Int64,mask::BitArray{3},
+        objs_volume::Vector{Vector{Vector{Float64}}},cnt::Int64,mask::BitArray{3},
         features::Vector{Feature},labels_incl::Vector{Vector{Int64}},
         border::Vector{Bool},num_feat::Int64,num_border::Int64,scaling::Float64)
     temp_objs_area = objs_area[cnt]
