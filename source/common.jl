@@ -1,7 +1,7 @@
 
 # Get urls of files in selected folders. Requires only data
 function get_urls1(settings::Union{Training,Validation},
-        data::Union{Training_data,Validation_data})
+        data::Union{Training_data,Validation_data},allowed_ext::Vector{String})
     # Get a reference to url accumulators
     url_input = data.url_input
     # Empty a url accumulator
@@ -24,6 +24,7 @@ function get_urls1(settings::Union{Training,Validation},
     for k = 1:length(dirs)
         # Get files in a directory
         files_input = getfiles(string(dir_input,"/",dirs[k]))
+        files_input = filter_ext(files_input,allowed_ext)
         # Push urls into an accumulator
         for l = 1:length(files_input)
             push!(url_input,string(dir_input,"/",files_input[l]))
@@ -34,7 +35,7 @@ end
 
 # Get urls of files in selected folders. Requires data and labels
 function get_urls2(settings::Union{Training,Validation},
-        data::Union{Training_data,Validation_data})
+        data::Union{Training_data,Validation_data},allowed_ext::Vector{String})
     # Get a reference to url accumulators
     url_input = data.url_input
     url_labels = data.url_labels
@@ -63,6 +64,9 @@ function get_urls2(settings::Union{Training,Validation},
         # Get files in a directory
         files_input = getfiles(string(dir_input,"/",dirs[k]))
         files_labels = getfiles(string(dir_labels,"/",dirs[k]))
+        # Filter files
+        files_input = filter_ext(files_input,allowed_ext)
+        files_labels = filter_ext(files_labels,allowed_ext)
         # Remove extensions from files
         filenames_input = remove_ext(files_input)
         filenames_labels = remove_ext(files_labels)

@@ -1,6 +1,10 @@
 
 # Get urls of files in a selected folder. Files are used for application.
-function get_urls_application_main(application::Application,application_data::Application_data)
+function get_urls_application_main(application::Application,
+        application_data::Application_data,model_data::Model_data)
+    if model_data.type[2]=="Images"
+        allowed_ext = ["png","jpg","jpeg"]
+    end
     url_input = application_data.url_input
     folders = application_data.folders
     empty!(url_input)
@@ -12,6 +16,7 @@ function get_urls_application_main(application::Application,application_data::Ap
     for i = 1:length(dirs)
         dir = dirs[i]
         files_input = getfiles(joinpath(main_dir,dir))
+        files_input = filter_ext(files_input,allowed_ext)
         push!(folders,dir)
         temp = Vector{String}(undef,0)
         for j = 1:length(files_input)
@@ -22,7 +27,7 @@ function get_urls_application_main(application::Application,application_data::Ap
     return nothing
 end
 get_urls_application() =
-    get_urls_application_main(application,application_data)
+    get_urls_application_main(application,application_data,model_data)
 
 function prepare_application_data(urls::Vector{String})
     num = length(urls)
@@ -121,8 +126,6 @@ function apply_main(settings::Settings,application_data::Application_data,
     folders = application.checked_folders
     num = length(folders)
     urls = application_data.url_input
-    allowed_ext = ["png","jpg","jpeg"]
-    urls = map(x->filter_ext(x,allowed_ext),urls)
     urls_batched,filenames_batched = batch_urls_filenames(urls,batch_size)
     savepath_main = application_options.savepath
     dirs = split(savepath_main,"/")

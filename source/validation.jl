@@ -2,14 +2,17 @@
 #---Data preparation
 
 # Get urls of files in selected folders
-function get_urls_validation_main(validation::Validation)
+function get_urls_validation_main(validation::Validation,model_data::Model_data)
+    if model_data.type[2]=="Images"
+        allowed_ext = ["png","jpg","jpeg"]
+    end
     if validation.use_labels==true
-        get_urls2(validation,validation_data)
+        get_urls2(validation,validation_data,allowed_ext)
     else
-        get_urls1(validation,validation_data)
+        get_urls1(validation,validation_data,allowed_ext)
     end
 end
-get_urls_validation() = get_urls_validation_main(validation)
+get_urls_validation() = get_urls_validation_main(validation,model_data)
 
 function prepare_validation_data_main(validation::Validation,validation_data::Validation_data,
         features::Array,progress::RemoteChannel,results::RemoteChannel)
