@@ -102,7 +102,7 @@ end
 
 # Convert images to grayscale Array{Float32,2}
 function image_to_gray_float(image::Array{RGB{Normed{UInt8,8}},2})
-    return collect(channelview(float.(Gray.(image))))
+    return collect(channelview(float.(Gray.(image))))[:,:,:]
 end
 
 # Convert images to RGB Array{Float32,3}

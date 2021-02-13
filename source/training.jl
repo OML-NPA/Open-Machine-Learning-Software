@@ -38,14 +38,14 @@ training_elapsed_time() = training_elapsed_time_main(training_plot_data)
 
 #---
 # Augments images using rotation and mirroring
-function augment(img::Array{Float32,2},label::BitArray{3},
+function augment(img::Array{Float32,3},label::BitArray{3},
         num_angles::Int64,pix_num::Tuple{Int64,Int64},min_fr_pix::Float64)
     lim = prod(pix_num)*min_fr_pix
     angles = range(0,stop=2*pi,length=num_angles+1)
     angles = angles[1:end-1]
     num = length(angles)
-    imgs_out = Vector{Vector{Array{Float32,3}}}(undef,num)
-    labels_out = Vector{Vector{BitArray{3}}}(undef,num)
+    imgs_out = Vector{Array{Float32,3}}(undef,0)
+    labels_out = Vector{BitArray{3}}(undef,0)
     Threads.@threads for g = 1:num
         angle_val = angles[g]
         img2 = rotate_img(img,angle_val)
@@ -55,28 +55,28 @@ function augment(img::Array{Float32,2},label::BitArray{3},
         step1 = Int64(floor(size(label2,1)/num1))
         step2 = Int64(floor(size(label2,2)/num2))
         num_batch = 2*(num1-1)*(num2-1)
-        img_temp = Vector{Array{Float32}}(undef,0)
-        label_temp = Vector{BitArray{3}}(undef,0)
-        Threads.@threads for h = 1:2
-            if h==1
-                img3 = img2
-                label3 = label2
-            elseif h==2
-                img3 = reverse(img2, dims = 2)
-                label3 = reverse(label2, dims = 2)
-            end
-            for i = 1:num1-1
-                for j = 1:num2-1
-                    ymin = (i-1)*step1+1;
-                    xmin = (j-1)*step2+1;
-                    I1 = label3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                    if sum(I1)<lim
-                        @info "here"
-                        continue
+        img_temp = Vector{Array{Float32,3}}(undef,0)
+        label_temp = Vector{BitArray{3}}(undef,0)  
+        Threads.@threads for i = 1:num1-1
+            for j = 1:num2-1
+                ymin = (i-1)*step1+1;
+                xmin = (j-1)*step2+1;
+                I1 = img2[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
+                I2 = label2[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
+                if std(I1)<0.01 || sum(I2)<lim 
+                    continue
+                else
+                    for h = 1:2
+                        if h==1
+                            I1_out = I1
+                            I2_out = I2
+                        elseif h==2
+                            I1_out = reverse(I1, dims = 2)
+                            I2_out = reverse(I2, dims = 2)
+                        end
+                        push!(img_temp,I1_out)
+                        push!(label_temp,I2_out)
                     end
-                    I2 = img3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                    push!(label_temp,I1)
-                    push!(img_temp,I2)
                 end
             end
         end
