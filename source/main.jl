@@ -22,7 +22,7 @@ end
     get_output,
     model_count,
     model_properties,
-    model_get_property,
+    model_get_layer_property,
     # Model design
     arrange,
     # Data loading

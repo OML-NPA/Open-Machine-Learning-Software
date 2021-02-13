@@ -279,7 +279,7 @@ model_count() = length(model_data.layers)
 model_properties(index) = [keys(model_data.layers[index])...]
 
 # Returns model layer property value
-function model_get_property_main(model_data::Model_data,index,property_name)
+function model_get_layer_property_main(model_data::Model_data,index,property_name)
     layer = model_data.layers[index]
     property = layer[property_name]
     if  isa(property,Tuple)
@@ -287,8 +287,8 @@ function model_get_property_main(model_data::Model_data,index,property_name)
     end
     return property
 end
-model_get_property(index,property_name) =
-    model_get_property_main(model_data,index,property_name)
+model_get_layer_property(index,property_name) =
+    model_get_layer_property_main(model_data,index,property_name)
 
 # Empties model layers
 function reset_layers_main(model_data::Model_data)

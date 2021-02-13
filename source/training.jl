@@ -1,6 +1,14 @@
 
 # Get urls of files in selected folders
-get_urls_training() = get_urls2(training,training_data)
+function get_urls_training_main(training::Training,training_data::Training_data,
+        model_data::Model_data)
+    if model_data.type[2]=="Images"
+        allowed_ext = ["png","jpg","jpeg"]
+    end
+    urls = get_urls2(training,training_data,allowed_ext)
+    return urls
+end
+get_urls_training() = get_urls_training_main(training,training_data,model_data)
 
 # Set training starting time
 function set_training_starting_time_main(training_plot_data::Training_plot_data)
@@ -30,7 +38,7 @@ training_elapsed_time() = training_elapsed_time_main(training_plot_data)
 
 #---
 # Augments images using rotation and mirroring
-function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
+function augment(img::Array{Float32,2},label::BitArray{3},
         num_angles::Int64,pix_num::Tuple{Int64,Int64},min_fr_pix::Float64)
     lim = prod(pix_num)*min_fr_pix
     angles = range(0,stop=2*pi,length=num_angles+1)
@@ -63,6 +71,7 @@ function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
                     xmin = (j-1)*step2+1;
                     I1 = label3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
                     if sum(I1)<lim
+                        @info "here"
                         continue
                     end
                     I2 = img3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
@@ -130,7 +139,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         # Convert BitArray labels to Array{Float32}
         label = label_to_bool(label,labels_color,labels_incl,border,border_thickness)
         # Augment images
-        data_input[k],data_labels[k] = augment(k,img,label,num_angles,pix_num,min_fr_pix)
+        data_input[k],data_labels[k] = augment(img,label,num_angles,pix_num,min_fr_pix)
         # Return progress
         put!(progress, 1)
     end
