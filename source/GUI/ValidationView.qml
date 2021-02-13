@@ -17,9 +17,7 @@ Component {
         property string dialogtarget
 
         Loader { id: featuredialogLoader}
-        Loader { id: trainingoptionsLoader}
-        Loader { id: customizationLoader}
-        Loader { id: trainingplotLoader}
+        Loader { id: validationplotLoader}
 
         function load_model_features() {
             var num_features = Julia.num_features()
@@ -49,19 +47,15 @@ Component {
             options: FolderDialog.ShowDirsOnly
             onAccepted: {
                 var dir = folder.toString().replace("file:///","")
-                /*updateButton.visible = true
                 updatemodelButton.visible = false
                 var count = featureModel.count
-                for (var i=0;i<count;i++) {
-                    featureModel.remove(0)
-                }*/
                 if (dialogtarget=="Images") {
                     imagesTextField.text = dir
-                    Julia.set_settings(["Training","input"],dir)
+                    Julia.set_settings(["Validation","input"],dir)
                 }
                 else if (dialogtarget=="Labels") {
                     labelsTextField.text = dir
-                    Julia.set_settings(["Training","labels"],dir)
+                    Julia.set_settings(["Validation","labels"],dir)
                 }
                 Julia.save_settings()
             }
@@ -72,11 +66,19 @@ Component {
             onAccepted: {
                 var url = file.toString().replace("file:///","")
                 neuralnetworkTextField.text = url
+                Julia.set_settings(["Validation","model"],url)
                 importmodel(model,url)
                 featureModel.clear()
                 load_model_features()
-                nameTextField.text = Julia.get_settings(["Training","name"])
-                Julia.save_settings()
+                var type = Julia.get_type()
+                if (type[1]==="Images") {
+                    inputLabel.text = "Images:"
+                    previewdataButton.visible = false
+                }
+                else {
+                    inputLabel.text = "Data:"
+                    previewdataButton.visible = true
+                }
             }
         }
 
@@ -159,140 +161,6 @@ Component {
                 id: dataColumn
                 spacing: 0.5*margin
                 Row {
-                    spacing: margin
-                    Row {
-                        spacing: 0.3*margin
-                        Label {
-                            id: problemtypeLabel
-                            text: "Problem type:"
-                            topPadding: 10*pix
-                        }
-                        ComboBox {
-                            id: problemtypeComboBox
-                            function changeLabels() {
-                                if (currentIndex===0) {
-                                    labelsLabel.text = "Labels:"
-                                    inputtypeModel.clear()
-                                    inputtypeModel.append({text: "Images"})
-                                    inputtypeModel.append({text: "Data series"})
-                                    inputtypeComboBox.currentIndex = 0
-                                    labelsRow.visible = false
-                                }
-                                else if (currentIndex===1) {
-                                    labelsLabel.text = "Labels:"
-                                    inputtypeModel.clear()
-                                    inputtypeModel.append({text: "Images"})
-                                    inputtypeComboBox.currentIndex = 0
-                                    labelsRow.visible = true
-                                }
-                                else {
-                                    labelsLabel.text = "Targets:"
-                                    inputtypeModel.clear()
-                                    inputtypeModel.append({text: "Images"})
-                                    inputtypeModel.append({text: "Data series"})
-                                    inputtypeComboBox.currentIndex = 0
-                                    labelsRow.visible = true
-                                }
-                            }
-                            editable: false
-                            width: 0.69*buttonWidth-1*pix
-                            model: ListModel {
-                                id: problemtypeModel
-                                ListElement {text: "Classification"}
-                                ListElement {text: "Segmentation"}
-                                ListElement {text: "Regression"}
-                            }
-                            onActivated: {
-                                Julia.set_settings(["Training","problem_type"],
-                                    [currentText,currentIndex],"make_tuple")
-                                featureModel.clear()
-                                neuralnetworkTextField.text = ""
-                                changeLabels()
-                                if (inputtypeComboBox.currentIndex===0) {
-                                    inputLabel.text = "Images:"
-                                    previewdataButton.visible = false
-                                }
-                                else {
-                                    inputLabel.text = "Data:"
-                                    previewdataButton.visible = true
-                                }
-                                disableButtons(currentIndex,1)
-                            }
-                            Component.onCompleted: {
-                                currentIndex = Julia.get_settings(["Training","problem_type"],2)
-                                if (neuralnetworkTextField.text!=="") {
-                                    var type = Julia.get_model_type()
-                                    var type_part = type[0]
-                                    for (var i=0;i<inputtypeModel.length;i++) {
-                                        var value = inputtypeModel.get(i)
-                                        if (type_part===value) {
-                                            currentIndex = i
-                                            break
-                                        }
-                                    }
-                                }
-                                changeLabels()
-                                disableButtons(currentIndex,1)
-                            }
-                        }
-                    }
-                    Row {
-                        spacing: 0.3*margin
-                        Label {
-                            text: "Input type:"
-                            topPadding: 10*pix
-                        }
-                        ComboBox {
-                            id: inputtypeComboBox
-                            function changeLabels() {
-                                if (currentIndex===0) {
-                                    inputLabel.text = "Images:"
-                                    previewdataButton.visible = false
-                                }
-                                else {
-                                    inputLabel.text = "Data:"
-                                    previewdataButton.visible = true
-                                }
-                            }
-
-                            editable: false
-                            width: 0.59*buttonWidth-1*pix
-                            model: ListModel {
-                                id: inputtypeModel
-                                ListElement {text: "Images"}
-                                ListElement {text: "Data series"}
-                            }
-                            onActivated: {
-                                Julia.set_settings(["Training","input_type"],
-                                    [currentText,currentIndex],"make_tuple")
-                                featureModel.clear()
-                                neuralnetworkTextField.text = ""
-                                changeLabels()
-                                disableButtons(currentIndex,0)
-                            }
-                            Component.onCompleted: {
-                                currentIndex = Julia.get_settings(["Training","input_type"],2)
-                                if (neuralnetworkTextField.text!=="") {
-                                    var type = Julia.get_model_type()
-                                    var type_part = type[1]
-                                    for (var i=0;i<inputtypeModel.length;i++) {
-                                        var value = inputtypeModel.get(i)
-                                        if (type_part===value) {
-                                            currentIndex = i
-                                            break
-                                        }
-                                    }
-                                }
-                                changeLabels()
-                                if (currentIndex==1) {
-                                    previewdataButton.visible = false
-                                }
-                                disableButtons(currentIndex,0)
-                            }
-                        }
-                    }
-                }
-                Row {
                     spacing: 0.3*margin
                     Label {
                         text: "Network:"
@@ -305,7 +173,7 @@ Component {
                         width: 1.55*buttonWidth
                         height: buttonHeight
                         Component.onCompleted: {
-                            var url = Julia.get_settings(["Training","model"])
+                            var url = Julia.get_settings(["Validation","model"])
                             if (Julia.isfile(url)) {
                                 text = url
                                 importmodel(model,url)
@@ -326,23 +194,6 @@ Component {
                 Row {
                     spacing: 0.3*margin
                     Label {
-                        text: "Name:"
-                        topPadding: 10*pix
-                        width: 0.34*buttonWidth
-                    }
-                    TextField {
-                        id: nameTextField
-                        width: 1.55*buttonWidth
-                        height: buttonHeight
-                        onEditingFinished: Julia.set_settings(["Training","name"],text)
-                        Component.onCompleted: {
-                            text = Julia.get_settings(["Training","name"])
-                        }
-                    }
-                }
-                Row {
-                    spacing: 0.3*margin
-                    Label {
                         id: inputLabel
                         text: "Images:"
                         topPadding: 10*pix
@@ -354,7 +205,7 @@ Component {
                         width: 1.55*buttonWidth
                         height: buttonHeight
                         Component.onCompleted: {
-                            var url = Julia.get_settings(["Training","input"])
+                            var url = Julia.get_settings(["Validation","input"])
                             if (Julia.isdir(url)) {
                                 text = url
                             }
@@ -371,6 +222,29 @@ Component {
                     }
                 }
                 Row {
+                    id: uselabelsRow
+                    spacing: 0.3*margin
+                    Label {
+                        id: uselabelsLabel
+                        text: "Use labels:"
+                    }
+                    CheckBox {
+                        id: uselabelsCheckBox
+                        onClicked: {
+                            var state = checkState==Qt.Checked
+                            labelsRow.visible = state
+                            Julia.set_settings(["Validation","use_labels"],state)
+                        }
+                        Component.onCompleted: {
+                            var state = Julia.get_settings(["Validation","use_labels"])
+                            labelsRow.visible = state
+                            checkState = state ? Qt.Checked : Qt.Unchecked
+                        }
+                    }
+
+                }
+
+                Row {
                     id: labelsRow
                     spacing: 0.3*margin
                     Label {
@@ -385,7 +259,7 @@ Component {
                         width: 1.55*buttonWidth
                         height: buttonHeight
                         Component.onCompleted: {
-                            var url = Julia.get_settings(["Training","labels"])
+                            var url = Julia.get_settings(["Validation","labels"])
                             if (Julia.isdir(url)) {
                                 text = url
                             }
@@ -435,39 +309,8 @@ Component {
                                 contentHeight: featureView.height+buttonHeight-2*pix
                                 Item {
                                     TreeButton {
-                                        id: updateButton
-                                        anchors.top: featureView.bottom
-                                        width: buttonWidth + 0.5*margin - 24*pix
-                                        height: buttonHeight - 2*pix
-                                        hoverEnabled: true
-                                        Label {
-                                            topPadding: 0.15*margin
-                                            leftPadding: 1.95*margin
-                                            text: "Update"
-                                        }
-                                        onClicked: {
-                                            if (imagesTextField.text!=="" && labelsTextField.text!=="") {
-                                                var count = featureModel.count
-                                                for (var i=0;i<count;i++) {
-                                                    featureModel.remove(0)
-                                                }
-                                                Julia.empty_progress_channel("Labels colors")
-                                                Julia.get_urls_training()
-                                                Julia.reset_features()
-                                                Julia.get_labels_colors()
-                                                updateButton.visible = false
-                                                updatemodelButton.visible = false
-                                                labelscolorsTimer.running = true
-
-                                            }
-                                        }
-                                        Component.onCompleted: {
-                                            load_model_features()
-                                        }
-                                    }
-                                    TreeButton {
                                         id: updatemodelButton
-                                        anchors.top: updateButton.bottom
+                                        anchors.top: featureView.bottom
                                         width: buttonWidth + 0.5*margin - 24*pix
                                         height: buttonHeight - 2*pix
                                         hoverEnabled: true
@@ -478,8 +321,6 @@ Component {
                                             text: "Update model"
                                         }
                                         onClicked: {
-                                            Julia.set_model_type(problemtypeComboBox.currentText,
-                                                            inputtypeComboBox.currentText)
                                             Julia.save_model("models/" + nameTextField.text + ".model")
                                         }
                                     }
@@ -550,6 +391,7 @@ Component {
                         buttonWidth)/2
                     Button {
                         id: previewdataButton
+                        visible: false
                         text: "Preview imported data"
                         width: buttonWidth
                         height: buttonHeight
@@ -565,78 +407,56 @@ Component {
                         width: buttonWidth
                         height: buttonHeight
                         onClicked: {
-                            if (down) {
-                                return
-                            }
-                            if (trainingoptionsLoader.sourceComponent === null) {
-                                trainingoptionsLoader.source = "TrainingOptions.qml"
-                            }
                         }
                     }
                     Button {
-                        id: designButton
-                        text: "Design"
+                        id: validateButton
+                        text: "Validate"
                         width: buttonWidth
                         height: buttonHeight
                         onClicked: {
                             if (down) {
                                 return
                             }
-                            if (customizationLoader.sourceComponent === null) {
-                                customizationLoader.source = "Design.qml"
-                            }
-                        }
-                    }
-                    Button {
-                        id: trainButton
-                        text: "Train"
-                        width: buttonWidth
-                        height: buttonHeight
-                        onClicked: {
-                            if (down) {
+                            if (imagesTextField.length===0 ||
+                                    (uselabelsCheckBox.checkState===Qt.checked &&
+                                     labelsTextField.length===0)) {
                                 return
                             }
-                            if (imagesTextField.length===0 || labelsTextField.length===0) {
-                                return
-                            }
-                            if (trainButton.text==="Train") {
-                                trainButton.text = "Stop data preparation"
-                                Julia.get_urls_training()
-                                Julia.empty_progress_channel("Training data preparation")
-                                Julia.empty_results_channel("Training data preparation")
-                                Julia.empty_progress_channel("Training data preparation modifiers")
-                                Julia.empty_progress_channel("Training")
-                                Julia.empty_results_channel("Training")
-                                Julia.empty_progress_channel("Training modifiers")
-                                trainingTimer.running = true
+                            if (validateButton.text==="Validate") {
+                                validateButton.text = "Stop data preparation"
+                                Julia.get_urls_validation()
+                                Julia.empty_progress_channel("Validation data preparation")
+                                Julia.empty_results_channel("Validation data preparation")
+                                Julia.empty_progress_channel("Validation data preparation modifiers")
+                                Julia.empty_progress_channel("Validation")
+                                Julia.empty_results_channel("Validation")
+                                Julia.empty_progress_channel("Validation modifiers")
+                                validationTimer.running = true
                                 Julia.gc()
-                                Julia.prepare_training_data()
+                                Julia.prepare_validation_data()
                             }
                             else {
-                                trainButton.text = "Train"
-                                trainingTimer.running = false
-                                trainingTimer.value = 0
-                                trainingTimer.max_value = 0
-                                trainingTimer.done = false
+                                validateButton.text = "Validate"
+                                validationTimer.running = false
                                 progressbar.value = 0
-                                Julia.put_channel("Training data preparation",["stop"])
-                                Julia.put_channel("Training",["stop"])
+                                Julia.put_channel("Validation data preparation",["stop"])
+                                Julia.put_channel("Validation",["stop"])
                             }
                         }
                         Timer {
-                            id: trainingTimer
+                            id: validationTimer
                             interval: 1000; running: false; repeat: true
-                            property double step: 0
                             property double value: 0
                             property double max_value: 0
                             property bool done: false
                             onTriggered: {
                                 function load_window() {
-                                    trainingplotLoader.source = "TrainingPlot.qml"
+                                    validationplotLoader.source = "ValidationPlot.qml"
                                 }
-                                dataProcessingTimerFunction(trainButton,trainingTimer,
-                                    "Train","Stop training","Training data preparation",
-                                    "Training",load_window)
+                                dataProcessingTimerFunction(validateButton,validationTimer,
+                                    "Validate","Stop validation","Validation data preparation",
+                                    "Validation",load_window)
                             }
                         }
                     }
@@ -698,14 +518,12 @@ Component {
         function disableButtons(currentIndex,ind) {
             if (problemtypeComboBox.currentIndex===1 && inputtypeComboBox.currentIndex===0) {
                 optionsButton.down = undefined
-                designButton.down = undefined
-                trainButton.down =  undefined
+                validateButton.down = undefined
                 previewdataButton.down = undefined
             }
             else{
                 optionsButton.down = true
-                designButton.down = true
-                trainButton.down = true
+                validateButton.down = true
                 previewdataButton.down = true
             }
         }

@@ -247,11 +247,13 @@ ApplicationWindow {
                     }
                 }
                 Label {
+                    visible: Julia.get_settings(["Validation","use_labels"])
                     topPadding: 0.2*margin
                     text: "Validation information"
                     font.bold: true
                 }
                 Row {
+                    visible: Julia.get_settings(["Validation","use_labels"])
                     spacing: 0.3*margin
                     Label {
                         id: accuracytextLabel
@@ -262,6 +264,7 @@ ApplicationWindow {
                     }
                 }
                 Row {
+                    visible: Julia.get_settings(["Validation","use_labels"])
                     spacing: 0.3*margin
                     Label {
                         text: "Loss:"
@@ -369,15 +372,16 @@ ApplicationWindow {
                 }
                 Row {
                     id: typeRow
-                    visible: false
                     spacing: 0.3*margin
                     Label {
+                        visible: Julia.get_settings(["Validation","use_labels"])
                         text: "Show:"
                         width: accuracytextLabel.width
                         topPadding: 10*pix
                     }
                     ComboBox {
                         id: typeComboBox
+                        visible: Julia.get_settings(["Validation","use_labels"])
                         property string type: "data_predicted"
                         editable: false
                         currentIndex: 0
@@ -487,7 +491,7 @@ ApplicationWindow {
         onClicked: mouse.accepted = false;
     }
     function get_image(display,type,inds) {
-        var size = Julia.get_image(["Validation_data","Validation_plot_data",type],
+        var size = Julia.get_image(["Validation_data","Plot_data",type],
             [0,0],inds)
 
 

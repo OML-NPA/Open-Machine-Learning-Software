@@ -121,7 +121,6 @@ function set_settings_main(settings::Settings,fields::QML.QListAllocated,args...
         field = Symbol(fields[i])
         data = getproperty(data,field)
     end
-    values = Array{Any}(undef,length(args))
     if length(args)==1
         value = args[1]
     elseif length(args)==2
@@ -169,6 +168,24 @@ load_settings() = load_settings!(settings)
 
 function source_dir()
     return fix_slashes(pwd())
+end
+
+function filter_ext(urls::Vector{String},allowed_ext::Vector{String})
+    urls_split = split.(urls,'.')
+    ext = map(x->string(x[end]),urls_split)
+    ext = lowercase.(ext)
+    log_inds = map(x->x in allowed_ext,ext)
+    urls_out = urls[log_inds]
+    return urls_out
+end
+
+function filter_ext(urls::Vector{String},allowed_ext::String)
+    urls_split = split.(urls,'.')
+    ext = map(x->string(x[end]),urls_split)
+    ext = lowercase.(ext)
+    log_inds = map(x->x == allowed_ext,ext)
+    urls = urls[log_inds]
+    return urls
 end
 
 #---Feature output related functions
@@ -262,7 +279,7 @@ model_count() = length(model_data.layers)
 model_properties(index) = [keys(model_data.layers[index])...]
 
 # Returns model layer property value
-function model_get_property_main(model_data::Model_data,index,property_name)
+function model_get_layer_property_main(model_data::Model_data,index,property_name)
     layer = model_data.layers[index]
     property = layer[property_name]
     if  isa(property,Tuple)
@@ -270,8 +287,8 @@ function model_get_property_main(model_data::Model_data,index,property_name)
     end
     return property
 end
-model_get_property(index,property_name) =
-    model_get_property_main(model_data,index,property_name)
+model_get_layer_property(index,property_name) =
+    model_get_layer_property_main(model_data,index,property_name)
 
 # Empties model layers
 function reset_layers_main(model_data::Model_data)
@@ -292,7 +309,7 @@ function update_layers_main(model_data::Model_data,keys,values,ext...)
         var = values[i]
         if var isa String
             var_num = tryparse(Float64, var)
-            if var_num == nothing
+            if isnothing(var_num)
               if occursin(",", var) && !occursin("[", var)
                  dict[keys[i]] = str2tuple(Int64,var)
               else
@@ -347,6 +364,18 @@ function fixtypes(dict::Dict)
     end
     return dict
 end
+
+# Set model type
+function set_model_type_main(model_data::Model_data,type1,type2)
+    model_data.type = [fix_QML_types(type1),fix_QML_types(type2)]
+end
+set_model_type(type1,type2) = set_model_type_main(model_data,type1,type2)
+
+# Get model type
+function get_model_type_main(model_data::Model_data)
+    return model_data.type
+end
+get_model_type() = get_model_type_main(model_data)
 
 # Resets model features
 function reset_features_main(model_data)

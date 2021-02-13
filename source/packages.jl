@@ -10,11 +10,10 @@ FileIO, ImageIO, JSON, BSON, XLSX,
 Images, ImageFiltering, ImageTransformations, ImageMorphology, DSP,
 ImageMorphology.FeatureTransform, ImageSegmentation,
 # Machine learning
-Flux, Flux.Losses,
+Flux, Flux.Losses, FluxExtra,
 # Math functions
 Random, StatsBase, Statistics, LinearAlgebra, Combinatorics, Distances,
 # Other
 Plots
 
-import Base.any
 import CUDA.CuArray, Flux.outdims

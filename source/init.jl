@@ -16,12 +16,11 @@ end
 @everywhere include("handling_data.jl")
 @everywhere include("helper_functions.jl")
 @everywhere include("image_processing.jl")
-@everywhere include("layers.jl")
 @everywhere include("design.jl")
 @everywhere include("training.jl")
-@everywhere include("training_common.jl")
+@everywhere include("common.jl")
 @everywhere include("validation.jl")
-@everywhere include("analysis.jl")
+@everywhere include("application.jl")
 
 # Other
 CUDA.allowscalar(false)

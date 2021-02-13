@@ -1,4 +1,15 @@
 
+# Get urls of files in selected folders
+function get_urls_training_main(training::Training,training_data::Training_data,
+        model_data::Model_data)
+    if model_data.type[2]=="Images"
+        allowed_ext = ["png","jpg","jpeg"]
+    end
+    urls = get_urls2(training,training_data,allowed_ext)
+    return urls
+end
+get_urls_training() = get_urls_training_main(training,training_data,model_data)
+
 # Set training starting time
 function set_training_starting_time_main(training_plot_data::Training_plot_data)
     training_plot_data.starting_time = now()
@@ -27,14 +38,14 @@ training_elapsed_time() = training_elapsed_time_main(training_plot_data)
 
 #---
 # Augments images using rotation and mirroring
-function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
+function augment(img::Array{Float32,3},label::BitArray{3},
         num_angles::Int64,pix_num::Tuple{Int64,Int64},min_fr_pix::Float64)
     lim = prod(pix_num)*min_fr_pix
     angles = range(0,stop=2*pi,length=num_angles+1)
     angles = angles[1:end-1]
     num = length(angles)
-    imgs_out = Vector{Vector{Array{Float32,3}}}(undef,num)
-    labels_out = Vector{Vector{BitArray{3}}}(undef,num)
+    imgs_out = Vector{Array{Float32,3}}(undef,0)
+    labels_out = Vector{BitArray{3}}(undef,0)
     Threads.@threads for g = 1:num
         angle_val = angles[g]
         img2 = rotate_img(img,angle_val)
@@ -44,27 +55,28 @@ function augment(k::Int64,img::Array{Float32,2},label::BitArray{3},
         step1 = Int64(floor(size(label2,1)/num1))
         step2 = Int64(floor(size(label2,2)/num2))
         num_batch = 2*(num1-1)*(num2-1)
-        img_temp = Vector{Array{Float32}}(undef,0)
-        label_temp = Vector{BitArray{3}}(undef,0)
-        Threads.@threads for h = 1:2
-            if h==1
-                img3 = img2
-                label3 = label2
-            elseif h==2
-                img3 = reverse(img2, dims = 2)
-                label3 = reverse(label2, dims = 2)
-            end
-            for i = 1:num1-1
-                for j = 1:num2-1
-                    ymin = (i-1)*step1+1;
-                    xmin = (j-1)*step2+1;
-                    I1 = label3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                    if sum(I1)<lim
-                        continue
+        img_temp = Vector{Array{Float32,3}}(undef,0)
+        label_temp = Vector{BitArray{3}}(undef,0)  
+        Threads.@threads for i = 1:num1-1
+            for j = 1:num2-1
+                ymin = (i-1)*step1+1;
+                xmin = (j-1)*step2+1;
+                I1 = img2[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
+                I2 = label2[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
+                if std(I1)<0.01 || sum(I2)<lim 
+                    continue
+                else
+                    for h = 1:2
+                        if h==1
+                            I1_out = I1
+                            I2_out = I2
+                        elseif h==2
+                            I1_out = reverse(I1, dims = 2)
+                            I2_out = reverse(I2, dims = 2)
+                        end
+                        push!(img_temp,I1_out)
+                        push!(label_temp,I2_out)
                     end
-                    I2 = img3[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
-                    push!(label_temp,I1)
-                    push!(img_temp,I2)
                 end
             end
         end
@@ -84,7 +96,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     if isempty(model_data.features)
         @info "Empty features"
         return nothing
-    elseif isempty(training_data.url_imgs)
+    elseif isempty(training_data.url_input)
         @info "Empty urls"
         return nothing
     end
@@ -99,7 +111,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     # Get feature data
     labels_color,labels_incl,border,border_thickness = get_feature_data(features)
     # Load images and labels
-    imgs = load_images(training_data.url_imgs)
+    imgs = load_images(training_data.url_input)
     labels = load_images(training_data.url_labels)
     # Get number of images
     num = length(imgs)
@@ -127,7 +139,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         # Convert BitArray labels to Array{Float32}
         label = label_to_bool(label,labels_color,labels_incl,border,border_thickness)
         # Augment images
-        data_input[k],data_labels[k] = augment(k,img,label,num_angles,pix_num,min_fr_pix)
+        data_input[k],data_labels[k] = augment(img,label,num_angles,pix_num,min_fr_pix)
         # Return progress
         put!(progress, 1)
     end
@@ -181,7 +193,7 @@ function make_minibatch(set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32
     val = max(0.0,floor(num/batch_size))
     finish = Int64(val*batch_size)
     # Get a vector of initial-1 indices
-    range_array = Vector(0:batch_size:finish)
+    range_array = collect(0:batch_size:finish)
     # Shuffle indices
     inds = shuffle!(range_array)
     # Separate set into inputs and labels
@@ -604,8 +616,8 @@ function train_main(settings::Settings,training_data::Training_data,
     # Initialization
     training = settings.Training
     training_options = training.Options
-    training_plot_data = training_data.Training_plot_data
-    training_results_data = training_data.Training_results_data
+    training_plot_data = training_data.Plot_data
+    training_results_data = training_data.Results_data
     args = training_options.Hyperparameters
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     reset_training_data(training_plot_data,training_results_data)

@@ -1,42 +1,64 @@
 
 #---Data preparation
-function prepare_validation_data_main(training::Training,training_data::Training_data,
+
+# Get urls of files in selected folders
+function get_urls_validation_main(validation::Validation,model_data::Model_data)
+    if model_data.type[2]=="Images"
+        allowed_ext = ["png","jpg","jpeg"]
+    end
+    if validation.use_labels==true
+        get_urls2(validation,validation_data,allowed_ext)
+    else
+        get_urls1(validation,validation_data,allowed_ext)
+    end
+end
+get_urls_validation() = get_urls_validation_main(validation,model_data)
+
+function prepare_validation_data_main(validation::Validation,validation_data::Validation_data,
         features::Array,progress::RemoteChannel,results::RemoteChannel)
-    put!(progress,3)
-    images = load_images(training_data.url_imgs)
-    put!(progress,1)
-    labels = load_images(training_data.url_labels)
-    put!(progress,1)
     if isempty(features)
         @info "empty features"
         return false
     end
     labels_color,labels_incl,border,border_thickness = get_feature_data(features)
+    put!(progress,2)
+    images = load_images(validation_data.url_input)
     data_input = map(x->image_to_gray_float(x),images)
-    data_labels = map(x->label_to_bool(x,labels_color,labels_incl,
-        border,border_thickness),labels)
-    data = (images,labels,data_input,data_labels)
+    put!(progress,1)
+    if validation.use_labels
+        labels = load_images(validation_data.url_labels)
+        data_labels = map(x->label_to_bool(x,labels_color,labels_incl,
+            border,border_thickness),labels)
+        data = (images,labels,data_input,data_labels)
+    else
+        data = (images,data_input)
+    end
     put!(results,data)
     put!(progress,1)
     return nothing
 end
-function  prepare_validation_data_main2(training::Training,training_data::Training_data,
-        features::Array,progress::RemoteChannel,results::RemoteChannel)
-    @everywhere training,training_data
-    remote_do(prepare_validation_data_main,workers()[end],training,training_data,
+function  prepare_validation_data_main2(validation::Validation,
+        validation_data::Validation_data,features::Array,
+        progress::RemoteChannel,results::RemoteChannel)
+    @everywhere validation,validation_data
+    remote_do(prepare_validation_data_main,workers()[end],validation,validation_data,
     features,progress,results)
 end
-prepare_validation_data() = prepare_validation_data_main2(training,training_data,
+prepare_validation_data() = prepare_validation_data_main2(validation,validation_data,
     model_data.features,channels.validation_data_progress,
     channels.validation_data_results)
 
-
-function get_validation_set(validation_plot_data::Validation_plot_data)
+function get_validation_set(validation::Validation,validation_plot_data::Validation_plot_data)
     data_input_raw = validation_plot_data.data_input
-    data_labels_raw = convert(Vector{Array{Float32,3}},
-        validation_plot_data.data_labels)
     data_input = map(x->x[:,:,:,:],data_input_raw)
-    data_labels = map(x->x[:,:,:,:],data_labels_raw)
+    if validation.use_labels
+        data_labels_raw = convert(Vector{Array{Float32,3}},
+            validation_plot_data.data_labels)
+        data_labels = map(x->x[:,:,:,:],data_labels_raw)
+    else
+        data_labels = Vector{Array{Float32,4}}(undef,length(data_input))
+        fill!(data_labels,Array{Float32,4}(undef,0,0,0,0))
+    end
     set = (data_input,data_labels)
     return set
 end
@@ -54,97 +76,6 @@ function reset_validation_data(validation_plot_data::Validation_plot_data,
     validation_plot_data.data_predicted =
         Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
     return nothing
-end
-
-#---Analysing images in slices
-function prepare_data(input_data::Union{Array{Float32,4},CuArray{Float32,4}},ind_max::Int64,
-        max_value::Int64,offset::Int64,ind_split::Int64,j::Int64)
-    start_ind = 1 + (j-1)*ind_split-1
-    end_ind = start_ind + ind_split-1
-    correct_size = end_ind-start_ind+1
-    start_ind = start_ind - offset
-    end_ind = end_ind + offset
-    start_ind = start_ind<1 ? 1 : start_ind
-    end_ind = end_ind>max_value ? max_value : end_ind
-    temp_data = input_data[:,start_ind:end_ind,:,:]
-    max_dim_size = size(temp_data,ind_max)
-    offset_add = Int64(ceil(max_dim_size/16)*16) - max_dim_size
-    temp_data = pad(temp_data,[0,offset_add],same)
-    output_data = (temp_data,correct_size,offset_add)
-    return output_data
-end
-
-# Makes output mask to have a correct size for stiching
-function fix_size(temp_predicted::Union{Array{Float32,4},CuArray{Float32,4}},
-        num_parts::Int64,correct_size::Int64,ind_max::Int64,
-        offset_add::Int64,j::Int64)
-    temp_size = size(temp_predicted,ind_max)
-    offset_temp = (temp_size - correct_size) - offset_add
-    if offset_temp>0
-        div_result = offset_add/2
-        offset_add1 = Int64(floor(div_result))
-        offset_add2 = Int64(ceil(div_result))
-        if j==1
-            temp_predicted = temp_predicted[:,
-                (1+offset_add1):(end-offset_temp-offset_add2),:,:]
-        elseif j==num_parts
-            temp_predicted = temp_predicted[:,
-                (1+offset_temp+offset_add1):(end-offset_add2),:,:]
-        else
-            temp = (temp_size - correct_size - offset_add)/2
-            offset_temp = Int64(floor(temp))
-            offset_temp2 = Int64(ceil(temp))
-            temp_predicted = temp_predicted[:,
-                (1+offset_temp+offset_add1):(end-offset_temp2-offset_add2),:,:]
-        end
-    elseif offset_temp<0
-        temp_predicted = pad(temp_predicted,[0,-offset_temp])
-    end
-end
-
-function accum_parts(model::Chain,input_data::Array{Float32,4},
-        num_parts::Int64,offset::Int64)
-    input_size = size(input_data)
-    max_value = maximum(input_size)
-    ind_max = findfirst(max_value.==input_size)
-    ind_split = convert(Int64,floor(max_value/num_parts))
-    predicted = Vector{Array{Float32,4}}(undef,0)
-    for j = 1:num_parts
-        if j==num_parts
-            ind_split = ind_split+rem(max_value,num_parts)
-        end
-        temp_data,correct_size,offset_add =
-            prepare_data(input_data,ind_max,max_value,offset,ind_split,j)
-        temp_predicted = model(temp_data)
-        temp_predicted =
-            fix_size(temp_predicted,num_parts,correct_size,ind_max,offset_add,j)
-        push!(predicted,temp_predicted)
-    end
-    predicted_out = reduce(vcat,predicted)
-    return predicted_out
-end
-
-function accum_parts(model::Chain,input_data::CuArray{Float32,4},
-        num_parts::Int64,offset::Int64)
-    input_size = size(input_data)
-    max_value = maximum(input_size)
-    ind_max = findfirst(max_value.==input_size)
-    ind_split = convert(Int64,floor(max_value/num_parts))
-    predicted = Vector{CuArray{Float32,4}}(undef,0)
-    for j = 1:num_parts
-        if j==num_parts
-            ind_split = ind_split+rem(max_value,num_parts)
-        end
-        temp_data,correct_size,offset_add =
-            prepare_data(input_data,ind_max,max_value,offset,ind_split,j)
-        temp_predicted::CuArray{Float32,4} = model(temp_data)
-        temp_predicted =
-            fix_size(temp_predicted,num_parts,correct_size,ind_max,offset_add,j)
-        push!(predicted,collect(temp_predicted))
-        CUDA.unsafe_free!(temp_predicted)
-    end
-    predicted_out::CuArray{Float32,4} = hcat(predicted...)
-    return predicted_out
 end
 
 #---Makes output images
@@ -189,31 +120,34 @@ function do_predicted_color!(predicted_color_temp::Vector{Array{RGB{Float32},2}}
     return
 end
 
-function compute(set_part::Array{Float32,4},data_array_part::BitArray{3},
-    perm_labels_color::Vector{Array{Float32,3}},num2::Int64,num_feat::Int64)
+function compute(validation::Validation,set_part::Array{Float32,4},
+        data_array_part::BitArray{3},perm_labels_color::Vector{Array{Float32,3}},
+        num2::Int64,num_feat::Int64)
     target_temp = Vector{Array{RGB{Float32},2}}(undef,num2)
     predicted_color_temp = Vector{Array{RGB{Float32},2}}(undef,num2)
     predicted_error_temp = Vector{Array{RGB{Float32},2}}(undef,num2)
-    Threads.@threads for j = 1:num2
-        if j>num_feat
-            target = set_part[:,:,j-num_feat]
-        else
-            target = set_part[:,:,j]
-        end
+    for j = 1:num2 #Threads.@threads
         color = perm_labels_color[j]
-        do_target!(target_temp,target,color,j)
-        truth = target.>0
         predicted_bool = data_array_part[:,:,j]
-        do_predicted_error!(predicted_error_temp,truth,predicted_bool,j)
         do_predicted_color!(predicted_color_temp,predicted_bool,color,j)
+        if validation.use_labels
+            if j>num_feat
+                target = set_part[:,:,j-num_feat]
+            else
+                target = set_part[:,:,j]
+            end
+            do_target!(target_temp,target,color,j)
+            truth = target.>0
+            do_predicted_error!(predicted_error_temp,truth,predicted_bool,j)
+        end
         @everywhere GC.safepoint()
     end
     return target_temp,predicted_color_temp,predicted_error_temp
 end
 
 function output_and_error_images(predicted_array::Vector{BitArray{3}},
-        actual_array::Array{Array{Float32,4},1},
-        model_data::Model_data,training::Training,channels::Channels)
+        actual_array::Array{Array{Float32,4},1},model_data::Model_data,
+        validation::Validation,channels::Channels)
     labels_color,labels_incl,border = get_feature_data(model_data.features)
     border_colors = labels_color[findall(border)]
     labels_color = vcat(labels_color,border_colors,border_colors)
@@ -229,14 +163,14 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     num_border = sum(border)
     data_array = Vector{BitArray{3}}(undef,num)
     if num_border>0
-        border_array = map(x->apply_border_data_main(x,model_data,training),predicted_array)
+        border_array = map(x->apply_border_data_main(x,model_data),predicted_array)
         data_array .= cat3.(predicted_array,border_array)
     else
         data_array .= predicted_array
     end
-    Threads.@threads for i=1:num
+    for i=1:num #Threads.@threads
         data_array_current = data_array[i]
-        Threads.@threads for j=1:num_border
+        for j=1:num_border #Threads.@threads
             min_area = model_data.features[j].min_area
             ind = num_feat + j
             if min_area>1
@@ -250,11 +184,11 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     predicted_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
     predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
     target_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
-    Threads.@threads for i = 1:num
+    for i = 1:num #Threads.@threads
         set_part = actual_array[i]
         data_array_part = data_array[i]
         target_temp,predicted_color_temp,predicted_error_temp =
-            compute(set_part,data_array_part,perm_labels_color,num2,num_feat)
+            compute(validation,set_part,data_array_part,perm_labels_color,num2,num_feat)
         predicted_color[i] = predicted_color_temp
         predicted_error[i] = predicted_error_temp
         target_color[i] = target_temp
@@ -264,41 +198,20 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     return predicted_color,predicted_error,target_color
 end
 
-#---Main analysis funtions
-# Runs data thorugh a neural network
-function forward(model::Chain,input_data::Array{Float32};
-        num_parts::Int64=1,offset::Int64=0,use_GPU::Bool=true)
-    if use_GPU
-        input_data_gpu = CuArray(input_data)
-        model = move(model,gpu)
-        if num_parts==1
-            predicted = collect(model(input_data_gpu))
-        else
-            predicted = collect(accum_parts(model,input_data_gpu,num_parts,offset))
-        end
-    else
-        if num_parts==1
-            predicted = model(input_data)
-        else
-            predicted = accum_parts(model,input_data,num_parts,offset)
-        end
-    end
-    return predicted::Array{Float32,4}
-end
-
 # Main validation function
 function validate_main(settings::Settings,validation_data::Validation_data,
         model_data::Model_data,channels::Channels)
-    training = settings.Training
-    validation_plot_data = validation_data.Validation_plot_data
-    validation_results_data = validation_data.Validation_results_data
+    validation = settings.Validation
+    validation_plot_data = validation_data.Plot_data
+    validation_results_data = validation_data.Results_data
+    use_labels = validation.use_labels
     model = model_data.model
     loss = model_data.loss
-    accuracy = get_accuracy_func(training)
+    accuracy = get_accuracy_func(settings.Training)
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
     reset_validation_data(validation_plot_data,validation_results_data)
     # Preparing set
-    set = get_validation_set(validation_plot_data)
+    set = get_validation_set(validation,validation_plot_data)
     num = length(set[1])
     accuracy_array = Vector{Float32}(undef,0)
     predicted_array = Vector{BitArray{3}}(undef,0)
@@ -325,28 +238,34 @@ function validate_main(settings::Settings,validation_data::Validation_data,
         predicted_array_temp = Vector{BitArray{3}}(undef,size_dim4)
         loss_array_temp = Vector{Float32}(undef,size_dim4)
         for j = 1:size_dim4
-            predicted_temp = predicted[:,:,:,j:j]
-            actual_temp = actual[:,:,:,j:j]
-            accuracy_array_temp[j] = accuracy(predicted_temp,actual_temp)
-            loss_array_temp[j] = loss(predicted_temp,actual_temp)
             predicted_array_temp[j] = predicted_bool[:,:,:,j]
+            if use_labels
+                predicted_temp = predicted[:,:,:,j:j]
+                actual_temp = actual[:,:,:,j:j]
+                accuracy_array_temp[j] = accuracy(predicted_temp,actual_temp)
+                loss_array_temp[j] = loss(predicted_temp,actual_temp)
+            end
         end
-        push!(accuracy_array,accuracy_array_temp...)
-        push!(loss_array,loss_array_temp...)
         push!(predicted_array,predicted_array_temp...)
-        temp_accuracy = accuracy_array[1:i]
-        temp_loss = loss_array[1:i]
-        mean_accuracy = mean(temp_accuracy)
-        mean_loss = mean(temp_loss)
-        accuracy_std = std(temp_accuracy)
-        loss_std = std(temp_loss)
-        data_out = [mean_accuracy,mean_loss,accuracy_std,loss_std]
+        if use_labels
+            push!(accuracy_array,accuracy_array_temp...)
+            push!(loss_array,loss_array_temp...)
+            temp_accuracy = accuracy_array[1:i]
+            temp_loss = loss_array[1:i]
+            mean_accuracy = mean(temp_accuracy)
+            mean_loss = mean(temp_loss)
+            accuracy_std = std(temp_accuracy)
+            loss_std = std(temp_loss)
+            data_out = [mean_accuracy,mean_loss,accuracy_std,loss_std]
+        else
+            data_out = zeros(Float32,4)
+        end
         put!(channels.validation_progress,data_out)
         @everywhere GC.safepoint()
     end
     actual_array = set[2]
-    data_predicted,data_error,target = output_and_error_images(predicted_array,
-        actual_array,model_data,training,channels)
+    data_predicted,data_error,target = output_and_error_images(
+        predicted_array,actual_array,model_data,validation,channels)
     data = (data_predicted,data_error,target,
         accuracy_array,loss_array,std(accuracy_array),std(loss_array))
     put!(channels.validation_results,data)

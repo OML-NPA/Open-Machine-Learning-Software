@@ -26,14 +26,14 @@ function get_progress_main(channels::Channels,field)
         channel_temp = channels.training_data_progress
     elseif field=="Validation data preparation"
         channel_temp = channels.validation_data_progress
-    elseif field=="Analysis data preparation"
-        channel_temp = channels.analysis_data_progress
+    elseif field=="Application data preparation"
+        channel_temp = channels.application_data_progress
     elseif field=="Training"
         channel_temp = channels.training_progress
     elseif field=="Validation"
         channel_temp = channels.validation_progress
-    elseif field=="Analysis"
-        channel_temp = channels.analysis_progress
+    elseif field=="Application"
+        channel_temp = channels.application_progress
     end
     if isready(channel_temp)
         return take!(channel_temp)
@@ -50,7 +50,7 @@ function get_results_main(channels::Channels,master_data::Master_data,
     if field=="Training data preparation"
         if isready(channels.training_data_results)
             data = take!(channels.training_data_results)
-            training_plot_data = master_data.Training_data.Training_plot_data
+            training_plot_data = master_data.Training_data.Plot_data
             training_plot_data.data_input = data[1]
             training_plot_data.data_labels = data[2]
             return true
@@ -60,20 +60,25 @@ function get_results_main(channels::Channels,master_data::Master_data,
     elseif field=="Validation data preparation"
         if isready(channels.validation_data_results)
             data = take!(channels.validation_data_results)
-            validation_plot_data = master_data.Validation_data.Validation_plot_data
-            validation_plot_data.data_input_orig = data[1]
-            validation_plot_data.data_labels_orig = data[2]
-            validation_plot_data.data_input = data[3]
-            validation_plot_data.data_labels = data[4]
+            validation_plot_data = master_data.Validation_data.Plot_data
+            if validation.use_labels
+                validation_plot_data.data_input_orig = data[1]
+                validation_plot_data.data_labels_orig = data[2]
+                validation_plot_data.data_input = data[3]
+                validation_plot_data.data_labels = data[4]
+            else
+                validation_plot_data.data_input_orig = data[1]
+                validation_plot_data.data_input = data[2]
+            end
             return true
         else
             return false
         end
-    elseif field=="Analysis data preparation"
-        if isready(channels.analysis_data_results)
-            data = take!(channels.analysis_data_results)
-            analysis_data = master_data.Analysis_data
-            analysis_data.data_input = data
+    elseif field=="Application data preparation"
+        if isready(channels.application_data_results)
+            data = take!(channels.application_data_results)
+            application_data = master_data.Application_data
+            application_data.data_input = data
             return true
         else
             return false
@@ -81,7 +86,7 @@ function get_results_main(channels::Channels,master_data::Master_data,
     elseif field=="Training"
         if isready(channels.training_results)
             data = take!(channels.training_results)
-            if data!=nothing
+            if !isnothing(data)
                 training_results_data = master_data.Training_data.Training_results_data
                 model_data.model = data[1]
                 training_results_data.accuracy = data[2]
@@ -97,7 +102,7 @@ function get_results_main(channels::Channels,master_data::Master_data,
     elseif field=="Validation"
         if isready(channels.validation_results)
             data = take!(channels.validation_results)
-            validation_plot_data = master_data.Validation_data.Validation_plot_data
+            validation_plot_data = master_data.Validation_data.Plot_data
             validation_plot_data.data_predicted = data[1]
             validation_plot_data.data_error = data[2]
             validation_plot_data.data_target = data[3]
@@ -129,8 +134,8 @@ function empty_progress_channel_main(channels::Channels,field)
         channel_temp = channels.training_data_progress
     elseif field=="Validation data preparation"
         channel_temp = channels.validation_data_progress
-    elseif field=="Analysis data preparation"
-        channel_temp = channels.analysis_data_progress
+    elseif field=="Application data preparation"
+        channel_temp = channels.application_data_progress
     elseif field=="Training data preparation modifiers"
         channel_temp = channels.training_data_modifiers
     elseif field=="Validation data preparation modifiers"
@@ -139,14 +144,14 @@ function empty_progress_channel_main(channels::Channels,field)
         channel_temp = channels.training_progress
     elseif field=="Validation"
         channel_temp = channels.validation_progress
-    elseif field=="Analysis"
-        channel_temp = channels.analysis_progress
+    elseif field=="Application"
+        channel_temp = channels.application_progress
     elseif field=="Training modifiers"
         channel_temp = channels.training_modifiers
     elseif field=="Validation modifiers"
         channel_temp = channels.validation_modifiers
-    elseif field=="Analysis modifiers"
-        channel_temp = channels.analysis_modifiers
+    elseif field=="Application modifiers"
+        channel_temp = channels.application_modifiers
     elseif field=="Labels colors"
         channel_temp = channels.training_labels_colors
     end
@@ -167,8 +172,8 @@ function empty_results_channel_main(channels::Channels,field)
         channel_temp = channels.training_data_results
     elseif field=="Validation data preparation"
         channel_temp = channels.validation_data_results
-    elseif field=="Analysis data preparation"
-        channel_temp = channels.analysis_data_results
+    elseif field=="Application data preparation"
+        channel_temp = channels.application_data_results
     elseif field=="Training"
         channel_temp = channels.training_results
     elseif field=="Validation"

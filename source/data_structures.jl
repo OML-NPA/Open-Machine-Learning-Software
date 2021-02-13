@@ -14,10 +14,10 @@
     validation_results::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     validation_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
     training_labels_colors::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
-    analysis_data_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
-    analysis_data_results::RemoteChannel = RemoteChannel(()->Channel{Any}(1))
-    analysis_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
-    analysis_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    application_data_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    application_data_results::RemoteChannel = RemoteChannel(()->Channel{Any}(1))
+    application_progress::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
+    application_modifiers::RemoteChannel = RemoteChannel(()->Channel{Any}(Inf))
 end
 channels = Channels()
 
@@ -31,7 +31,8 @@ output_mask = Output_mask()
 
 @with_kw mutable struct Output_area
     area_distribution::Bool = false
-    individual_obj_area::Bool = false
+    obj_area::Bool = false
+    obj_area_sum::Bool = false
     binning::Int64 = 0
     value::Float64 = 10
     normalisation::Int64 = 0
@@ -40,7 +41,8 @@ output_area = Output_area()
 
 @with_kw mutable struct Output_volume
     volume_distribution::Bool = false
-    individual_obj_volume::Bool = false
+    obj_volume::Bool = false
+    obj_volume_sum::Bool = false
     binning::Int64 = 0
     value::Float64 = 10
     normalisation::Int64 = 0
@@ -67,6 +69,7 @@ end
 feature = Feature()
 
 @with_kw mutable struct Model_data
+    type::Vector{String} = ["Classification","Images"]
     input_size::Tuple{Int64,Int64,Int64} = (160,160,1)
     model::Chain = Chain()
     layers::Vector{Dict{String,Any}} = []
@@ -101,8 +104,10 @@ end
 validation_results_data = Validation_results_data()
 
 @with_kw mutable struct Validation_data
-    Validation_plot_data::Validation_plot_data = validation_plot_data
-    Validation_results_data::Validation_results_data = validation_results_data
+    Plot_data::Validation_plot_data = validation_plot_data
+    Results_data::Validation_results_data = validation_results_data
+    url_input::Vector{String} = Vector{String}(undef,0)
+    url_labels::Vector{String} = Vector{String}(undef,0)
 end
 validation_data = Validation_data()
 
@@ -128,24 +133,24 @@ end
 training_results_data = Training_results_data()
 
 @with_kw mutable struct Training_data
-    Training_plot_data::Training_plot_data = training_plot_data
-    Training_results_data::Training_results_data = training_results_data
-    url_imgs::Vector{String} = Vector{String}(undef,0)
+    Plot_data::Training_plot_data = training_plot_data
+    Results_data::Training_results_data = training_results_data
+    url_input::Vector{String} = Vector{String}(undef,0)
     url_labels::Vector{String} = Vector{String}(undef,0)
 end
 training_data = Training_data()
 
-@with_kw mutable struct Analysis_data
-    url_imgs::Vector{String} = Vector{String}(undef,0)
+@with_kw mutable struct Application_data
+    url_input::Vector{Vector{String}} = Vector{Vector{String}}(undef,0)
     folders::Vector{String} = Vector{String}(undef,0)
     data_input::Vector{Array{Float32,4}} = Vector{Array{Float32,4}}(undef,1)
 end
-analysis_data = Analysis_data()
+application_data = Application_data()
 
 @with_kw mutable struct Master_data
     Training_data::Training_data = training_data
     Validation_data::Validation_data = validation_data
-    Analysis_data::Analysis_data = analysis_data
+    Application_data::Application_data = application_data
     image::Array{RGB{Float32},2} = Array{RGB{Float32},2}(undef,10,10)
 end
 master_data = Master_data()
@@ -225,17 +230,26 @@ design = Design()
     Design::Design = design
     problem_type::Tuple{String,Int64} = ("Segmentation",1)
     input_type::Tuple{String,Int64} = ("Image",0)
-    template::String = ""
-    images::String = ""
+    model::String = ""
+    input::String = ""
     labels::String = ""
     name::String = "new"
 end
 training = Training()
 
-# Analysis
-@with_kw mutable struct Analysis_options
+# Validation
+@with_kw mutable struct Validation
+    model::String = ""
+    input::String = ""
+    use_labels::Bool = false
+    labels::String = ""
+end
+validation = Validation()
+
+# Application
+@with_kw mutable struct Application_options
     savepath::String = ""
-    analyse_by::Tuple{String,Int64} = ("file",0)
+    apply_by::Tuple{String,Int64} = ("file",0)
     data_type::Int64 = 0
     image_type::Int64 = 0
     downsize::Int64 = 0
@@ -243,15 +257,15 @@ training = Training()
     scaling::Float64 = 1
     minibatch_size::Int64 = 1
 end
-analysis_options = Analysis_options()
+application_options = Application_options()
 
-@with_kw mutable struct Analysis
-    Options::Analysis_options = analysis_options
+@with_kw mutable struct Application
+    Options::Application_options = application_options
     folder_url::String = ""
     model_url::String = ""
     checked_folders::Vector{String} = String[]
 end
-analysis = Analysis()
+application = Application()
 
 # Visualisation
 @with_kw mutable struct Visualisation
@@ -264,7 +278,8 @@ visualisation = Visualisation()
     Main::Main_s = main
     Options::Options = options
     Training::Training = training
-    Analysis::Analysis = analysis
+    Validation::Validation = validation
+    Application::Application = application
     Visualisation::Visualisation = visualisation
 end
 settings = Settings()

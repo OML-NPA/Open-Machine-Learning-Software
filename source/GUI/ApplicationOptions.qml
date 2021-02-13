@@ -18,7 +18,7 @@ ApplicationWindow {
     maximumHeight: gridLayout.height
     color: defaultpalette.window
 
-    onClosing: { analysisoptionsLoader.sourceComponent = null }
+    onClosing: { applicationoptionsLoader.sourceComponent = null }
 
     GridLayout {
         id: gridLayout
@@ -145,18 +145,18 @@ ApplicationWindow {
                                             height: buttonHeight
                                             readOnly: true
                                             Component.onCompleted: {
-                                                text = Julia.get_settings(["Analysis","Options","savepath"])
+                                                text = Julia.get_settings(["Application","Options","savepath"])
                                                 if (text==="") {
                                                     text = Julia.fix_slashes(Julia.pwd()+"/Output data")
-                                                    Julia.set_settings(["Analysis","Options","savepath"],text)
+                                                    Julia.set_settings(["Application","Options","savepath"],text)
                                                 }
-                                                analysisoptionsFolderDialog.currentFolder = text
+                                                applicationoptionsFolderDialog.currentFolder = text
                                             }
                                             FolderDialog {
-                                                id: analysisoptionsFolderDialog
+                                                id: applicationoptionsFolderDialog
                                                 onAccepted: {
                                                     var url = stripURL(folder)
-                                                    Julia.set_settings(["Analysis","Options","savepath"],url)
+                                                    Julia.set_settings(["Application","Options","savepath"],url)
                                                     savepathTextField.text = url
                                                 }
                                             }
@@ -166,7 +166,7 @@ ApplicationWindow {
                                             text: "Browse"
                                             width: buttonWidth/2
                                             height: buttonHeight
-                                            onClicked: {analysisoptionsFolderDialog.open()}
+                                            onClicked: {applicationoptionsFolderDialog.open()}
                                         }
                                     }
                                     ComboBox {
@@ -178,10 +178,10 @@ ApplicationWindow {
                                         }
                                         Component.onCompleted: {
                                             currentIndex =
-                                                Julia.get_settings(["Analysis","Options","analyse_by"],2)
+                                                Julia.get_settings(["Application","Options","apply_by"],2)
                                         }
-                                        onAccepted: {
-                                            Julia.set_settings(["Analysis","Options","analyse_by"],
+                                        onActivated: {
+                                            Julia.set_settings(["Application","Options","apply_by"],
                                                 [currentText,currentIndex],"make_tuple")
                                         }
                                     }
@@ -196,10 +196,10 @@ ApplicationWindow {
                                         }
                                         Component.onCompleted: {
                                             currentIndex =
-                                                Julia.get_settings(["Analysis","Options","data_type"])
+                                                Julia.get_settings(["Application","Options","data_type"])
                                         }
-                                        onAccepted: {
-                                            Julia.set_settings(["Analysis","Options","data_type"],currentIndex)
+                                        onActivated: {
+                                            Julia.set_settings(["Application","Options","data_type"],currentIndex)
                                         }
                                     }
                                     ComboBox {
@@ -212,10 +212,10 @@ ApplicationWindow {
                                         }
                                         Component.onCompleted: {
                                             currentIndex =
-                                                Julia.get_settings(["Analysis","Options","image_type"])
+                                                Julia.get_settings(["Application","Options","image_type"])
                                         }
-                                        onAccepted: {
-                                            Julia.set_settings(["Analysis","Options","image_type"],currentIndex)
+                                        onActivated: {
+                                            Julia.set_settings(["Application","Options","image_type"],currentIndex)
                                         }
                                     }
                                     ComboBox {
@@ -230,11 +230,11 @@ ApplicationWindow {
                                         }
                                         Component.onCompleted: {
                                             currentIndex =
-                                                Julia.get_settings(["Analysis","Options","downsize"])
+                                                Julia.get_settings(["Application","Options","downsize"])
                                         }
-                                        onAccepted: {
+                                        onActivated: {
                                             Julia.set_settings(
-                                                ["Analysis","Options","downsize"],currentIndex)
+                                                ["Application","Options","downsize"],currentIndex)
                                         }
                                     }
                                     ComboBox {
@@ -248,11 +248,11 @@ ApplicationWindow {
                                         }
                                         Component.onCompleted: {
                                             currentIndex =
-                                                Julia.get_settings(["Analysis","Options","skip_frames"])
+                                                Julia.get_settings(["Application","Options","skip_frames"])
                                         }
-                                        onAccepted: {
+                                        onActivated: {
                                             Julia.set_settings(
-                                                ["Analysis","Options","skip_frames"],currentIndex)
+                                                ["Application","Options","skip_frames"],currentIndex)
                                         }
                                     }
                                 }
@@ -271,11 +271,11 @@ ApplicationWindow {
                                 validator: DoubleValidator { bottom: 0.0001; top: 999999;
                                     decimals: 4; notation: DoubleValidator.StandardNotation}
                                 Component.onCompleted: {
-                                    text = Julia.get_settings(["Analysis","Options","scaling"])
+                                    text = Julia.get_settings(["Application","Options","scaling"])
                                 }
                                 onEditingFinished: {
                                     var value = parseFloat(text)
-                                    Julia.set_settings(["Analysis","Options","scaling"],value)
+                                    Julia.set_settings(["Application","Options","scaling"],value)
                                 }
                             }
                             Label {

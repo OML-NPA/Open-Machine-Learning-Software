@@ -55,13 +55,13 @@ function pad(array::Union{AbstractArray{Float32},AbstractArray{Float64}},
     leftpad = Int64.(floor.(div_result))
     rightpad = Int64.(ceil.(div_result))
     if padding[1]!=0
-        vec1 = array[1,:]'
-        vec2 = array[end,:]'
+        vec1 = array[1,:,:,:]'
+        vec2 = array[end,:,:,:]'
         array = vcat(fun(el_type,leftpad[1],size(array,2),vec1),
             array,fun(el_type,rightpad[1],size(array,2),vec2))
-    else
-        vec1 = array[:,1]
-        vec2 = array[:,end]
+    else       
+        vec1 = array[:,1,:,:]
+        vec2 = array[:,end,:,:]
         array = hcat(fun(el_type,size(array,1),leftpad[2],vec1),
             array,fun(el_type,size(array,1),rightpad[2],vec2))
     end
@@ -96,7 +96,7 @@ function allcmp(inds)
     return true
 end
 
-function any(array::BitArray,dim::Int64)
+function anydim(array::BitArray,dim::Int64)
     vec = BitArray(undef, size(array,dim), 1)
     if dim==1
         for i=1:length(vec)
@@ -221,3 +221,10 @@ cat4(A::AbstractArray, B::AbstractArray) = cat(A, B; dims=Val(4))
 cat4(A::AbstractArray...) = cat(A...; dims=Val(4))
 
 gc() = GC.gc()
+
+# Works as fill!, but does not use a reference
+function fill_no_ref!(target::AbstractArray,el)
+    for i = 1:length(target)
+        target[i] = copy(el)
+    end
+end

@@ -12,6 +12,8 @@ end
     make_model,
     save_model,
     load_model,
+    get_model_type,
+    set_model_type,
     # Handle features
     num_features,
     reset_features,
@@ -22,16 +24,17 @@ end
     get_output,
     model_count,
     model_properties,
-    model_get_property,
+    model_get_layer_property,
     # Model design
     arrange,
     # Data loading
     get_urls_training,
-    get_urls_analysis,
+    get_urls_validation,
+    get_urls_application,
     get_labels_colors,
     prepare_training_data,
     prepare_validation_data,
-    prepare_analysis_data,
+    prepare_application_data,
     # Data handling
     isfile,
     isdir,
@@ -50,7 +53,7 @@ end
     # Main actions
     train,
     validate,
-    analyse,
+    apply,
     # Training related
     set_training_starting_time,
     training_elapsed_time,
