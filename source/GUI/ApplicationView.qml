@@ -343,7 +343,6 @@ Component {
                 var value = Julia.get_progress("Application")
                 if (timer.value===timer.max_value) {
                     timer.running = false
-                    timer.done = false
                     timer.value = 0
                     timer.max_value = 0
                     button.text = start
