@@ -12,6 +12,8 @@ end
     make_model,
     save_model,
     load_model,
+    get_model_type,
+    set_model_type,
     # Handle features
     num_features,
     reset_features,
@@ -41,8 +43,6 @@ end
     get_settings,
     set_settings,
     save_settings,
-    get_type,
-    set_type,
     get_image,
     get_results,
     get_progress,

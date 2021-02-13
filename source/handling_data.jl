@@ -366,16 +366,16 @@ function fixtypes(dict::Dict)
 end
 
 # Set model type
-function set_type_main(model_data::Model_data,type1,type2)
+function set_model_type_main(model_data::Model_data,type1,type2)
     model_data.type = [fix_QML_types(type1),fix_QML_types(type2)]
 end
-set_type(type1,type2) = set_type_main(model_data,type1,type2)
+set_model_type(type1,type2) = set_model_type_main(model_data,type1,type2)
 
 # Get model type
-function get_type_main(model_data::Model_data)
+function get_model_type_main(model_data::Model_data)
     return model_data.type
 end
-get_type() = get_type_main(model_data)
+get_model_type() = get_model_type_main(model_data)
 
 # Resets model features
 function reset_features_main(model_data)

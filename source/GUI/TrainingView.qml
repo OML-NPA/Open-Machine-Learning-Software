@@ -205,8 +205,6 @@ Component {
                             onActivated: {
                                 Julia.set_settings(["Training","problem_type"],
                                     [currentText,currentIndex],"make_tuple")
-                                Julia.set_type(problemtypeComboBox.currentText,
-                                                inputtypeComboBox.currentText)
                                 featureModel.clear()
                                 neuralnetworkTextField.text = ""
                                 changeLabels()
@@ -222,6 +220,17 @@ Component {
                             }
                             Component.onCompleted: {
                                 currentIndex = Julia.get_settings(["Training","problem_type"],2)
+                                if (neuralnetworkTextField.text!=="") {
+                                    var type = Julia.get_model_type()
+                                    var type_part = type[0]
+                                    for (var i=0;i<inputtypeModel.length;i++) {
+                                        var value = inputtypeModel.get(i)
+                                        if (type_part===value) {
+                                            currentIndex = i
+                                            break
+                                        }
+                                    }
+                                }
                                 changeLabels()
                                 disableButtons(currentIndex,1)
                             }
@@ -256,8 +265,6 @@ Component {
                             onActivated: {
                                 Julia.set_settings(["Training","input_type"],
                                     [currentText,currentIndex],"make_tuple")
-                                Julia.set_type(problemtypeComboBox.currentText,
-                                                inputtypeComboBox.currentText)
                                 featureModel.clear()
                                 neuralnetworkTextField.text = ""
                                 changeLabels()
@@ -265,6 +272,17 @@ Component {
                             }
                             Component.onCompleted: {
                                 currentIndex = Julia.get_settings(["Training","input_type"],2)
+                                if (neuralnetworkTextField.text!=="") {
+                                    var type = Julia.get_model_type()
+                                    var type_part = type[1]
+                                    for (var i=0;i<inputtypeModel.length;i++) {
+                                        var value = inputtypeModel.get(i)
+                                        if (type_part===value) {
+                                            currentIndex = i
+                                            break
+                                        }
+                                    }
+                                }
                                 changeLabels()
                                 if (currentIndex==1) {
                                     previewdataButton.visible = false
@@ -460,6 +478,8 @@ Component {
                                             text: "Update model"
                                         }
                                         onClicked: {
+                                            Julia.set_model_type(problemtypeComboBox.currentText,
+                                                            inputtypeComboBox.currentText)
                                             Julia.save_model("models/" + nameTextField.text + ".model")
                                         }
                                     }
