@@ -280,22 +280,7 @@ Component {
                 Layout.preferredWidth: buttonWidth
                 Layout.preferredHeight: buttonHeight
                 onClicked: {
-                    applicationProgressbar.value = 0
-                    applicationprogressLabel.text = "0%"
-                    if (applicationButton.text==="Apply") {
-                        applicationButton.text = "Stop application"
-                        Julia.get_urls_application()
-                        var num_urls = Julia.get_data(["Application_data","url_input"]).length
-                        if (num_urls===0) {
-                            return
-                        }
-                        Julia.empty_progress_channel("Application")
-                        Julia.empty_progress_channel("Application modifiers")
-                        applicationTimer.running = true
-                        applicationprogressLabel.visible = true
-                        Julia.gc()
-                    }
-                    else {
+                    function reset() {
                         applicationButton.text = "Apply"
                         applicationTimer.running = false
                         applicationTimer.value = 0
@@ -303,6 +288,25 @@ Component {
                         applicationProgressbar.value = 0
                         applicationprogressLabel.visible = false
                         Julia.put_channel("Application",["stop"])
+                    }
+                    applicationProgressbar.value = 0
+                    applicationprogressLabel.text = "0%"
+                    if (applicationButton.text==="Apply") {
+                        applicationButton.text = "Stop application"
+                        Julia.get_urls_application()
+                        var num_urls = Julia.get_data(["Application_data","url_input"]).length
+                        if (num_urls===0) {
+                            reset()
+                            return
+                        }
+                        Julia.empty_progress_channel("Application")
+                        Julia.empty_progress_channel("Application modifiers")
+                        applicationTimer.running = true
+                        applicationprogressLabel.visible = true
+                        Julia.apply()
+                    }
+                    else {
+                        reset()
                     }
                 }
                 Timer {
