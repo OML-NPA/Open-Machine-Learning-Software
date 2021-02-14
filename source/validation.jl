@@ -126,7 +126,7 @@ function compute(validation::Validation,set_part::Array{Float32,4},
     target_temp = Vector{Array{RGB{Float32},2}}(undef,num2)
     predicted_color_temp = Vector{Array{RGB{Float32},2}}(undef,num2)
     predicted_error_temp = Vector{Array{RGB{Float32},2}}(undef,num2)
-    for j = 1:num2 #Threads.@threads
+    @threads for j = 1:num2
         color = perm_labels_color[j]
         predicted_bool = data_array_part[:,:,j]
         do_predicted_color!(predicted_color_temp,predicted_bool,color,j)
@@ -168,9 +168,9 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     else
         data_array .= predicted_array
     end
-    for i=1:num #Threads.@threads
+    @threads for i=1:num
         data_array_current = data_array[i]
-        for j=1:num_border #Threads.@threads
+        @threads for j=1:num_border
             min_area = model_data.features[j].min_area
             ind = num_feat + j
             if min_area>1
@@ -184,7 +184,7 @@ function output_and_error_images(predicted_array::Vector{BitArray{3}},
     predicted_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
     predicted_error = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
     target_color = Vector{Vector{Array{RGB{Float32},2}}}(undef,num)
-    for i = 1:num #Threads.@threads
+    @threads for i = 1:num
         set_part = actual_array[i]
         data_array_part = data_array[i]
         target_temp,predicted_color_temp,predicted_error_temp =

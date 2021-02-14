@@ -239,7 +239,7 @@ function apply_border_data_main(data_in::BitArray{3},
     num_border = length(inds_border)
     num_feat = length(model_data.features)
     data = BitArray{3}(undef,size(data_in)[1:2]...,num_border)
-    Threads.@threads for i = 1:num_border
+    @threads for i = 1:num_border
         border_num_pixels = border_thickness[i]
         ind_feat = inds_border[i]
         ind_border = num_feat + ind_feat

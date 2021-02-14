@@ -44,7 +44,7 @@ function augment!(data::Vector{Tuple{T1,T2}},img::T1,label::T2,num_angles::Int64
     angles_range = range(0,stop=2*pi,length=num_angles+1)
     angles = collect(angles_range[1:end-1])
     num = length(angles)
-    Threads.@threads for g = 1:num
+    @threads for g = 1:num
         angle_val = angles[g]
         img2 = rotate_img(img,angle_val)
         label2 = rotate_img(label,angle_val)
@@ -53,8 +53,8 @@ function augment!(data::Vector{Tuple{T1,T2}},img::T1,label::T2,num_angles::Int64
         step1 = Int64(floor(size(label2,1)/num1))
         step2 = Int64(floor(size(label2,2)/num2))
         num_batch = 2*(num1-1)*(num2-1) 
-        Threads.@threads for i = 1:num1-1
-            Threads.@threads for j = 1:num2-1
+        @threads for i = 1:num1-1
+            @threads for j = 1:num2-1
                 ymin = (i-1)*step1+1;
                 xmin = (j-1)*step2+1;
                 I1 = img2[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
@@ -111,7 +111,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     # Return progress target value
     put!(progress, num+1)
     # Make imput images
-    Threads.@threads for k = 1:num
+    @threads for k = 1:num
         # Abort if requested
         if isready(channels.training_data_modifiers)
             if fetch(channels.training_data_modifiers)[1]=="stop"
@@ -193,7 +193,7 @@ function make_minibatch(set::Tuple{Vector{Array{Float32,3}},Vector{Array{Float32
     num = length(inds)
     set_minibatch = Vector{Tuple{Array{Float32,4},
         Array{Float32,4}}}(undef,num)
-    Threads.@threads for i=1:num
+    @threads for i=1:num
         ind = inds[i]
         # First and last minibatch indices
         ind1 = ind+1
