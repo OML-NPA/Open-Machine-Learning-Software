@@ -38,14 +38,12 @@ training_elapsed_time() = training_elapsed_time_main(training_plot_data)
 
 #---
 # Augments images using rotation and mirroring
-function augment(img::Array{Float32,3},label::BitArray{3},
-        num_angles::Int64,pix_num::Tuple{Int64,Int64},min_fr_pix::Float64)
+function augment!(data::Vector{Tuple{T1,T2}},img::T1,label::T2,num_angles::Int64,
+        pix_num::Tuple{Int64,Int64},min_fr_pix::Float64) where {T1<:Array{Float32,3},T2<:BitArray{3}}
     lim = prod(pix_num)*min_fr_pix
-    angles = range(0,stop=2*pi,length=num_angles+1)
-    angles = angles[1:end-1]
+    angles_range = range(0,stop=2*pi,length=num_angles+1)
+    angles = collect(angles_range[1:end-1])
     num = length(angles)
-    imgs_out = Vector{Array{Float32,3}}(undef,0)
-    labels_out = Vector{BitArray{3}}(undef,0)
     Threads.@threads for g = 1:num
         angle_val = angles[g]
         img2 = rotate_img(img,angle_val)
@@ -54,11 +52,9 @@ function augment(img::Array{Float32,3},label::BitArray{3},
         num2 = Int64(floor(size(label2,2)/(pix_num[2]*0.9)))
         step1 = Int64(floor(size(label2,1)/num1))
         step2 = Int64(floor(size(label2,2)/num2))
-        num_batch = 2*(num1-1)*(num2-1)
-        img_temp = Vector{Array{Float32,3}}(undef,0)
-        label_temp = Vector{BitArray{3}}(undef,0)  
+        num_batch = 2*(num1-1)*(num2-1) 
         Threads.@threads for i = 1:num1-1
-            for j = 1:num2-1
+            Threads.@threads for j = 1:num2-1
                 ymin = (i-1)*step1+1;
                 xmin = (j-1)*step2+1;
                 I1 = img2[ymin:ymin+pix_num[1]-1,xmin:xmin+pix_num[2]-1,:]
@@ -74,19 +70,14 @@ function augment(img::Array{Float32,3},label::BitArray{3},
                             I1_out = reverse(I1, dims = 2)
                             I2_out = reverse(I2, dims = 2)
                         end
-                        push!(img_temp,I1_out)
-                        push!(label_temp,I2_out)
+                        data_out = (I1_out,I2_out)
+                        push!(data,data_out)
                     end
                 end
             end
         end
-        imgs_out[g] = img_temp
-        labels_out[g] = label_temp
     end
-    imgs_out_flat = reduce(vcat,imgs_out)
-    labels_out_flat = reduce(vcat,labels_out)
-    data_out = (imgs_out_flat,labels_out_flat)
-    return data_out
+    return nothing
 end
 
 # Prepare data for training
@@ -116,8 +107,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     # Get number of images
     num = length(imgs)
     # Initialize accumulators
-    data_input = Vector{Vector{Array{Float32,3}}}(undef,num)
-    data_labels = Vector{Vector{BitArray{3}}}(undef,num)
+    data = Vector{Tuple{Array{Float32,3},BitArray{3}}}(undef,0)
     # Return progress target value
     put!(progress, num+1)
     # Make imput images
@@ -139,15 +129,15 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         # Convert BitArray labels to Array{Float32}
         label = label_to_bool(label,labels_color,labels_incl,border,border_thickness)
         # Augment images
-        data_input[k],data_labels[k] = augment(img,label,num_angles,pix_num,min_fr_pix)
+        augment!(data,img,label,num_angles,pix_num,min_fr_pix)
         # Return progress
         put!(progress, 1)
     end
     # Flatten input images and labels array
-    data_out_input = reduce(vcat,data_input)
-    data_out_labels = reduce(vcat,data_labels)
+    data_input = getfield.(data, 1)
+    data_labels = getfield.(data, 2)
     # Return results
-    put!(results, (data_out_input,data_out_labels))
+    put!(results, (data_input,data_labels))
     # Return progress
     put!(progress, 1)
     return nothing
