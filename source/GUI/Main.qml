@@ -94,8 +94,8 @@ ApplicationWindow {
                             {"name": "Options", "stackview": generalOptionsView},
                             {"name": "Training", "stackview": trainingView},
                             {"name": "Validation", "stackview": validationView},
-                            {"name": "Application", "stackview": applicationView},
-                            {"name": "Visualisation", "stackview": visualisationView}]
+                            {"name": "Application", "stackview": applicationView}]
+                            //{"name": "Visualisation", "stackview": visualisationView}]
                         delegate : MenuButton {
                             id: general
                             width: 1.3*buttonWidth
