@@ -292,7 +292,6 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
     # Run training for n epochs
     while epoch_idx<epochs
         # Make minibatches
-        num_test = length(test_set[1])
         run_test = num_test!=0
         train_batches = make_minibatch(train_set,batch_size)
         if run_test
@@ -364,8 +363,7 @@ function train_CPU!(model_data::Model_data,training::Training,accuracy::Function
                 # Test if testing frequency reached or training is done
                 if testing_frequency_cond || training_finished_cond
                     # Calculate test accuracy and loss
-                    data_test = test_CPU(model,accuracy,loss,channels,
-                        test_batches,length(test_batches))
+                    data_test = test_CPU(model,accuracy,loss,test_batches,num_test)
                     # Return testing information
                     put!(channels.training_progress,["Testing",data_test...,iteration])
                     push!(test_accuracy,data_test[1])
@@ -414,7 +412,6 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
     max_iterations = 0
     iteration = 1
     epoch_idx = 1
-    num_test = length(test_set[1])
     run_test = num_test!=0
     model = model_data.model
     model = move(model,gpu)
@@ -505,7 +502,7 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
                 # Test if testing frequency reached or training is done
                 if testing_frequency_cond || training_finished_cond
                     # Calculate test accuracy and loss
-                    data_test = test_GPU(model,accuracy,loss,channels,test_batches,num_test)
+                    data_test = test_GPU(model,accuracy,loss,test_batches,num_test)
                     # Return testing information
                     put!(channels.training_progress,["Testing",data_test...,iteration])
                     push!(test_accuracy,data_test[1])
@@ -539,7 +536,7 @@ function train_GPU!(model_data::Model_data,training::Training,accuracy::Function
 end
 
 # Testing on CPU
-function test_CPU(model::Chain,accuracy::Function,loss::Function,channels::Channels,
+function test_CPU(model::Chain,accuracy::Function,loss::Function,
         test_batches::Array{Tuple{Array{Float32,4},Array{Float32,4}},1},num_test::Int64)
     test_accuracy = Vector{Float32}(undef,num_test)
     test_loss = Vector{Float32}(undef,num_test)
@@ -555,7 +552,7 @@ function test_CPU(model::Chain,accuracy::Function,loss::Function,channels::Chann
 end
 
 # Testing on GPU
-function test_GPU(model::Chain,accuracy::Function,loss::Function,channels::Channels,
+function test_GPU(model::Chain,accuracy::Function,loss::Function,
         test_batches::Array{Tuple{Array{Float32,4},Array{Float32,4}},1},num_test::Int64)
     test_accuracy = Vector{Float32}(undef,num_test)
     test_loss = Vector{Float32}(undef,num_test)
