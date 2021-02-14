@@ -187,8 +187,8 @@ function correct_view(img::Array{Float32,2},label::Array{RGB{Normed{UInt8,8}},2}
     return img,label
 end
 
-# Rotate Array{Float32}
-function rotate_img(img::Array{Float32,2},angle_val::Float64)
+# Rotate Array
+function rotate_img(img::AbstractArray{Real,2},angle_val::Float64)
     if angle!=0
         img_out = imrotate(img,angle_val,axes(img))
         replace_nan!(img_out)
@@ -198,12 +198,27 @@ function rotate_img(img::Array{Float32,2},angle_val::Float64)
     end
 end
 
-# Rotate BitArray
+function rotate_img(img::AbstractArray{T,3},angle_val::Float64) where T<:AbstractFloat
+    if angle!=0
+        img_out = copy(img)
+        for i = 1:size(img,3)
+            slice = img[:,:,i]
+            temp = imrotate(slice,angle_val,axes(slice))
+            replace_nan!(temp)
+            img_out[:,:,i] = convert.(T,temp)
+        end
+        return(img_out)
+    else
+        return(img)
+    end
+end
+
 function rotate_img(img::BitArray{3},angle_val::Float64)
     if angle!=0
         img_out = copy(img)
         for i = 1:size(img,3)
-            temp = imrotate(img[:,:,i],angle_val,axes(img[:,:,i]))
+            slice = img[:,:,i]
+            temp = imrotate(slice,angle_val,axes(slice))
             replace_nan!(temp)
             img_out[:,:,i] = temp.>0
         end
