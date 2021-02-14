@@ -342,7 +342,8 @@ function fixtypes(dict::Dict)
         "stride",
         "inputs",
         "outputs",
-        "dimension"]
+        "dimension",
+        "multiplier"]
         if haskey(dict, key)
             dict[key] = Int64(dict[key])
         end

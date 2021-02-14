@@ -109,7 +109,7 @@ function getresizing(type::String, d, in_size)
             out[i] = out[i] * multiplier
         end
         out = (out...,)
-        return (Upscaling(multiplier, out, dims), out)
+        return (Upscaling(multiplier, dims), out)
     elseif type == "Flattening"
         out = (prod(size(x)), 1, 1)
         return (x -> Flux.flatten(x), out)
