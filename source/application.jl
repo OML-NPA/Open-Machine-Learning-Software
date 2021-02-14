@@ -32,7 +32,7 @@ get_urls_application() =
 function prepare_application_data(urls::Vector{String})
     num = length(urls)
     data = Vector{Array{Float32,4}}(undef,length(urls))
-    Threads.@threads for i = 1:num
+    @threads for i = 1:num
         url = urls[i]
         image = load_image(url)
         data[i] = image_to_gray_float(image)[:,:,:,:]
@@ -201,7 +201,7 @@ function apply_main(settings::Settings,application_data::Application_data,
                     border_mask = apply_border_data_main(temp_mask,model_data)
                     temp_mask = cat3(temp_mask,border_mask)
                 end
-                Threads.@threads for l=1:num_feat
+                @threads for l=1:num_feat
                     min_area = features[l].min_area
                     if min_area>1
                         if border[l]
@@ -302,7 +302,7 @@ function objects_area(mask_current::BitArray{2},components::Array{Int64,2},
         components_parent = components_vector[ind]
         num = maximum(components_parent)
         area_out = Vector{Float64}(undef,num)
-        Threads.@threads for i = 1:num
+        @threads for i = 1:num
             ind_bool = components_parent.==i
             area_out[i] = count(mask_current[ind_bool])./scaling
         end
@@ -315,7 +315,7 @@ function func2D_to_3D(objects_mask::BitArray{2})
     D = Float32.(distance_transform(feature_transform((!).(objects_mask))))
     w = zeros(Float32,(size(D)...,8))
     inds = vcat(1:4,6:9)
-    Threads.@threads for i = 1:8
+    @threads for i = 1:8
       u = zeros(Float32,(9,1))
       u[inds[i]] = 1
       u = reshape(u,(3,3))
@@ -342,7 +342,7 @@ function objects_volume(objects_mask::BitArray{2},components::Array{Int64,2},
     if isnothing(ind)
         num = maximum(components)
         volumes_out = Vector{Float64}(undef,num)
-        Threads.@threads for i = 1:num
+        @threads for i = 1:num
             logical_inds = components.==i
             pixels = volume_model[logical_inds]
             volumes_out[i] = 2*sum(pixels)/scaling
@@ -351,7 +351,7 @@ function objects_volume(objects_mask::BitArray{2},components::Array{Int64,2},
         components_parent = components_vector[ind]
         num = maximum(components_parent)
         volumes_out = Vector{Float64}(undef,num)
-        Threads.@threads for i = 1:num
+        @threads for i = 1:num
             ind_bool = components_parent.==i
             pixels = volume_model[ind_bool]
             volumes_out[i] = 2*sum(pixels)/scaling
@@ -415,10 +415,10 @@ function data_to_histograms(histograms_area::Vector{Vector{Histogram}},
         objs_area::Vector{Vector{Vector{Float64}}},
         objs_volume::Array{Vector{Vector{Float64}}},features::Vector{Feature},num_batch::Int64,
         num_feat::Int64,num_border::Int64,border::Vector{Bool})
-    Threads.@threads for i = 1:num_batch
+    @threads for i = 1:num_batch
         temp_histograms_area = histograms_area[i]
         temp_histograms_volume = histograms_volume[i]
-        Threads.@threads for l = 1:num_feat
+        @threads for l = 1:num_feat
             output_options = features[l].Output
             area_dist_cond = output_options.Area.area_distribution
             volume_dist_cond = output_options.Volume.volume_distribution
@@ -520,7 +520,7 @@ function export_histograms(histograms_area::Vector{Vector{Histogram}},
     if num_cols_dist==0
         return nothing
     end
-    Threads.@threads for i = 1:num
+    @threads for i = 1:num
         num_cols_dist = num_dist_area + num_dist_volume
         if num_dist_area>0
             num_rows_area = maximum(map(x->length(x.weights),histograms_area[i]))
@@ -637,7 +637,7 @@ function mask_to_img(mask::BitArray{3},features::Vector{Feature},
     perm_labels_color64 = map(x -> permutedims(x[:,:,:]/255,[3,2,1]),labels_color)
     num2 = length(labels_color)
     perm_labels_color = convert(Array{Array{Float32,3}},perm_labels_color64)
-    for j = 1:length(inds) #Threads.@threads 
+    for j = 1:length(inds) #@threads 
         ind = inds[j]
         mask_current = mask[:,:,ind]
         color = perm_labels_color[ind]

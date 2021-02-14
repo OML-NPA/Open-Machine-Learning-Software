@@ -98,6 +98,7 @@ Component {
                     }
                 }
                 Row {
+                    visible: false
                     spacing: 0.4*margin
                     Label {
                         id: allowedcpucoresLabel
