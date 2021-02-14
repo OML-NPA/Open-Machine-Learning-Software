@@ -28,7 +28,7 @@ ApplicationWindow {
     }
 
     Timer {
-        id: validationplotTimer
+        id: trainingTimer
         property int iteration: 0
         property int epochs: 0
         property int epoch: 0
@@ -77,7 +77,7 @@ ApplicationWindow {
                         lossLine.axisY.max = test_loss
                     }
                 }
-                if ((iteration===max_iterations && max_iterations!==0) || validationplotTimer.done) {
+                if ((iteration===max_iterations && max_iterations!==0) || trainingTimer.done) {
                     var state = Julia.get_results("Training")
                     if (state===true) {
                         running = false
@@ -361,7 +361,7 @@ ApplicationWindow {
                                     width: iterationsperepochtextLabel.width
                                 }
                                 SpinBox {
-                                    from: validationplotTimer.epoch
+                                    from: trainingTimer.epoch
                                     value: Julia.get_settings(
                                                ["Training","Options","Hyperparameters","epochs"])
                                     to: 10000
@@ -369,10 +369,10 @@ ApplicationWindow {
                                     editable: false
                                     onValueModified: {
                                         Julia.put_channel("Training",["epochs",value])
-                                        validationplotTimer.epochs = value
-                                        validationplotTimer.max_iterations =
-                                                value*validationplotTimer.iterations_per_epoch
-                                        maxiterationsLabel.text = validationplotTimer.max_iterations
+                                        trainingTimer.epochs = value
+                                        trainingTimer.max_iterations =
+                                                value*trainingTimer.iterations_per_epoch
+                                        maxiterationsLabel.text = trainingTimer.max_iterations
                                     }
                                 }
                             }
