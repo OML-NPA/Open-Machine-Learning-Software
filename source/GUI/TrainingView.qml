@@ -621,8 +621,8 @@ Component {
                                 Julia.put_channel("Training data preparation",["stop"])
                             }
                             else if (preparedataButton.text==="Remove data") {
-                                reset_data_field(["Training_data","Plot_data","data_input"])
-                                reset_data_field(["Training_data","Plot_data","data_labels"])
+                                Julia.reset_data_field(["Training_data","Plot_data","data_input"])
+                                Julia.reset_data_field(["Training_data","Plot_data","data_labels"])
                                 preparedataButton.text = "Prepare data"
                             }
                         }

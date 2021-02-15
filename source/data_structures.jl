@@ -283,3 +283,11 @@ visualisation = Visualisation()
     Visualisation::Visualisation = visualisation
 end
 settings = Settings()
+
+#---Other
+
+mutable struct Counter
+    iteration::Int
+    Counter() = new(0)
+end
+(c::Counter)() = (c.iteration += 1)

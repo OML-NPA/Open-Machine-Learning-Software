@@ -229,3 +229,4 @@ function fill_no_ref!(target::AbstractArray,el)
     end
 end
 
+enable_finalizers(on::Bool) = ccall(:jl_gc_enable_finalizers, Cvoid, (Ptr{Cvoid}, Int32,), Core.getptls(), on)
