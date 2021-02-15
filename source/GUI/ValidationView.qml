@@ -70,7 +70,7 @@ Component {
                 importmodel(model,url)
                 featureModel.clear()
                 load_model_features()
-                var type = Julia.get_type()
+                var type = Julia.get_model_type()
                 if (type[1]==="Images") {
                     inputLabel.text = "Images:"
                     previewdataButton.visible = false

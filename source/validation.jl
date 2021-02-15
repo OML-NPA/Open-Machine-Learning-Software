@@ -217,7 +217,7 @@ function validate_main(settings::Settings,validation_data::Validation_data,
     predicted_array = Vector{BitArray{3}}(undef,0)
     loss_array = Vector{Float32}(undef,0)
     put!(channels.validation_progress,[2*num])
-    num_parts = 10
+    num_parts = 20
     offset = 20
     @everywhere GC.gc()
     for i = 1:num
