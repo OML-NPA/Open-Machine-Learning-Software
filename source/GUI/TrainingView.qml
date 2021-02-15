@@ -545,7 +545,7 @@ Component {
                 Column {
                     id: buttonsColumn
                     spacing: 0.3*margin
-                    topPadding: (featuresColumn.height - buttonsColumn.height)/2
+                    topPadding: (featuresColumn.height - buttonsColumn.height)/1.1
                     leftPadding: (dataColumn.width - featuresColumn.width -
                         buttonWidth)/2
                     Button {
@@ -588,7 +588,60 @@ Component {
                         }
                     }
                     Button {
+                        id: preparedataButton
+                        text: "Prepare data"
+                        width: buttonWidth
+                        height: buttonHeight
+                        onClicked: {
+                            if (down) {
+                                return
+                            }
+                            if (imagesTextField.length===0 || labelsTextField.length===0) {
+                                return
+                            }
+                            if (preparedataButton.text==="Prepare data") {
+                                preparedataButton.text = "Stop data preparation"
+                                Julia.get_urls_training()
+                                Julia.empty_progress_channel("Training data preparation")
+                                Julia.empty_results_channel("Training data preparation")
+                                Julia.empty_progress_channel("Training data preparation modifiers")
+                                Julia.empty_progress_channel("Training")
+                                Julia.empty_results_channel("Training")
+                                Julia.empty_progress_channel("Training modifiers")
+                                dataprocessingTimer.running = true
+                                Julia.prepare_training_data()
+                            }
+                            else if (preparedataButton.text==="Stop data preparation") {
+                                preparedataButton.text = "Prepare data"
+                                dataprocessingTimer.running = false
+                                dataprocessingTimer.value = 0
+                                dataprocessingTimer.max_value = 0
+                                dataprocessingTimer.done = false
+                                progressbar.value = 0
+                                Julia.put_channel("Training data preparation",["stop"])
+                            }
+                            else if (preparedataButton.text==="Remove data") {
+                                reset_data_field(["Training_data","Plot_data","data_input"])
+                                reset_data_field(["Training_data","Plot_data","data_labels"])
+                                preparedataButton.text = "Prepare data"
+                            }
+                        }
+                        Timer {
+                            id: dataprocessingTimer
+                            interval: 1000; running: false; repeat: true
+                            property double step: 0
+                            property double value: 0
+                            property double max_value: 0
+                            property bool done: false
+                            onTriggered: {
+                                dataProcessingTimerFunction(preparedataButton,dataprocessingTimer,
+                                    "Prepare data","Remove data","Training data preparation")
+                            }
+                        }
+                    }
+                    Button {
                         id: trainButton
+                        visible: false
                         text: "Train"
                         width: buttonWidth
                         height: buttonHeight
@@ -600,68 +653,39 @@ Component {
                                 return
                             }
                             if (trainButton.text==="Train") {
-                                trainButton.text = "Stop data preparation"
-                                Julia.get_urls_training()
-                                Julia.empty_progress_channel("Training data preparation")
-                                Julia.empty_results_channel("Training data preparation")
-                                Julia.empty_progress_channel("Training data preparation modifiers")
-                                Julia.empty_progress_channel("Training")
-                                Julia.empty_results_channel("Training")
-                                Julia.empty_progress_channel("Training modifiers")
-                                trainingTimer.running = true
-                                Julia.gc()
-                                Julia.prepare_training_data()
+                                trainButton.text = "Stop Training"
+                                Julia.train()
+                                trainingplotLoader.source = "TrainingPlot.qml"
                             }
                             else {
                                 trainButton.text = "Train"
-                                trainingTimer.running = false
-                                trainingTimer.value = 0
-                                trainingTimer.max_value = 0
-                                trainingTimer.done = false
                                 progressbar.value = 0
-                                Julia.put_channel("Training data preparation",["stop"])
                                 Julia.put_channel("Training",["stop"])
-                            }
-                        }
-                        Timer {
-                            id: trainingTimer
-                            interval: 1000; running: false; repeat: true
-                            property double step: 0
-                            property double value: 0
-                            property double max_value: 0
-                            property bool done: false
-                            onTriggered: {
-                                function load_window() {
-                                    trainingplotLoader.source = "TrainingPlot.qml"
-                                }
-                                dataProcessingTimerFunction(trainButton,trainingTimer,
-                                    "Train","Stop training","Training data preparation",
-                                    "Training",load_window)
                             }
                         }
                     }
                     ProgressBar {
                         id: progressbar
-                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                         width: buttonWidth
                     }
                 }
             }
         }
-        function dataProcessingTimerFunction(button,timer,start,stop,
-            action,action_done,load_window) {
+        function dataProcessingTimerFunction(button,timer,reset,finish,
+            action) {
             if (timer.max_value!==0 && !timer.done) {
                 var value = Julia.get_progress(action)
                 if (timer.value===timer.max_value) {
                     var state = Julia.get_results(action)
                     if (state===true) {
                         timer.done = true
-                        if (action_done==="Training") {
-                            Julia.train()
-                        }
-                        else if (action_done==="Validation") {
-                            Julia.validate()
-                        }
+                        timer.running = false
+                        timer.value = 0
+                        timer.max_value = 0
+                        timer.done = false
+                        preparedataButton.text = finish
+                        trainButton.visible = true
+                        progressbar.value = 0
                     }
                 }
                 else {
@@ -670,14 +694,6 @@ Component {
                     }
                 }
                 progressbar.value = timer.value/timer.max_value
-            }
-            if (timer.done && Julia.check_progress(action_done)!==false) {
-                timer.running = false
-                timer.value = 0
-                timer.max_value = 0
-                timer.done = false
-                button.text = stop
-                load_window()
             }
             else {
                 value = Julia.get_progress(action)
@@ -690,7 +706,7 @@ Component {
                     timer.value = 0
                     timer.max_value = 0
                     timer.done = false
-                    button.text = start
+                    button.text = reset
                 }
             }
         }

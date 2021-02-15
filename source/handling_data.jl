@@ -218,6 +218,19 @@ end
 set_output(fields,ind,value) = set_output_main(model_data,fields,ind,value)
 
 #---
+
+function reset_data_field_main(master_data::Master_data,fields)
+    fields::Vector{String} = fix_QML_types(fields)
+    data = master_data
+    for i = 1:length(fields)
+        field = Symbol(fields[i])
+        data = getproperty(data,field)
+    end
+    empty!(data)
+    return nothing
+end
+reset_data_field(fields) = reset_data_field_main(master_data,fields)
+
 # Resets data property
 function resetproperty!(datatype,field)
     var = getproperty(datatype,field)
