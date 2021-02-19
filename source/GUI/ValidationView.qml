@@ -424,97 +424,32 @@ Component {
                                 return
                             }
                             if (validateButton.text==="Validate") {
-                                validateButton.text = "Stop data preparation"
+                                validateButton.text = "Stop validation"
                                 Julia.get_urls_validation()
-                                Julia.empty_progress_channel("Validation data preparation")
-                                Julia.empty_results_channel("Validation data preparation")
                                 Julia.empty_progress_channel("Validation data preparation modifiers")
                                 Julia.empty_progress_channel("Validation")
                                 Julia.empty_results_channel("Validation")
                                 Julia.empty_progress_channel("Validation modifiers")
-                                validationTimer.running = true
-                                Julia.gc()
-                                Julia.prepare_validation_data()
+                                validationplotLoader.source = "ValidationPlot.qml"
+                                Julia.validate()
                             }
                             else {
                                 validateButton.text = "Validate"
                                 validationTimer.running = false
                                 progressbar.value = 0
-                                Julia.put_channel("Validation data preparation",["stop"])
                                 Julia.put_channel("Validation",["stop"])
-                            }
-                        }
-                        Timer {
-                            id: validationTimer
-                            interval: 1000; running: false; repeat: true
-                            property double value: 0
-                            property double max_value: 0
-                            property bool done: false
-                            onTriggered: {
-                                function load_window() {
-                                    validationplotLoader.source = "ValidationPlot.qml"
-                                }
-                                dataProcessingTimerFunction(validateButton,validationTimer,
-                                    "Validate","Stop validation","Validation data preparation",
-                                    "Validation",load_window)
                             }
                         }
                     }
                     ProgressBar {
                         id: progressbar
+                        visible: false
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                         width: buttonWidth
                     }
                 }
             }
         }
-        function dataProcessingTimerFunction(button,timer,start,stop,
-            action,action_done,load_window) {
-            if (timer.max_value!==0 && !timer.done) {
-                var value = Julia.get_progress(action)
-                if (timer.value===timer.max_value) {
-                    var state = Julia.get_results(action)
-                    if (state===true) {
-                        timer.done = true
-                        if (action_done==="Training") {
-                            Julia.train()
-                        }
-                        else if (action_done==="Validation") {
-                            Julia.validate()
-                        }
-                    }
-                }
-                else {
-                    if (value!==false) {
-                        timer.value += value
-                    }
-                }
-                progressbar.value = timer.value/timer.max_value
-            }
-            if (timer.done && Julia.check_progress(action_done)!==false) {
-                timer.running = false
-                timer.value = 0
-                timer.max_value = 0
-                timer.done = false
-                button.text = stop
-                load_window()
-            }
-            else {
-                value = Julia.get_progress(action)
-                if (value===false) { return }
-                if (value!==0) {
-                    timer.max_value = value
-                }
-                else {
-                    timer.running = false
-                    timer.value = 0
-                    timer.max_value = 0
-                    timer.done = false
-                    button.text = start
-                }
-            }
-        }
-
         function disableButtons(currentIndex,ind) {
             if (problemtypeComboBox.currentIndex===1 && inputtypeComboBox.currentIndex===0) {
                 optionsButton.down = undefined

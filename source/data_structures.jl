@@ -79,33 +79,22 @@ end
 model_data = Model_data()
 
 #---Master data
-@with_kw mutable struct Validation_plot_data
-    data_input::Vector{Array{Float32,3}} = Vector{Array{Float32,3}}(undef,0)
-    data_labels::Vector{BitArray{3}} = Vector{BitArray{3}}(undef,0)
-    data_input_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
-        Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
-    data_labels_orig::Vector{Array{RGB{Normed{UInt8,8}},2}} =
-        Vector{Array{RGB{Normed{UInt8,8}},2}}(undef,1)
-    data_predicted::Vector{Vector{Array{RGB{Float32},2}}} =
-        Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
-    data_error::Vector{Vector{Array{RGB{Float32},2}}} =
-        Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
-    data_target::Vector{Vector{Array{RGB{Float32},2}}} =
-        Vector{Vector{Array{RGB{Float32},2}}}(undef,1)
+@with_kw mutable struct Validation_results
+    original::Vector{Array{RGB{N0f8},2}} = 
+        Vector{Array{RGB{N0f8},2}}(undef,0)
+    predicted_data::Vector{Vector{Tuple{BitArray{2},Vector{N0f8}}}} = 
+        Vector{Vector{Tuple{BitArray{2},Vector{N0f8}}}}(undef,0)
+    target_data::Vector{Vector{Tuple{BitArray{2},Vector{N0f8}}}} = 
+        Vector{Vector{Tuple{BitArray{2},Vector{N0f8}}}}(undef,0)
+    error_data::Vector{Vector{Tuple{BitArray{3},Vector{N0f8}}}} = 
+        Vector{Vector{Tuple{BitArray{3},Vector{N0f8}}}}(undef,0)
+    other_data::Vector{Tuple{Float32,Float32}} = 
+        Vector{Tuple{Float32,Float32}}(undef,0)
 end
-validation_plot_data = Validation_plot_data()
-
-@with_kw mutable struct Validation_results_data
-    loss_std::Union{Float32,Float64} = 0.0f0
-    accuracy_std::Union{Float32,Float64} = 0.0f0
-    loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-    accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-end
-validation_results_data = Validation_results_data()
+validation_results = Validation_results()
 
 @with_kw mutable struct Validation_data
-    Plot_data::Validation_plot_data = validation_plot_data
-    Results_data::Validation_results_data = validation_results_data
+    Results::Validation_results = validation_results
     url_input::Vector{String} = Vector{String}(undef,0)
     url_labels::Vector{String} = Vector{String}(undef,0)
 end
@@ -151,7 +140,7 @@ application_data = Application_data()
     Training_data::Training_data = training_data
     Validation_data::Validation_data = validation_data
     Application_data::Application_data = application_data
-    image::Array{RGB{Float32},2} = Array{RGB{Float32},2}(undef,10,10)
+    image::Array{RGB{Float32},2} = Array{RGB{Float32},2}(undef,0,0)
 end
 master_data = Master_data()
 

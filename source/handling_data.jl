@@ -246,28 +246,61 @@ function resetproperty!(datatype,field)
 end
 
 #---Image related functions
+
+function bitarray_to_image(array_bool::BitArray{2},color::Vector{Normed{UInt8,8}})
+    s = size(array_bool)
+    array_uint = zeros(N0f8,4,s...)
+    inds = [2,1,4]
+    for i = 1:3
+        ind = inds[i]
+        channel = color[i]
+        if channel>0
+            slice = array_uint[ind,:,:]
+            slice[array_bool] .= channel
+            array_uint[ind,:,:] .= slice
+        end
+    end
+    array_uint[3,:,:] .= 1
+    return collect(colorview(ARGB32,array_uint))
+end
+
+function bitarray_to_image(array_bool::BitArray{3},color::Vector{Normed{UInt8,8}})
+    s = size(array_bool)
+    array_uint = zeros(N0f8,4,s...)
+    for i = 2:4
+        channel = color[i-1]
+        if channel>0
+            slice = array_uint[i,:,:]
+            slice[array_bool[i,:,:]] .= channel
+            array_uint[i,:,:] .= slice
+        end
+    end
+    array_uint[3,:,:] .= 1
+    return collect(colorview(ARGB32,array_uint))
+end
+
 # Saves image to the main image storage and returns its size
-function get_image_main(master_data::Master_data,model_data::Model_data,fields,
+function get_image_main(master_data::Master_data,fields,
         img_size,inds)
     fields = fix_QML_types(fields)
     img_size = fix_QML_types(img_size)
     inds = fix_QML_types(inds)
-    image = collect(get_data(fields,inds))
-    if isempty(image)
-        master_data.image = ARGB32.(image)
-        return [0,0]
+    image_data = get_data(fields,inds)
+    if image_data isa Array{RGB{N0f8},2}
+        image = image_data
+    else
+        image = bitarray_to_image(image_data...)
     end
-
     inds = findall(img_size.!=0)
     if !isempty(inds)
         r = minimum(map(x-> img_size[x]/size(image,x),inds))
         image = imresize(image, ratio=r)
     end
-    master_data.image = ARGB32.(image)
+    master_data.image = image
     return [size(image)...]
 end
 get_image(fields,img_size,inds...) =
-    get_image_main(master_data,model_data,fields,img_size,inds...)
+    get_image_main(master_data,fields,img_size,inds...)
 
 # Displays image from the main image storage to Julia canvas
 function display_image(buffer::Array{UInt32, 1},
@@ -279,7 +312,7 @@ function display_image(buffer::Array{UInt32, 1},
     buffer = reinterpret(ARGB32, buffer)
     image = master_data.image
     if size(buffer)==reverse(size(image))
-        buffer .= transpose(ARGB32.(image))
+        buffer .= transpose(image)
     end
     return nothing
 end
@@ -464,3 +497,11 @@ function load_model_main(model_data,url)
   end
 end
 load_model(url) = load_model_main(model_data,url)
+
+function empty_field!(str,field::Symbol)
+    val = getfield(str,field)
+    type = typeof(val)
+    new_val = type(undef,zeros(Int64,length(size(val)))...)
+    setfield!(str, field, new_val)
+    return nothing
+end

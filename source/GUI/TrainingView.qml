@@ -641,7 +641,7 @@ Component {
                     }
                     Button {
                         id: trainButton
-                        visible: false
+                        visible: true
                         text: "Train"
                         width: buttonWidth
                         height: buttonHeight
