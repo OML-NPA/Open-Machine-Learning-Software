@@ -506,7 +506,7 @@ end
 
 # Runs data thorugh a neural network
 function forward(model::Chain,input_data::Array{Float32};
-        num_parts::Int64=1,offset::Int64=0,use_GPU::Bool=true)
+        num_parts::Int64=20,offset::Int64=20,use_GPU::Bool=true)
     if use_GPU
         input_data_gpu = CuArray(input_data)
         model = move(model,gpu)

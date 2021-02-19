@@ -61,15 +61,9 @@ function get_results_main(channels::Channels,master_data::Master_data,
         if isready(channels.validation_data_results)
             data = take!(channels.validation_data_results)
             validation_plot_data = master_data.Validation_data.Plot_data
-            if validation.use_labels
-                validation_plot_data.data_input_orig = data[1]
-                validation_plot_data.data_labels_orig = data[2]
-                validation_plot_data.data_input = data[3]
-                validation_plot_data.data_labels = data[4]
-            else
-                validation_plot_data.data_input_orig = data[1]
-                validation_plot_data.data_input = data[2]
-            end
+            validation_plot_data.data_predicted = 1
+            validation_plot_data.data_target = 1
+            validation_plot_data.data_error = 1
             return true
         else
             return false
@@ -102,15 +96,16 @@ function get_results_main(channels::Channels,master_data::Master_data,
     elseif field=="Validation"
         if isready(channels.validation_results)
             data = take!(channels.validation_results)
-            validation_plot_data = master_data.Validation_data.Plot_data
-            validation_plot_data.data_predicted = data[1]
-            validation_plot_data.data_error = data[2]
-            validation_plot_data.data_target = data[3]
-            validation_results_data.accuracy = data[4]
-            validation_results_data.loss = data[5]
-            validation_results_data.accuracy_std = data[6]
-            validation_results_data.loss_std = data[7]
-            return [data[4],data[5],mean(data[4]),mean(data[5]),data[6],data[7]]
+            validation_results = master_data.Validation_data.Results
+            original = data[1]
+            image_data = data[2]
+            other_data = data[3]
+            push!(validation_results.original,original)
+            push!(validation_results.predicted_data,image_data[1])
+            push!(validation_results.target_data,image_data[2])
+            push!(validation_results.error_data,image_data[3])
+            push!(validation_results.other_data,other_data)
+            return [other_data...]
         else
             return false
         end

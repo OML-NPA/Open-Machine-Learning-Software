@@ -229,3 +229,23 @@ function fill_no_ref!(target::AbstractArray,el)
     end
 end
 
+enable_finalizers(on::Bool) = ccall(:jl_gc_enable_finalizers, Cvoid, (Ptr{Cvoid}, Int32,), Core.getptls(), on)
+
+# Clears workspace
+macro clear()
+    return quote
+        var_list = names(Main)
+        count = 0
+        for var in var_list
+            types = (AbstractArray,Number,String,Bool)
+            var_type = typeof(eval(var))
+            if any((<:).(var_type,types))
+                eval(Meta.parse(string(var," = nothing")))
+                count+=1
+            end
+        end
+        @everywhere GC.gc()
+        str = string("Cleared ",count," variables")
+        @info str
+    end
+end

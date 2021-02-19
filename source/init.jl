@@ -26,8 +26,8 @@ end
 CUDA.allowscalar(false)
 
 # Import the configutation file
-if !isfile("config.bson")
-    save_settings()
-else
+if isfile("config.bson")
     load_settings()
+else
+    save_settings()
 end

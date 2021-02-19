@@ -50,7 +50,7 @@ end
     empty_results_channel,
     empty_progress_channel,
     put_channel,
-    # Main actions
+    # Main actions 
     train,
     validate,
     apply,
