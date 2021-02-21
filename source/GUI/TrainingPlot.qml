@@ -270,6 +270,10 @@ ApplicationWindow {
                                 Layout.leftMargin: 0.3*margin
                                 onClicked: {
                                     Julia.put_channel("Training",["stop"])
+                                    var stop = false
+                                    while (!stop) {
+                                        stop = Julia.get_results("Training")
+                                    }
                                 }
                             }
                         }
