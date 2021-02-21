@@ -107,11 +107,12 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     # Get number of images
     num = length(imgs)
     # Initialize accumulators
-    data = Vector{Tuple{Array{Float32,3},BitArray{3}}}(undef,0)
+    data_all = Vector{Vector{Tuple{Array{Float32,3},BitArray{3}}}}(undef,num)
     # Return progress target value
     put!(progress, num+1)
     # Make imput images
     @threads for k = 1:num
+        data = Vector{Tuple{Array{Float32,3},BitArray{3}}}(undef,0)
         # Abort if requested
         if isready(channels.training_data_modifiers)
             if fetch(channels.training_data_modifiers)[1]=="stop"
@@ -130,12 +131,15 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         label = label_to_bool(label,labels_color,labels_incl,border,border_thickness)
         # Augment images
         augment!(data,img,label,num_angles,pix_num,min_fr_pix)
+        data_all[k] = data
         # Return progress
         put!(progress, 1)
     end
     # Flatten input images and labels array
-    data_input = getfield.(data, 1)
-    data_labels = getfield.(data, 2)
+    data_flat = reduce(vcat,data_all)
+    # Separate
+    data_input = getfield.(data_flat, 1)
+    data_labels = getfield.(data_flat, 2)
     # Return results
     put!(results, (data_input,data_labels))
     # Return progress
