@@ -21,7 +21,7 @@ set_training_starting_time() =
 # Calculates the time elapsed from the begining of training
 function training_elapsed_time_main(training_plot_data::Training_plot_data)
     dif = (now() - training_plot_data.starting_time).value
-    hours = string(Int64(round(dif/3600000)))
+    hours = string(Int64(floor(dif/3600000)))
     minutes_num = floor(dif/60000)
     minutes = string(Int64(minutes_num - floor(minutes_num/60)*60))
     if length(minutes)<2
