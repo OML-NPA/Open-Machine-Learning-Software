@@ -265,14 +265,16 @@ function bitarray_to_image(array_bool::BitArray{2},color::Vector{Normed{UInt8,8}
 end
 
 function bitarray_to_image(array_bool::BitArray{3},color::Vector{Normed{UInt8,8}})
-    s = size(array_bool)
+    s = size(array_bool)[2:3]
     array_uint = zeros(N0f8,4,s...)
-    for i = 2:4
-        channel = color[i-1]
+    inds = [2,1,4]
+    for i = 1:3
+        ind = inds[i]
+        channel = color[i]
         if channel>0
-            slice = array_uint[i,:,:]
+            slice = array_uint[ind,:,:]
             slice[array_bool[i,:,:]] .= channel
-            array_uint[i,:,:] .= slice
+            array_uint[ind,:,:] .= slice
         end
     end
     array_uint[3,:,:] .= 1
