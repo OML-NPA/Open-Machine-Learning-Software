@@ -117,7 +117,7 @@ training_plot_data = Training_plot_data()
     accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
     test_accuracy::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
     test_loss::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
-    test_iteration::Union{Vector{Float32},Vector{Float64}} = Vector{Float32}(undef,0)
+    test_iteration::Vector{Int64} = Vector{Int64}(undef,0)
 end
 training_results_data = Training_results_data()
 

@@ -273,6 +273,7 @@ ApplicationWindow {
                                     var stop = false
                                     while (!stop) {
                                         stop = Julia.get_results("Training")
+                                        Julia.sleep(0.1)
                                     }
                                 }
                             }

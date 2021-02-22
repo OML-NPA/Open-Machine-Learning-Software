@@ -68,7 +68,8 @@ end
     pwd,
     gc,
     fix_slashes,
-    source_dir
+    source_dir,
+    sleep
 )
 load("GUI//Main.qml",
     display_image = CxxWrap.@safe_cfunction(display_image, Cvoid,
