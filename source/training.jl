@@ -637,13 +637,6 @@ function train_main(settings::Settings,training_data::Training_data,
     # Run training
     data = train!(model_data,training,args,opt,accuracy,loss,
         train_set,test_set,testing_times,use_GPU,channels)
-    # Clean up
-    results_data = training_data.Results_data
-    empty!(results_data.loss)
-    empty!(results_data.accuracy)
-    empty!(results_data.test_loss)
-    empty!(results_data.test_accuracy)
-    empty!(results_data.test_iteration)
     # Return training results
     put!(channels.training_results,(model_data.model,data...))
     return nothing
