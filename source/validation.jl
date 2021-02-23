@@ -24,15 +24,15 @@ function reset_validation_data(validation_results::Validation_results)
 end
 
 function prepare_validation_data(validation::Validation,
-        validation_data::Validation_data,features::Array,ind::Int64)
+        validation_data::Validation_data,features::Vector{Feature},ind::Int64)
     validation_results = validation_data.Results
-    labels_color,labels_incl,border,border_thickness = get_feature_data(features)
+    inds,labels_color,labels_incl,border,border_thickness = get_feature_data(features)
     original = load_image(validation_data.url_input[ind])
     data_input = image_to_gray_float(original)[:,:,:,:]
     if validation.use_labels
         label = load_image(validation_data.url_labels[ind])
-        label_bool = label_to_bool(label,labels_color,labels_incl,
-            border,border_thickness)
+        label_bool = label_to_bool(label,inds,labels_color,
+            labels_incl,border,border_thickness)
         data_label = convert(Array{Float32,3},label_bool)[:,:,:,:]
     else
         data_label = Array{Float32,4}(undef,size(data_input))
@@ -84,7 +84,7 @@ end
 
 function output_images(predicted_bool::BitArray{3},label_bool::BitArray{3},
         model_data::Model_data,validation::Validation)
-    labels_color,labels_incl,border = get_feature_data(model_data.features)
+    labels_color, _ ,border = get_feature_data(model_data.features)
     labels_color_uint = convert(Vector{Vector{N0f8}},labels_color/255)
     inds_border = findall(border)
     border_colors = labels_color_uint[findall(border)]
@@ -110,7 +110,7 @@ function output_images(predicted_bool::BitArray{3},label_bool::BitArray{3},
     end
     predicted_data,error_data,target_data = compute(validation,
         predicted_bool_final,label_bool,labels_color_uint,num_feat)
-    return predicted_data,error_data,target_data
+    return predicted_data,target_data,error_data
 end
 
 # Main validation function
@@ -146,6 +146,10 @@ function validate_main(settings::Settings,validation_data::Validation_data,
         # Preparing data
         original,data_input,data_label = prepare_validation_data(validation,
             validation_data,features,i)
+
+            colorview(Gray, Float32.(data_label[:,:,2]))
+
+
         predicted = forward(model,data_input,use_GPU=use_GPU)
         accuracy_array[i] = accuracy(predicted,data_label)
         loss_array[i] = loss(predicted,data_label)

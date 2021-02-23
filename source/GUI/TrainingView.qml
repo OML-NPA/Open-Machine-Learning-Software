@@ -28,6 +28,7 @@ Component {
                 for (var i=0;i<num_features;i++) {
                     var ind = i+1
                     var color = Julia.get_feature_field(ind,"color")
+                    var parents = Julia.get_feature_field(ind,"parents")
                     var feature = {
                         "name": Julia.get_feature_field(ind,"name"),
                         "colorR": color[0],
@@ -37,7 +38,9 @@ Component {
                         "border_thickness": Julia.get_feature_field(ind,"border_thickness"),
                         "borderRemoveObjs": Julia.get_feature_field(ind,"border_remove_objs"),
                         "min_area": Julia.get_feature_field(ind,"min_area"),
-                        "parent": Julia.get_feature_field(ind,"parent")}
+                        "parent": parents[0],
+                        "parent2": parents[1],
+                        "notFeature": Julia.get_feature_field(ind,"not_feature")}
                     featureModel.append(feature)
                 }
             }
@@ -124,7 +127,9 @@ Component {
                                 "border_thickness": 3,
                                 "borderRemoveObjs": false,
                                 "min_area": 1,
-                                "parent": ""}
+                                "parent": "",
+                                "parent2": "",
+                                "notFeature": false}
                             featureModel.append(feature)
                             Julia.append_features(feature.name,
                                                   feature.colorR,
@@ -134,7 +139,8 @@ Component {
                                                   feature.border_thickness,
                                                   feature.borderRemoveObjs,
                                                   feature.min_area,
-                                                  feature.parent)
+                                                  [feature.parent,feature.parent2],
+                                                  feature.notFeature)
                         }
                         max_value = 0
                         value = 0

@@ -111,31 +111,30 @@ function image_to_rgb_float(image::Array{RGB{Normed{UInt8,8}},2})
 end
 
 # Convert images to BitArray{3}
-function label_to_bool(labelimg::Array{RGB{Normed{UInt8,8}},2},
+function label_to_bool(labelimg::Array{RGB{Normed{UInt8,8}},2}, feature_inds::Vector{Int64},
         labels_color::Vector{Vector{Float64}},labels_incl::Vector{Vector{Int64}},
         border::Vector{Bool},border_thickness::Vector{Int64})
     colors = map(x->RGB((n0f8.(./(x,255)))...),labels_color)
-    num = length(colors)
+    num = length(feature_inds)
     num_borders = sum(border)
     inds_borders = findall(border)
     label = fill!(BitArray{3}(undef, size(labelimg)...,
         num + num_borders),0)
     # Find features based on colors
-    for i=1:num
-        label[:,:,i] = .==(labelimg,colors[i])
-    end
-    # Combine feature marked for that
-    for i=1:num
-        for j=1:length(labels_incl[i])
-            label[:,:,i] = .|(label[:,:,i],
-                label[:,:,labels_incl[i][j]])
+    for i in feature_inds
+        colors_current = [colors[i]]
+        inds = findall(map(x->issubset(i,x),labels_incl))
+        if !isempty(feature_inds)
+            push!(colors_current,colors[feature_inds]...)
         end
+        bitarrays = map(x -> .==(labelimg,x),colors_current)
+        label[:,:,i] = any(reduce(cat3,bitarrays),dims=3)
     end
     # Make features outlining object borders
     for j=1:length(inds_borders)
         ind = inds_borders[j]
         dil = dilate(outer_perim(label[:,:,ind]),border_thickness[ind])
-        label[:,:,length(colors)+j] = dil
+        label[:,:,num+j] = dil
     end
     return label
 end
@@ -144,25 +143,34 @@ end
 # labels and whether border data should be obtained
 function get_feature_data(features::Vector{Feature})
     num = length(features)
+    feature_names = Vector{String}(undef,num)
+    feature_parents = Vector{Vector{String}}(undef,num)
     labels_color = Vector{Vector{Float64}}(undef,num)
     labels_incl = Vector{Vector{Int64}}(undef,num)
+    for i=1:num
+        feature = features[i]
+        feature_names[i] = features[i].name
+        feature_parents[i] = features[i].parents
+        labels_color[i] = feature.color
+    end
+    for i=1:num
+        labels_incl[i] = findall(any.(map(x->x.==feature_parents[i],feature_names)))
+    end
+    feature_inds = Vector{Int64}(undef,0)
+    for i = 1:num
+        if !features[i].not_feature
+            push!(feature_inds,i)
+        end
+    end
+    num = length(feature_inds)
     border = Vector{Bool}(undef,num)
     border_thickness = Vector{Int64}(undef,num)
-    feature_names = Vector{String}(undef,num)
-    feature_parents = Vector{String}(undef,num)
-    for i = 1:num
-        feature_names[i] = features[i].name
-        feature_parents[i] = features[i].parent
-    end
-    for i = 1:num
+    for i in feature_inds
         feature = features[i]
-        labels_color[i] = feature.color
         border[i] = feature.border
         border_thickness[i] = feature.border_thickness
-        inds = findall(feature_names[i].==feature_parents)
-        labels_incl[i] = inds
     end
-    return labels_color,labels_incl,border,border_thickness
+    return feature_inds,labels_color,labels_incl,border,border_thickness
 end
 
 # Removes rows and columns from image sides if they are uniformly black.

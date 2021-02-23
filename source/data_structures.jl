@@ -63,7 +63,8 @@ output_options = Output_options()
     border_thickness::Int64 = 3
     border_remove_objs::Bool = false
     min_area::Int64 = 1
-    parent::String = ""
+    parents::Vector{String} = ["",""]
+    not_feature::Bool = false
     Output::Output_options = output_options
 end
 feature = Feature()

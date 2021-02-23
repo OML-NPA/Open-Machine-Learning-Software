@@ -100,7 +100,7 @@ function prepare_training_data_main(training::Training,training_data::Training_d
     # Get output image size for dimensions 1 and 2
     pix_num = model_data.input_size[1:2]
     # Get feature data
-    labels_color,labels_incl,border,border_thickness = get_feature_data(features)
+    feature_inds,labels_color,labels_incl,border,border_thickness = get_feature_data(features)
     # Load images and labels
     imgs = load_images(training_data.url_input)
     labels = load_images(training_data.url_labels)
@@ -122,13 +122,13 @@ function prepare_training_data_main(training::Training,training_data::Training_d
         end
         # Get current image and label
         img = imgs[k]
-        label = labels[k]
+        labelimg = labels[k]
         # Convert to grayscale
         img = image_to_gray_float(img)
         # Crope to remove black background
         # img,label = correct_view(img,label)
         # Convert BitArray labels to Array{Float32}
-        label = label_to_bool(label,labels_color,labels_incl,border,border_thickness)
+        label = label_to_bool(labelimg,feature_inds,labels_color,labels_incl,border,border_thickness)
         # Augment images
         augment!(data,img,label,num_angles,pix_num,min_fr_pix)
         data_all[k] = data

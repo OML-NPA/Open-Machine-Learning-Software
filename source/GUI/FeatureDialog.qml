@@ -27,18 +27,27 @@ ApplicationWindow {
                 spacing: 0.3*margin
                 ColumnLayout {
                     Layout.alignment : Qt.AlignHCenter
-                    spacing: 0.55*margin
+                    spacing: 0.40*margin
                     Label {
                         Layout.alignment : Qt.AlignLeft
                         text: "Name:"
-                        bottomPadding: 0.05*margin
+                        bottomPadding: 0.08*margin
                     }
                     Label {
                         Layout.alignment : Qt.AlignLeft
                         Layout.row: 1
                         text: "Parent:"
-                        bottomPadding: 0.05*margin
+                        bottomPadding: 0.08*margin
                     }
+                    Label {
+                        id: parent2Label
+                        visible: false
+                        Layout.alignment : Qt.AlignLeft
+                        Layout.row: 1
+                        text: "Parent 2:"
+                        bottomPadding: 0.08*margin
+                    }
+
                 }
                 ColumnLayout {
                     TextField {
@@ -57,6 +66,7 @@ ApplicationWindow {
                             id: nameModel
                         }
                         Component.onCompleted: {
+                            // parentComboBox 1
                             nameModel.append({"name": ""})
                             for (var i=0;i<featureModel.count;i++) {
                               if (i===indTree) continue
@@ -69,8 +79,68 @@ ApplicationWindow {
                                         currentIndex = i
                                     }
                                 }
+                                parent2Label.visible = true
+                                parent2ComboBox.visible = true
+                            }
+                            // parentComboBox 2
+                            var name1 = parentComboBox.currentText
+                            name2Model.append({"name": ""})
+                            for (i=0;i<featureModel.count;i++) {
+                              name = featureModel.get(i).name
+                              if (i===indTree || name1===name) continue
+                              name2Model.append({"name": name})
+                            }
+                            var parentName = featureModel.get(indTree).parent2
+                            if (parentName!=="") {
+                                for (i=0;i<name2Model.count;i++) {
+                                    if (name2Model.get(i).name===parentName) {
+                                        parent2ComboBox.currentIndex = i
+                                    }
+                                }
                             }
                         }
+                        onActivated: {
+                            if (index!==0) {
+                                parent2Label.visible = true
+                                parent2ComboBox.visible = true
+                            }
+                            else {
+                                parent2Label.visible = false
+                                parent2ComboBox.visible = false
+                            }
+                        }
+                    }
+                    ComboBox {
+                        id: parent2ComboBox
+                        visible: false
+                        Layout.preferredWidth: 400*pix
+                        editable: false
+                        model: name2Model
+                        ListModel {
+                            id: name2Model
+                        }
+                    }
+                }
+            }
+            Row {
+                Label {
+                    id: notfeatureLabel
+                    width: 400*pix
+                    text: "Not a feature:"
+                }
+                CheckBox {
+                    id: notfeatureCheckBox
+                    onClicked: {
+                        if (checkState==Qt.Checked) {
+                            featureModel.get(indTree).notFeature = true
+                        }
+                        if (checkState==Qt.Unchecked) {
+                            featureModel.get(indTree).notFeature = false
+                        }
+                    }
+                    Component.onCompleted: {
+                        checkState = featureModel.get(indTree).notFeature ?
+                            Qt.Checked : Qt.Unchecked
                     }
                 }
             }
@@ -184,6 +254,8 @@ ApplicationWindow {
                     var feature = featureModel.get(indTree)
                     feature.name = new_name
                     feature.parent = parentComboBox.currentText
+                    feature.parent2 = parent2ComboBox.currentText
+                    var parents = [feature.parent,feature.parent2]
                     Julia.update_features(indTree+1,
                                           feature.name,
                                           feature.colorR,
@@ -193,7 +265,8 @@ ApplicationWindow {
                                           feature.border_thickness,
                                           feature.borderRemoveObjs,
                                           feature.min_area,
-                                          feature.parent)
+                                          [feature.parent,feature.parent2],
+                                          feature.notFeature)
                     featuredialogLoader.sourceComponent = null
                 }
             }
