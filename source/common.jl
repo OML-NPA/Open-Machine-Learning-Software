@@ -125,7 +125,7 @@ function label_to_bool(labelimg::Array{RGB{Normed{UInt8,8}},2}, feature_inds::Ve
         colors_current = [colors[i]]
         inds = findall(map(x->issubset(i,x),labels_incl))
         if !isempty(feature_inds)
-            push!(colors_current,colors[feature_inds]...)
+            push!(colors_current,colors[inds]...)
         end
         bitarrays = map(x -> .==(labelimg,x),colors_current)
         label[:,:,i] = any(reduce(cat3,bitarrays),dims=3)
