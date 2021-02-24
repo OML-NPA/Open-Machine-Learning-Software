@@ -84,7 +84,8 @@ end
 
 function output_images(predicted_bool::BitArray{3},label_bool::BitArray{3},
         model_data::Model_data,validation::Validation)
-    labels_color, _ ,border = get_feature_data(model_data.features)
+    feature_inds,labels_color, _ ,border = get_feature_data(model_data.features)
+    labels_color = labels_color[feature_inds]
     labels_color_uint = convert(Vector{Vector{N0f8}},labels_color/255)
     inds_border = findall(border)
     border_colors = labels_color_uint[findall(border)]
@@ -108,7 +109,7 @@ function output_images(predicted_bool::BitArray{3},label_bool::BitArray{3},
             predicted_bool_final[:,:,ind] .= temp_array
         end
     end
-    predicted_data,error_data,target_data = compute(validation,
+    predicted_data,target_data,error_data = compute(validation,
         predicted_bool_final,label_bool,labels_color_uint,num_feat)
     return predicted_data,target_data,error_data
 end
@@ -146,10 +147,6 @@ function validate_main(settings::Settings,validation_data::Validation_data,
         # Preparing data
         original,data_input,data_label = prepare_validation_data(validation,
             validation_data,features,i)
-
-            colorview(Gray, Float32.(data_label[:,:,2]))
-
-
         predicted = forward(model,data_input,use_GPU=use_GPU)
         accuracy_array[i] = accuracy(predicted,data_label)
         loss_array[i] = loss(predicted,data_label)

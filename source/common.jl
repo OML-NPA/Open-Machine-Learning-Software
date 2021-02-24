@@ -239,13 +239,13 @@ end
 # Use border data to better separate objects
 function apply_border_data_main(data_in::BitArray{3},
         model_data::Model_data)
-    labels_color,labels_incl,border,border_thickness = get_feature_data(model_data.features)
+    feature_inds,labels_color,labels_incl,border,border_thickness = get_feature_data(model_data.features)
     inds_border = findall(border)
     if isnothing(inds_border)
         return data_in
     end
     num_border = length(inds_border)
-    num_feat = length(model_data.features)
+    num_feat = length(feature_inds)
     data = BitArray{3}(undef,size(data_in)[1:2]...,num_border)
     @threads for i = 1:num_border
         border_num_pixels = border_thickness[i]
