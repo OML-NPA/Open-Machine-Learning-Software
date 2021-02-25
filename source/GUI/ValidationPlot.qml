@@ -349,8 +349,11 @@ ApplicationWindow {
                         }
                         Component.onCompleted: {
                             for (var i=0;i<featureModel.count;i++) {
-                                featureselectModel.append(
-                                    {"name": featureModel.get(i).name})
+                                var feature = featureModel.get(i)
+                                if (!feature.notFeature) {
+                                    featureselectModel.append(
+                                        {"name": feature.name})
+                                }
                             }
                             var num = featureselectModel.count
                             for (i=0;i<num;i++) {

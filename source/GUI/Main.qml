@@ -268,6 +268,31 @@ ApplicationWindow {
         Julia.set_settings(["Training","model"],url)
     }
 
+    function load_model_features(featureModel) {
+        var num_features = Julia.num_features()
+        if (featureModel.count!==0) {
+            featureModel.clear()
+        }
+        for (var i=0;i<num_features;i++) {
+            var ind = i+1
+            var color = Julia.get_feature_field(ind,"color")
+            var parents = Julia.get_feature_field(ind,"parents")
+            var feature = {
+                "name": Julia.get_feature_field(ind,"name"),
+                "colorR": color[0],
+                "colorG": color[1],
+                "colorB": color[2],
+                "border": Julia.get_feature_field(ind,"border"),
+                "border_thickness": Julia.get_feature_field(ind,"border_thickness"),
+                "borderRemoveObjs": Julia.get_feature_field(ind,"border_remove_objs"),
+                "min_area": Julia.get_feature_field(ind,"min_area"),
+                "parent": parents[0],
+                "parent2": parents[1],
+                "notFeature": Julia.get_feature_field(ind,"not_feature")}
+            featureModel.append(feature)
+        }
+    }
+
     function stripURL(url) {
         return url.toString().replace("file:///","")
     }

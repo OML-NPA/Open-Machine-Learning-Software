@@ -21,31 +21,6 @@ Component {
         Loader { id: customizationLoader}
         Loader { id: trainingplotLoader}
 
-        function load_model_features() {
-            var num_features = Julia.num_features()
-            if (num_features!==0 && featureModel.count==0) {
-                updatemodelButton.visible = true
-                for (var i=0;i<num_features;i++) {
-                    var ind = i+1
-                    var color = Julia.get_feature_field(ind,"color")
-                    var parents = Julia.get_feature_field(ind,"parents")
-                    var feature = {
-                        "name": Julia.get_feature_field(ind,"name"),
-                        "colorR": color[0],
-                        "colorG": color[1],
-                        "colorB": color[2],
-                        "border": Julia.get_feature_field(ind,"border"),
-                        "border_thickness": Julia.get_feature_field(ind,"border_thickness"),
-                        "borderRemoveObjs": Julia.get_feature_field(ind,"border_remove_objs"),
-                        "min_area": Julia.get_feature_field(ind,"min_area"),
-                        "parent": parents[0],
-                        "parent2": parents[1],
-                        "notFeature": Julia.get_feature_field(ind,"not_feature")}
-                    featureModel.append(feature)
-                }
-            }
-        }
-
         FolderDialog {
             id: folderDialog
             currentFolder: currentfolder
@@ -76,8 +51,8 @@ Component {
                 var url = file.toString().replace("file:///","")
                 neuralnetworkTextField.text = url
                 importmodel(model,url)
-                featureModel.clear()
-                load_model_features()
+                load_model_features(featureModel)
+                updatemodelButton.visible = true
                 nameTextField.text = Julia.get_settings(["Training","name"])
                 Julia.save_settings()
             }
@@ -315,7 +290,8 @@ Component {
                             if (Julia.isfile(url)) {
                                 text = url
                                 importmodel(model,url)
-                                load_model_features()
+                                load_model_features(featureModel)
+                                updatemodelButton.visible = true
                             }
                         }
                     }
@@ -466,9 +442,6 @@ Component {
                                                 labelscolorsTimer.running = true
 
                                             }
-                                        }
-                                        Component.onCompleted: {
-                                            load_model_features()
                                         }
                                     }
                                     TreeButton {
