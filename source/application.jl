@@ -103,7 +103,10 @@ function apply_main(settings::Settings,application_data::Application_data,
     loss = model_data.loss
     features = model_data.features
     use_GPU = settings.Options.Hardware_resources.allow_GPU && has_cuda()
-    labels_color,labels_incl,border = get_feature_data(features)
+    feature_inds,labels_color,labels_incl,border = get_feature_data(features)
+    features = features[feature_inds]
+    labels_color = labels_color[feature_inds]
+    labels_incl = labels_incl[feature_inds]
     num_feat = length(border)
     num_border = sum(border)
     apply_border = num_border>0
@@ -144,8 +147,6 @@ function apply_main(settings::Settings,application_data::Application_data,
     end
     # Run application
     cnt = 0
-    num_parts = 20 # For dividing input image into n parts
-    offset = 20 # For taking extra n pixels from both sides of an image part
     put!(channels.application_progress,sum(length.(urls_batched))+length(urls_batched))
     @everywhere GC.gc()
     for k = 1:num
@@ -189,8 +190,7 @@ function apply_main(settings::Settings,application_data::Application_data,
             end
             # Get neural network output
             input_data = prepare_application_data(urls_batch[l])
-            predicted = forward(model,input_data,num_parts=num_parts,
-                offset=offset,use_GPU=use_GPU)
+            predicted = forward(model,input_data,use_GPU=use_GPU)
             predicted_bool = predicted.>0.5
             size_dim4 = size(predicted_bool,4)
             # Flatten and use border info if present
