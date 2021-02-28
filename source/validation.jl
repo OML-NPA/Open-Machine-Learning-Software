@@ -64,7 +64,7 @@ function compute(validation::Validation,predicted_bool::BitArray{3},
     target_data = Vector{Tuple{BitArray{2},Vector{N0f8}}}(undef,num)
     error_data = Vector{Tuple{BitArray{3},Vector{N0f8}}}(undef,num)
     color_error = ones(N0f8,3)
-    for i = 1:num
+    @threads for i = 1:num
         color = labels_color[i]
         predicted_bool_feat = predicted_bool[:,:,i]
         predicted_data[i] = (predicted_bool_feat,color)
@@ -84,7 +84,8 @@ end
 
 function output_images(predicted_bool::BitArray{3},label_bool::BitArray{3},
         model_data::Model_data,validation::Validation)
-    feature_inds,labels_color, _ ,border = get_feature_data(model_data.features)
+    features = model_data.features
+    feature_inds,labels_color, _ ,border = get_feature_data(features)
     labels_color = labels_color[feature_inds]
     labels_color_uint = convert(Vector{Vector{N0f8}},labels_color/255)
     inds_border = findall(border)
@@ -96,7 +97,7 @@ function output_images(predicted_bool::BitArray{3},label_bool::BitArray{3},
     num = length(labels_color_uint)
     num_border = sum(border)
     if num_border>0
-        border_bool = apply_border_data_main(predicted_bool,model_data)
+        border_bool = apply_border_data(predicted_bool,features)
         predicted_bool = cat3(predicted_bool,border_bool)
     end
     predicted_bool_final = predicted_bool

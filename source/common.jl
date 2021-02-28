@@ -237,9 +237,8 @@ function rotate_img(img::BitArray{3},angle_val::Float64)
 end
 
 # Use border data to better separate objects
-function apply_border_data_main(data_in::BitArray{3},
-        model_data::Model_data)
-    feature_inds,labels_color,labels_incl,border,border_thickness = get_feature_data(model_data.features)
+function apply_border_data(data_in::BitArray{3},features::Vector{Feature})
+    feature_inds,labels_color,labels_incl,border,border_thickness = get_feature_data(features)
     inds_border = findall(border)
     if isnothing(inds_border)
         return data_in
@@ -262,7 +261,7 @@ function apply_border_data_main(data_in::BitArray{3},
         background = background1 .| background2
         skel = thinning(border_bool)
         background[skel] .= true
-        if model_data.features[i].border_remove_objs
+        if features[i].border_remove_objs
             components = label_components((!).(border_bool),conn(4))
             centroids = component_centroids(components)
             intensities = component_intensity(components,data_feat)
@@ -283,7 +282,6 @@ function apply_border_data_main(data_in::BitArray{3},
     end
     return data
 end
-apply_border_data(data_in) = apply_border_data_main(data_in,model_data)
 
 #---
 # Accuracy based on RMSE
@@ -514,7 +512,7 @@ end
 
 # Runs data thorugh a neural network
 function forward(model::Chain,input_data::Array{Float32};
-        num_parts::Int64=20,offset::Int64=20,use_GPU::Bool=true)
+        num_parts::Int64=30,offset::Int64=20,use_GPU::Bool=true)
     if use_GPU
         input_data_gpu = CuArray(input_data)
         model = move(model,gpu)
